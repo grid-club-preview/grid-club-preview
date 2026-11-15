@@ -1,6 +1,14 @@
-# Grid Club v0.4a · Dot Trails
+# Grid Club v0.4a.2 · Dot Trails
 
 **Installable web puzzle prototype**, playable in Chrome on Windows and as a Home Screen web app on an iPhone. This is a feature upgrade to v0.3 for the existing GitHub Pages site, not an App Store build.
+
+## v0.4a.2 patch: Back button + accessible dot numbers
+
+- **Back now returns immediately to the game selection screen** without displaying the Pause message or a confirmation. It quietly preserves the unfinished puzzle and elapsed time. Reopening that puzzle resumes directly rather than showing the Pause overlay. The separate Pause button still hides the entire puzzle and stops the timer.
+- **Numbers are hidden by default on every board**, including boards with more than nine pairs.
+- A **123 Show numbers / Hide numbers** button appears above the grid; it labels all matching dot pairs (not merely grids with over nine pairs).
+- The choice is stored on this device and restored when the app is opened again; it does not affect the puzzle, timer, score or Assisted/Unassisted classification.
+- This patch keeps the original v0.4a daily puzzle seed, puzzle ID and saved-game storage keys unchanged. Existing v0.4a progress and achievements should remain available when updating on the same installed web app.
 
 ## What's new
 
@@ -13,6 +21,13 @@
 - **Local achievement records**: time, moves, hints, resets, puzzle ID, assistance status and queued *unverified* results. These are not currently submitted to any server.
 - **Offline feedback**: the game acknowledges locally saved results and explains that leaderboard submission is not yet active.
 - **Ad layout reservation** beneath gameplay controls, with no advert, tracking SDK or network included.
+
+## Future timed daily challenge (not yet active)
+
+- A daily challenge may occasionally be a **countdown challenge**, with a fixed time limit and the same puzzle for everybody that day.
+- Countdown results must be distinguished from normal daily results; no time extensions or paid/credit-based time boosts.
+- The free Pause facility would remain available and fully obscure the board.
+- Exact countdown duration, cadence and ranking rules will be finalised before the feature is activated. **All v0.4a.2 daily challenges remain the current untimed 11×11 format.**
 
 ## Important limitations
 
@@ -32,6 +47,7 @@ Run in Node 20+:
 ```sh
 node tests/engine.test.js
 node tests/v04a.test.js
+node tests/navigation.test.js
 ```
 
-The second suite checks 400 deterministic puzzles, variable pair counts, hints, freeze/resume/save/restore and fair-play counters. The interface was exercised in a simulated mobile browser, including a completed puzzle and local results recording. It has **not been verified on the user's actual iPhone** yet. Real service-worker offline/reconnect behavior requires testing after GitHub deployment.
+The second suite checks 400 deterministic puzzles, variable pair counts, hints, freeze/resume/save/restore and fair-play counters. The third uses a simulated DOM to exercise the Back button, resumed games, explicit Pause and numeric-label preference. v0.4a was previously exercised in a simulated mobile browser; this patch could not be rechecked in a real browser here. **Test v0.4a.2 on the actual iPhone** after GitHub deployment, including the offline cache update.

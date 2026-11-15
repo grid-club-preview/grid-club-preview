@@ -49,6 +49,11 @@
     .boardHeader { display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:10px; }
     .boardHeader strong { font-size:19px; }
     .boardHeader small { font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums; }
+    .accessibilityBar { display:flex;justify-content:flex-end;margin:-3px 0 10px; }
+    .numberToggle { display:inline-flex;align-items:center;gap:7px;border:1px solid #42506a;background:#253147;color:#e5ebf4;border-radius:999px;padding:7px 11px;font-size:12px;font-weight:700; }
+    .numberToggle .toggleIcon { font-size:13px;font-weight:850;color:var(--mint); }
+    .numberToggle[aria-pressed="true"] {background:#304a52;border-color:#66c4b8;}
+    .numberToggle:focus-visible {outline:2px solid var(--mint);outline-offset:3px;}
     .progress { height:5px;border-radius:7px;background:#334057;overflow:hidden;margin-bottom:13px; }
     .progress > div { height:100%;width:0;background:var(--mint);transition:width .16s; }
     .boardWrap { position:relative; width:100%; aspect-ratio:1 / 1; }
@@ -110,6 +115,7 @@
       <div class="stats"><div class="stat"><small>◉ Pairs</small><strong id="pairs">0/5</strong></div><div class="stat"><small>☝ Moves</small><strong id="moves">0</strong></div><div class="stat"><small>◷ Time</small><strong id="time">00:00</strong></div></div>
       <div class="panel boardPanel">
         <div class="boardHeader"><strong id="boardTitle">Dot Trails</strong><small id="cells">0/25 squares</small></div>
+        <div class="accessibilityBar"><button class="numberToggle" type="button" id="numberToggle" aria-pressed="false" aria-label="Show numbers on coloured dots" title="Increase accessibility by showing numbers on each matching pair"><span class="toggleIcon" aria-hidden="true">123</span><span id="numberToggleText">Show numbers</span></button></div>
         <div class="progress"><div id="progress"></div></div>
         <div class="boardWrap"><canvas id="board" role="img" aria-label="Interactive Dot Trails puzzle board"></canvas>
           <div class="win" id="win"><div class="winInner"><div style="font-size:36px;color:var(--mint)">✦</div><h3 id="winTitle">Nice one.</h3><p id="winMessage">All squares filled.</p><div class="winCategory" id="winCategory"></div><div class="resultStatus" id="resultStatus"></div><div class="futureNotice" id="futureNotice"></div><button id="next">Next puzzle</button><button class="secondary" id="share">↗ Share result</button></div></div>
@@ -121,7 +127,7 @@
       </div>
       <div class="controls"><button id="undo"><span>↶</span>Undo</button><button id="hint"><span>✧</span>Hint</button><button id="reset"><span>⟲</span>Reset</button><button id="new"><span>❖</span>New</button></div>
       <div class="adSlot" id="adSlot" aria-hidden="true"><small>Space reserved for a possible banner advert · no adverts in v0.4a</small></div>
-      <footer>Grid Club · Prototype v0.4a</footer>
+      <footer>Grid Club · Prototype v0.4a.2</footer>
     </section>
   </main>
   <div class="pauseLayer" id="pauseLayer" hidden role="dialog" aria-modal="true" aria-labelledby="pauseTitle">

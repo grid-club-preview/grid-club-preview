@@ -1,4 +1,4 @@
-/* Grid Club · Dot Trails v0.4a · offline-first, pause, partial hints, local achievements */
+/* Grid Club · Dot Trails v0.4a.2 · numeric labels and silent Back navigation */
 (() => {
   'use strict';
   const core = GridCore;
@@ -9,6 +9,7 @@
   const STATS_KEY = 'gridclub-stats-v1';
   const PROGRESS_KEY = 'gridclub-progress-v04a';
   const DIFFICULTY_KEY = 'gridclub-dottrails-size';
+  const DOT_NUMBERS_KEY = 'gridclub-dottrails-show-numbers';
   const canvas = $('board'), ctx = canvas.getContext('2d');
   const utcDay = () => new Date().toISOString().slice(0,10);
   const today = () => utcDay();
@@ -30,6 +31,15 @@
   let mode = 'free', size = 5, game = null, activePointerId = null;
   let lastCell = null, side = 0, notified = false, hintPreview = null, hintUntil = 0;
   let storageAvailable = true, saveWarningShown = false;
+  let showDotNumbers = false;
+  try { showDotNumbers = localStorage.getItem(DOT_NUMBERS_KEY) === 'true'; } catch (_) {}
+  function updateDotNumbersButton() {
+    const button = $('numberToggle');
+    button.setAttribute('aria-pressed', String(showDotNumbers));
+    button.setAttribute('aria-label', showDotNumbers ? 'Hide numbers on coloured dots' : 'Show numbers on coloured dots');
+    button.title = showDotNumbers ? 'Hide numeric dot labels' : 'Increase accessibility by showing numbers on each matching pair';
+    $('numberToggleText').textContent = showDotNumbers ? 'Hide numbers' : 'Show numbers';
+  }
 
   function readJSON(key, fallback) {
     try { return JSON.parse(localStorage.getItem(key) || 'null') || fallback; }
@@ -110,6 +120,9 @@
   }
   function setGame(newGameObject) {
     game = newGameObject;
+    // Re-entering a puzzle from Home is an explicit request to play, not to see
+    // the Pause screen. Progress was saved when the player left.
+    if (game.paused && !game.finishedAt) core.resume(game);
     notified = false; activePointerId = null;lastCell = null;hintPreview=null;hintUntil=0;
     $('win').classList.remove('show');
     $('incomplete').hidden = true; $('hintStatus').hidden = true;
@@ -122,7 +135,7 @@
       button.classList.toggle('active',selected);
       button.setAttribute('aria-pressed',String(selected));
     });
-    $('pauseLayer').hidden = !game.paused || !!game.finishedAt;
+    $('pauseLayer').hidden = true;
     render();
     persist();
     requestAnimationFrame(resize);
@@ -141,7 +154,7 @@
   }
   function switchDifficulty(newSize) {
     if (mode !== 'free') return;
-    saveAndSuspend();
+    suspendSilently();
     size = newSize;saveDifficulty();
     setGame(savedGame('free',size) || freshGame());
   }
@@ -188,8 +201,8 @@
       ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);
       ctx.fillStyle=colours[pair.id%colours.length];ctx.fill();
       ctx.beginPath();ctx.arc(x-r*.1,y-r*.16,r*.2,0,Math.PI*2);ctx.fillStyle='#ffffff55';ctx.fill();
-      // Extra pairs are labelled so the 11x11 board isn't colour-only.
-      if(game.level.pairs.length>9) {
+      // Optional accessibility feature: numeric labels on all pairs, off by default.
+      if(showDotNumbers) {
         ctx.fillStyle='#101624';ctx.font=`800 ${Math.max(9,cell*.31)}px system-ui`;
         ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(String(pair.id+1),x,y+1);
       }
@@ -288,6 +301,21 @@
     requestAnimationFrame(resize);
   }
   function saveAndSuspend() {if(game){pauseGame();persist();}}
+  function suspendSilently() {
+    if (!game) return;
+    if (activePointerId !== null) release();
+    clearHint();
+    if (!game.finishedAt) core.pause(game);
+    persist();
+  }
+  function returnHome() {
+    // Back is navigation, never a request to open the Pause overlay.
+    suspendSilently();
+    $('pauseLayer').hidden = true;
+    $('gameScreen').hidden = true;
+    $('home').hidden = false;
+    updateHome();
+  }
   function pointerCell(event) {
     const rect=canvas.getBoundingClientRect();
     const x=Math.floor((event.clientX-rect.left)/rect.width*size);
@@ -333,11 +361,17 @@
   canvas.addEventListener('lostpointercapture',release);
   $('dailyStart').onclick=()=>start('daily');
   $('freeStart').onclick=()=>start('free');
-  $('back').onclick=()=>{saveAndSuspend();$('gameScreen').hidden=true;$('home').hidden=false;updateHome();};
+  $('back').onclick=returnHome;
   $('pauseButton').onclick=pauseGame;
   $('resumeButton').onclick=resumeGame;
-  $('pauseBack').onclick=()=>{$('gameScreen').hidden=true;$('home').hidden=false;updateHome();};
-  $('help').onclick=()=>alert('Connect matching dots without crossing lines and fill every square. Lift your finger to leave a partly drawn path, then continue from its loose end. Tap a coloured dot to clear its line. Hint shows a short section of one possible solution without drawing it. Pausing is free and hides the entire puzzle. Undo and Reset do not rewind the clock.');
+  $('pauseBack').onclick=returnHome;
+  $('numberToggle').onclick=()=>{
+    showDotNumbers=!showDotNumbers;
+    try { localStorage.setItem(DOT_NUMBERS_KEY,String(showDotNumbers)); } catch (_) {}
+    updateDotNumbersButton();draw();
+  };
+  updateDotNumbersButton();
+  $('help').onclick=()=>alert('Connect matching dots without crossing lines and fill every square. Lift your finger to leave a partly drawn path, then continue from its loose end. Tap a coloured dot to clear its line. Use Show numbers to label matching dot pairs if helpful. Hint shows a short section of one possible solution without drawing it. Pausing is free and hides the entire puzzle. Undo and Reset do not rewind the clock.');
   $('undo').onclick=()=>{if(game?.paused)return;clearHint();core.undo(game);update();};
   $('hint').onclick=()=>{
     if(!game||game.paused||game.finishedAt)return;
