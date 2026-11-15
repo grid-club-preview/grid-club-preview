@@ -1,4 +1,4 @@
-const CACHE = 'gridclub-pwa-v0.2';
+const CACHE = 'gridclub-pwa-v0.3';
 const APP_FILES = [
   './',
   './index.html',
@@ -22,5 +22,14 @@ self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
   const u = new URL(event.request.url);
   if (u.origin !== self.location.origin || !u.pathname.startsWith(new URL(self.registration.scope).pathname)) return;
-  event.respondWith(caches.match(event.request).then(cached => cached || fetch(event.request)));
+  event.respondWith((async () => {
+    const cache = await caches.open(CACHE);
+    try {
+      const response = await fetch(event.request);
+      if (response.ok) cache.put(event.request, response.clone());
+      return response;
+    } catch (_) {
+      return (await cache.match(event.request)) || Response.error();
+    }
+  })());
 });

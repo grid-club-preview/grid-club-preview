@@ -6,12 +6,12 @@
   <meta name="theme-color" content="#0e1424">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="description" content="Daily Dot Connect puzzles and unlimited colourful challenges. Play offline.">
+  <meta name="description" content="Daily Dot Trails puzzles: connect matching dots, fill every square and play offline.">
   <meta name="apple-mobile-web-app-title" content="Grid Club">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icons/icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
-  <title>Grid Club · Dot Connect</title>
+  <title>Grid Club · Dot Trails</title>
   <style>
     :root { color-scheme: dark; --bg:#0e1424; --surface:#1a243a; --tile:#253147; --muted:#9daabe; --mint:#7be3d4; --purple:#a178ff; }
     * { box-sizing: border-box; }
@@ -36,8 +36,9 @@
     .gamebar { display:flex;align-items:center;justify-content:space-between;margin-bottom:19px; }
     .gamebar .center { text-align:center; }
     .gamebar .center small { display:block;color:var(--muted);margin-top:3px; }
-    .difficulty { display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px; }
-    .difficulty button { background:var(--surface);padding:12px;border-radius:12px;font-weight:700; }
+    .difficulty { display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-bottom:16px; }
+    .difficulty button { background:var(--surface);padding:10px 2px;border-radius:12px;font-weight:700;font-size:12px;line-height:1.3; }
+    .difficulty button small { display:block;opacity:.75;font-size:10px;margin-top:3px; }
     .difficulty button.active { background:var(--purple); }
     .stats { display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px; }
     .stat { background:var(--surface);padding:12px;text-align:center;border-radius:14px; }
@@ -51,7 +52,8 @@
     .progress > div { height:100%;width:0;background:var(--mint);transition:width .16s; }
     .boardWrap { position:relative; width:100%; aspect-ratio:1 / 1; }
     canvas { display:block;width:100%;height:100%;touch-action:none;user-select:none;-webkit-user-select:none; border-radius:16px; }
-    .boardCaption { text-align:center;font-size:12px;color:var(--muted);line-height:1.5;margin:14px 0 0; }
+    .boardCaption { text-align:center;font-size:12px;color:var(--muted);line-height:1.5;margin:12px 0 0; }
+    .boardAlert { padding:11px 13px;margin-top:12px;background:#453021;color:#ffdfb1;border:1px solid #8b5a30;border-radius:11px;font-weight:700;text-align:center;font-size:12px;line-height:1.4; }
     .controls { display:grid;grid-template-columns:repeat(4,1fr);gap:9px; }
     .controls button { background:var(--surface); border-radius:14px; padding:12px 2px; font-weight:700; font-size:12px; }
     .controls span { display:block;font-size:20px;margin-bottom:6px; }
@@ -73,33 +75,34 @@
       <header><div><div class="eyebrow">GRID CLUB</div><h1>A little puzzle break.</h1></div><div class="mark">✦</div></header>
       <div class="panel hero">
         <div class="eyebrow">◷ &nbsp; TODAY'S CHALLENGE <span id="solvedTag" style="float:right;display:none">✓ SOLVED</span></div>
-        <h2>Dot Connect</h2>
-        <p>Link matching colours. Fill the entire grid. No crossing paths.</p>
+        <h2>Dot Trails</h2>
+        <p>Connect matching dots. Fill the entire grid without crossing paths. Today’s puzzle is 11×11.</p>
         <button class="primary" id="dailyStart"><span>Play today's puzzle</span><span>→</span></button>
       </div>
       <div class="eyebrow" style="color:var(--muted);margin:5px 0 12px">THE GAMES</div>
-      <button class="tileButton" id="freeStart"><span class="tileIcon">🟣</span><span><strong>Dot Connect</strong><small>Unlimited colourful puzzles</small></span><span style="margin-left:auto">›</span></button>
+      <button class="tileButton" id="freeStart"><span class="tileIcon">🟣</span><span><strong>Dot Trails</strong><small>Connect the dots · four difficulty levels</small></span><span style="margin-left:auto">›</span></button>
       <div class="tileButton" style="opacity:.58"><span class="tileIcon">▧</span><span><strong>Block Slide</strong><small>Sliding-block puzzle · next release</small></span><span style="margin-left:auto;font-size:11px">SOON</span></div>
       <footer>Independent prototype. No adverts, tracking or accounts.</footer>
     </section>
     <section id="gameScreen" hidden>
       <div class="gamebar">
         <button class="back" id="back" aria-label="Back">‹</button>
-        <div class="center"><div class="eyebrow">DOT CONNECT</div><small id="modeTitle">Free play</small></div>
+        <div class="center"><div class="eyebrow">DOT TRAILS</div><small id="modeTitle">Free play</small></div>
         <button class="back" id="help" aria-label="How to play">?</button>
       </div>
-      <div class="difficulty" id="difficulty"><button data-size="5" class="active">5 × 5</button><button data-size="6">6 × 6</button><button data-size="7">7 × 7</button></div>
+      <div class="difficulty" id="difficulty" aria-label="Puzzle difficulty"><button data-size="5" class="active" aria-pressed="true">Easy<small>5×5</small></button><button data-size="7">Medium<small>7×7</small></button><button data-size="9">Hard<small>9×9</small></button><button data-size="11">Expert<small>11×11</small></button></div>
       <div class="stats"><div class="stat"><small>◉ Pairs</small><strong id="pairs">0/5</strong></div><div class="stat"><small>☝ Moves</small><strong id="moves">0</strong></div><div class="stat"><small>◷ Time</small><strong id="time">00:00</strong></div></div>
       <div class="panel boardPanel">
-        <div class="boardHeader"><strong>Connect the colours</strong><small id="cells">0/25 squares</small></div>
+        <div class="boardHeader"><strong id="boardTitle">Dot Trails</strong><small id="cells">0/25 squares</small></div>
         <div class="progress"><div id="progress"></div></div>
-        <div class="boardWrap"><canvas id="board" role="img" aria-label="Interactive Dot Connect puzzle board"></canvas>
-          <div class="win" id="win"><div class="winInner"><div style="font-size:36px;color:var(--mint)">✦</div><h3>Puzzle complete!</h3><p>Every square connected. Nicely done.</p><button id="next">Next puzzle</button><button class="secondary" id="share">↗ Share result</button></div></div>
+        <div class="boardWrap"><canvas id="board" role="img" aria-label="Interactive Dot Trails puzzle board"></canvas>
+          <div class="win" id="win"><div class="winInner"><div style="font-size:36px;color:var(--mint)">✦</div><h3>Puzzle complete!</h3><p><span id="winMessage">Every square filled. Nicely done.</span></p><button id="next">Next puzzle</button><button class="secondary" id="share">↗ Share result</button></div></div>
         </div>
-        <p class="boardCaption">Start from a coloured dot and drag to its match. Fill every square.</p>
+        <p id="incomplete" class="boardAlert" role="status" aria-live="polite" hidden>Oof, nice work, but all squares need filling</p>
+        <p class="boardCaption">Connect matching dots and fill every square. Lift your finger to pause, then drag from the line’s loose end to continue. Tap a dot to remove its line.</p>
       </div>
       <div class="controls"><button id="undo"><span>↶</span>Undo</button><button id="hint"><span>✧</span>Hint</button><button id="reset"><span>⟲</span>Reset</button><button id="new"><span>❖</span>New</button></div>
-      <footer>Grid Club · Prototype v0.2</footer>
+      <footer>Grid Club · Prototype v0.3</footer>
     </section>
   </main>
   <script src="puzzle.js"></script>

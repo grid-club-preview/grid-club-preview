@@ -1,38 +1,57 @@
-# Grid Club v0.2: publish from Windows, play on iPhone
+# Grid Club · Dot Trails v0.3
 
-This **web app** does not require Xcode or a Mac. It is not a native `.ipa` or App Store submission yet. It contains Dot Connect, not Block Slide.
+A playable, installable **web app** for Windows Chrome and iPhone Safari/Home Screen. No Mac or Xcode needed for this prototype. This is not yet a native App Store submission.
 
-## Fastest test on Windows (no account)
+## What's changed since v0.2
 
-Unzip this folder and double-click `index.html` in Chrome or Edge. Keep `game.js` and `puzzle.js` beside it. This tests gameplay, but Home Screen installation and offline caching require HTTPS hosting.
+- Dot Connect is now **Dot Trails**. The game description explicitly says **connect**.
+- Free Play difficulty buttons: **Easy 5×5**, **Medium 7×7**, **Hard 9×9**, **Expert 11×11**.
+- Daily challenge: an **11×11** puzzle, identical for anyone playing on the same UTC date. The daily puzzle generator tests several candidate layouts and keeps the more winding one; this does not guarantee that all players find it harder than Expert.
+- More varied levels generated from complete winding paths. Every level has at least one full-board solution; **uniqueness and calibrated difficulty have not yet been verified**.
+- If you lift your finger or mouse midway through a line, it **stays put**. Restart at the line's open end to continue it.
+- Once all dots are connected but the grid isn't filled, the message says exactly: **“Oof, nice work, but all squares need filling”**. You can keep editing.
+- A prominent **Next puzzle** button appears after each completed Free Play puzzle. Difficulty remains selected.
+- Fixed colours for nine dot pairs, updated help text, and a clearer loose-end marker.
+- Completion statistics are stored in the device's local storage. There are **no live credits, advertisements, accounts or server sync** yet. The credits wallet is only a future-compatible data structure.
+- New v0.3 offline service-worker cache and network-first update behaviour.
 
-## Put it online using GitHub Pages (no programming needed)
+## Publish v0.3 to your existing GitHub Pages site
 
-1. On your Windows laptop, create a free account at https://github.com/ if you don't have one.
-2. Use **New repository**, give it a name such as `grid-club-preview`, and set it to **Public**. GitHub Free requires a public repo for Pages. Do **not** add personal/private information: the site and code will be public.
-3. Unzip the files in this package. On the repo webpage choose **Add file > Upload files**. Drag the following directly to the **root** of the repository: `index.html`, `game.js`, `puzzle.js`, `manifest.webmanifest`, `sw.js`, `.nojekyll` and the **icons** folder with its three PNGs. (GitHub's web uploader can accept the folder if dragged from Windows File Explorer.) Commit changes. If `.nojekyll` is hidden, it is optional for this basic package.
-4. Go to **Settings > Pages > Build and deployment**. Set **Source** to **Deploy from a branch**, then select **main**, **/(root)**, and **Save**.
-5. GitHub Pages will provide a URL like `https://YOURUSERNAME.github.io/grid-club-preview/`. It may take several minutes to go live. Open that URL on your iPhone in **Safari**.
-6. Use Safari's **Share** menu > **Add to Home Screen**, enable **Open as Web App** (if offered), then **Add**. Launch **Grid Club** from its Home Screen icon.
-7. To test offline: launch Grid Club once while online, wait for the page to load fully, then enable Airplane Mode and open the Home Screen icon again. Offline play should work after the initial cache has installed. If not, reconnect and open the site again once; browsers can defer caching.
+You already have a repository at `https://github.com/grid-club-preview/grid-club-preview` and a live Pages address:
 
-## Updates
+`https://grid-club-preview.github.io/grid-club-preview/`
 
-Upload updated files to the same repository. Change the `CACHE` value in `sw.js` each release (e.g. `gridclub-pwa-v0.3`) so the PWA can refresh its offline files. After uploading, load once online; later launches should use the new version.
+1. Unzip `GridClub-Web-PWA-v0.3.zip` on your Windows laptop.
+2. Open your existing repository in GitHub. Choose **Add file → Upload files**.
+3. Upload the **contents of the unzipped folder**, not the ZIP itself or the outer folder. Place `index.html`, `game.js`, `puzzle.js`, `sw.js`, `manifest.webmanifest`, `.nojekyll` and `PUBLISH_FROM_WINDOWS.md` in the **repository root**. If GitHub asks to replace existing files, confirm the replacement. The existing `icons` folder does not need changing because the artwork has not changed.
+4. Click **Commit changes**. GitHub Pages should deploy the new files using your existing settings.
+5. Open the Pages URL on Windows and check the **Dot Trails** title and **Expert 11×11** button.
+6. Open the installed Home Screen web app on your iPhone. Reload it or close and reopen it. The v0.2 service worker may serve the old version on the first opening while it installs the v0.3 service worker. You may need a second launch or a fresh browser visit to see v0.3.
 
-## Privacy & limits
+**Do not create a new repository or change the GitHub Pages settings.** Your current site address stays the same.
 
-- GitHub Pages is publicly accessible, even if you share the link only with friends.
-- The game currently stores only a daily-complete flag in that browser's local storage. There is no cross-device sync.
-- New games, difficulty ratings and Apple App Store packaging remain future work.
-- This beta has not been tested in Mobile Safari on an actual iPhone.
+Tip: GitHub's browser uploader can be awkward when replacing many existing files. GitHub Desktop for Windows is an alternative: clone the repository, copy the new files over the old files, Commit and Push.
 
-## App Store later, still without a Mac
+## Local test
 
-The anticipated route is to add **Capacitor** to the web code, then build/sign an iOS app using a cloud macOS CI provider such as **Codemagic**. You will need an Apple Developer Program membership for signed App Store/TestFlight distribution. Test the signed app with TestFlight on your personal iPhone. Apple may reject apps that merely repackage a website or imitate another game too closely, so add high-quality native-feeling features and distinctive branding before submission.
+- Open `index.html` with Chrome on Windows for a quick check. For the full Home Screen/offline behaviour, use GitHub Pages (`https://`), since service workers won't register for a local file.
+- Play a puzzle. Stop dragging halfway through one line, then drag from its loose end to continue. Change difficulty. Complete a Free Play level and use **Next puzzle**.
+- Verify the Daily challenge opens an 11×11 board.
+- If a line blocks squares, tap one of its coloured endpoint dots to clear it, or use Undo/Reset.
 
-Official sources:
-- GitHub Pages: https://docs.github.com/en/pages/getting-started-with-github-pages/creating-a-github-pages-site
-- Add to iPhone Home Screen: https://support.apple.com/en-gb/guide/iphone/iph42ab2f3a7/ios
-- Capacitor iOS setup: https://capacitorjs.com/docs/getting-started/environment-setup
-- Apple App Review: https://developer.apple.com/app-store/review/guidelines/
+## Automated checks
+
+In a terminal with Node installed, inside the extracted folder run:
+
+`node tests/engine.test.js`
+
+This checks 400 deterministic generated boards for full-grid coverage and drawable solutions, plus pause/resume, undo, clear-line and incomplete-grid behaviour. A separate automated browser check was run on a mobile-sized viewport and the pointer controls.
+
+## Known limitations / next phases
+
+- The path generator guarantees *solvability*, not uniqueness or consistently human-graded difficulty. Some puzzles may have several solutions or feel unintuitive.
+- Expert uses smaller touch targets. Test on the real iPhone before deciding whether to reduce to 10×10.
+- The app does not save an incomplete board if you navigate back or close the app. Completion counts and the Daily solved tag are saved *locally* in the browser.
+- Undo and Hint are free in v0.3. Shared Club Credits, Boosts, time-limited challenges, disappearance mechanics and accessible number/letter markers are planned, not implemented.
+- No ad SDK or personal-information collection is bundled in this prototype.
+- For eventual App Store submission, an iOS package, device testing, privacy work and an Apple Developer membership will be required.
