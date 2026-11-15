@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0e1424">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="description" content="Daily Dot Trails puzzles: connect matching dots, fill every square and play offline.">
+  <meta name="description" content="Daily Dot Trails puzzles: connect matching dots, fill every square, pause, save progress and play offline.">
   <meta name="apple-mobile-web-app-title" content="Grid Club">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icons/icon-192.png" type="image/png">
@@ -35,6 +35,7 @@
     .back { width:44px;height:44px;display:grid;place-items:center;background:var(--surface);border-radius:50%;font-size:23px; }
     .gamebar { display:flex;align-items:center;justify-content:space-between;margin-bottom:19px; }
     .gamebar .center { text-align:center; }
+    .gamebar .right { display:flex;gap:7px; }
     .gamebar .center small { display:block;color:var(--muted);margin-top:3px; }
     .difficulty { display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-bottom:16px; }
     .difficulty button { background:var(--surface);padding:10px 2px;border-radius:12px;font-weight:700;font-size:12px;line-height:1.3; }
@@ -53,13 +54,27 @@
     .boardWrap { position:relative; width:100%; aspect-ratio:1 / 1; }
     canvas { display:block;width:100%;height:100%;touch-action:none;user-select:none;-webkit-user-select:none; border-radius:16px; }
     .boardCaption { text-align:center;font-size:12px;color:var(--muted);line-height:1.5;margin:12px 0 0; }
+    .hintAlert { padding:10px 12px;margin:10px 0 0;background:#253b47;color:#c9faf2;border-radius:10px;font-size:12px;line-height:1.4; }
+    .tinyAlert {margin:9px 0 0;padding:10px 12px;border-radius:10px;background:#4a2a2d;color:#ffcccf;font-size:12px;}
+    .offlineTag { font-size:12px;background:#293447;border:1px solid #3b506a;border-radius:11px;padding:10px 12px;margin-bottom:12px; }
+    .pauseLayer { position:fixed;inset:0;z-index:20;background:#0e1424;display:flex;align-items:center;justify-content:center;padding:calc(22px + env(safe-area-inset-top)) 25px calc(22px + env(safe-area-inset-bottom)); }
+    .pauseInner {max-width:360px;text-align:center;width:100%;}
+    .pauseInner h2 { font-size:30px;margin:13px 0 7px; }
+    .pauseInner p { color:var(--muted);font-size:14px;line-height:1.6;margin:0 0 23px; }
+    .pauseInner button { display:block;width:100%;padding:15px;border-radius:14px;font-weight:800;background:var(--mint);color:var(--bg);margin-top:10px; }
+    .pauseInner button.secondary {background:var(--surface);color:white;}
+    .winInner .resultStatus {font-size:12px;color:#bde9e0;background:#203b42;padding:10px;border-radius:10px;margin-bottom:8px;line-height:1.4;}
+    .winInner .futureNotice {font-size:10px;color:var(--muted);line-height:1.35;margin-bottom:14px;}
+    .winInner .winCategory {font-size:11px;color:var(--mint);font-weight:700;letter-spacing:.4px;margin-bottom:10px;}
+    .adSlot {height:66px; margin:10px 0 2px;display:flex;align-items:center;justify-content:center;border:1px dashed #344259;border-radius:14px;color:#718096;font-size:10px;text-align:center;}
+    .adSlot small {font-size:10px;}
     .boardAlert { padding:11px 13px;margin-top:12px;background:#453021;color:#ffdfb1;border:1px solid #8b5a30;border-radius:11px;font-weight:700;text-align:center;font-size:12px;line-height:1.4; }
     .controls { display:grid;grid-template-columns:repeat(4,1fr);gap:9px; }
     .controls button { background:var(--surface); border-radius:14px; padding:12px 2px; font-weight:700; font-size:12px; }
     .controls span { display:block;font-size:20px;margin-bottom:6px; }
-    .win { display:none;position:absolute;inset:0;align-items:center;justify-content:center;background:rgba(9,13,22,.72);border-radius:16px;padding:13px; }
+    .win { display:none;position:fixed;inset:0;z-index:12;align-items:center;justify-content:center;background:rgba(9,13,22,.95);border-radius:0;padding:25px 18px;overflow-y:auto; }
     .win.show { display:flex; }
-    .winInner { background:var(--surface);border-radius:20px;padding:23px;text-align:center;width:100%;max-width:305px;box-shadow:0 12px 35px #0007; }
+    .winInner { background:var(--surface);border-radius:20px;padding:26px;text-align:center;width:100%;max-width:375px;box-shadow:0 12px 35px #0007; }
     .winInner h3 { margin:10px 0 6px;font-size:24px; }
     .winInner p { margin:0 0 17px;color:var(--muted);font-size:14px; }
     .winInner button { width:100%;padding:13px;border-radius:12px;background:var(--mint);color:var(--bg);font-weight:800; }
@@ -74,37 +89,50 @@
     <section id="home">
       <header><div><div class="eyebrow">GRID CLUB</div><h1>A little puzzle break.</h1></div><div class="mark">✦</div></header>
       <div class="panel hero">
-        <div class="eyebrow">◷ &nbsp; TODAY'S CHALLENGE <span id="solvedTag" style="float:right;display:none">✓ SOLVED</span></div>
+        <div class="eyebrow">◷ &nbsp; TODAY'S CHALLENGE <span id="solvedTag" style="float:right" hidden>✓ SOLVED</span></div>
         <h2>Dot Trails</h2>
         <p>Connect matching dots. Fill the entire grid without crossing paths. Today’s puzzle is 11×11.</p>
-        <button class="primary" id="dailyStart"><span>Play today's puzzle</span><span>→</span></button>
+        <button class="primary" id="dailyStart"><span id="dailyStartText">Play today's puzzle</span><span>→</span></button>
       </div>
       <div class="eyebrow" style="color:var(--muted);margin:5px 0 12px">THE GAMES</div>
-      <button class="tileButton" id="freeStart"><span class="tileIcon">🟣</span><span><strong>Dot Trails</strong><small>Connect the dots · four difficulty levels</small></span><span style="margin-left:auto">›</span></button>
+      <button class="tileButton" id="freeStart"><span class="tileIcon">🟣</span><span><strong id="freeStartText">Dot Trails</strong><small>Connect the dots · four difficulty levels</small></span><span style="margin-left:auto">›</span></button>
       <div class="tileButton" style="opacity:.58"><span class="tileIcon">▧</span><span><strong>Block Slide</strong><small>Sliding-block puzzle · next release</small></span><span style="margin-left:auto;font-size:11px">SOON</span></div>
-      <footer>Independent prototype. No adverts, tracking or accounts.</footer>
+      <footer>Independent prototype. No adverts, tracking or accounts. Progress is saved on this device.</footer>
     </section>
     <section id="gameScreen" hidden>
       <div class="gamebar">
         <button class="back" id="back" aria-label="Back">‹</button>
         <div class="center"><div class="eyebrow">DOT TRAILS</div><small id="modeTitle">Free play</small></div>
-        <button class="back" id="help" aria-label="How to play">?</button>
+        <div class="right"><button class="back" id="pauseButton" aria-label="Pause game" title="Pause">Ⅱ</button><button class="back" id="help" aria-label="How to play">?</button></div>
       </div>
+      <div id="connectivity" class="offlineTag" role="status" hidden>Offline mode · progress saved locally</div>
       <div class="difficulty" id="difficulty" aria-label="Puzzle difficulty"><button data-size="5" class="active" aria-pressed="true">Easy<small>5×5</small></button><button data-size="7">Medium<small>7×7</small></button><button data-size="9">Hard<small>9×9</small></button><button data-size="11">Expert<small>11×11</small></button></div>
       <div class="stats"><div class="stat"><small>◉ Pairs</small><strong id="pairs">0/5</strong></div><div class="stat"><small>☝ Moves</small><strong id="moves">0</strong></div><div class="stat"><small>◷ Time</small><strong id="time">00:00</strong></div></div>
       <div class="panel boardPanel">
         <div class="boardHeader"><strong id="boardTitle">Dot Trails</strong><small id="cells">0/25 squares</small></div>
         <div class="progress"><div id="progress"></div></div>
         <div class="boardWrap"><canvas id="board" role="img" aria-label="Interactive Dot Trails puzzle board"></canvas>
-          <div class="win" id="win"><div class="winInner"><div style="font-size:36px;color:var(--mint)">✦</div><h3>Puzzle complete!</h3><p><span id="winMessage">Every square filled. Nicely done.</span></p><button id="next">Next puzzle</button><button class="secondary" id="share">↗ Share result</button></div></div>
+          <div class="win" id="win"><div class="winInner"><div style="font-size:36px;color:var(--mint)">✦</div><h3 id="winTitle">Nice one.</h3><p id="winMessage">All squares filled.</p><div class="winCategory" id="winCategory"></div><div class="resultStatus" id="resultStatus"></div><div class="futureNotice" id="futureNotice"></div><button id="next">Next puzzle</button><button class="secondary" id="share">↗ Share result</button></div></div>
         </div>
         <p id="incomplete" class="boardAlert" role="status" aria-live="polite" hidden>Oof, nice work, but all squares need filling</p>
+        <p id="hintStatus" class="hintAlert" role="status" aria-live="polite" hidden></p>
+        <p id="saveWarning" class="tinyAlert" role="alert" hidden>Saving is unavailable in this browser. Progress may be lost when you leave.</p>
         <p class="boardCaption">Connect matching dots and fill every square. Lift your finger to pause, then drag from the line’s loose end to continue. Tap a dot to remove its line.</p>
       </div>
       <div class="controls"><button id="undo"><span>↶</span>Undo</button><button id="hint"><span>✧</span>Hint</button><button id="reset"><span>⟲</span>Reset</button><button id="new"><span>❖</span>New</button></div>
-      <footer>Grid Club · Prototype v0.3</footer>
+      <div class="adSlot" id="adSlot" aria-hidden="true"><small>Space reserved for a possible banner advert · no adverts in v0.4a</small></div>
+      <footer>Grid Club · Prototype v0.4a</footer>
     </section>
   </main>
+  <div class="pauseLayer" id="pauseLayer" hidden role="dialog" aria-modal="true" aria-labelledby="pauseTitle">
+    <div class="pauseInner">
+      <div style="font-size:47px;color:var(--mint)">Ⅱ</div>
+      <h2 id="pauseTitle">Taking a breather?</h2>
+      <p>The clock has stopped and your puzzle is hidden. Your progress is saved on this device.</p>
+      <button id="resumeButton">▶ Resume puzzle</button>
+      <button class="secondary" id="pauseBack">Return to Grid Club</button>
+    </div>
+  </div>
   <script src="puzzle.js"></script>
   <script src="game.js"></script>
   <script>

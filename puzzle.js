@@ -1,4 +1,4 @@
-/* Grid Club · Dot Trails v0.3
+/* Grid Club · Dot Trails v0.4a
  * A complete puzzle is built from a shuffled Hamiltonian route, split into
  * non-overlapping coloured paths. Every generated board therefore has at least
  * one valid, full-grid solution. Pure JS: runs in browsers and in Node tests.
@@ -6,7 +6,7 @@
 (function (root) {
   'use strict';
   const SIZES = [5, 7, 9, 11];
-  const PAIRS = { 5: 5, 7: 6, 9: 8, 11: 9 };
+  const PAIR_RANGES = {5:[3,5], 7:[5,7], 9:[7,10], 11:[9,12]};
   const eq = (a, b) => !!a && !!b && a.x === b.x && a.y === b.y;
   const adjacent = (a, b) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y) === 1;
   const key = p => `${p.x},${p.y}`;
@@ -54,7 +54,8 @@
     return route;
   }
   function splitRoute(route, size, pick) {
-    const count = PAIRS[size], total = size * size;
+    const [minPairs, maxPairs] = PAIR_RANGES[size];
+    const count = minPairs + pick(maxPairs - minPairs + 1), total = size * size;
     const base = Math.floor(total / count);
     const lengths = Array.from({length: count}, (_, i) => base + (i < total % count ? 1 : 0));
     const minimum = size <= 5 ? 3 : 4;
@@ -110,8 +111,62 @@
   }
   function copyPaths(paths) { return JSON.parse(JSON.stringify(paths)); }
   function create(level) {
+    const now = Date.now();
     return { level, paths: {}, undo: [], moves: 0, hints: 0, resets: 0,
-      startedAt: Date.now(), finishedAt: null, drag: null, snapshot: {}, tapClear: false };
+      startedAt: now, clockStartedAt: now, elapsedMs: 0, paused: false,
+      finishedAt: null, drag: null, snapshot: {}, tapClear: false,
+      attemptId: `${level.seed}-${now}-${Math.random().toString(36).slice(2,10)}` };
+  }
+  function elapsed(g, now = Date.now()) {
+    return Math.max(0, g.elapsedMs + (!g.paused && !g.finishedAt && g.clockStartedAt ? Math.max(0, now - g.clockStartedAt) : 0));
+  }
+  function pause(g, now = Date.now()) {
+    if (!g || g.paused || g.finishedAt) return false;
+    g.elapsedMs = elapsed(g, now);
+    g.clockStartedAt = null; g.paused = true;
+    g.drag = null; g.tapClear = false;
+    return true;
+  }
+  function resume(g, now = Date.now()) {
+    if (!g || !g.paused || g.finishedAt) return false;
+    g.paused = false; g.clockStartedAt = now;
+    return true;
+  }
+  // Persist a snapshot with a frozen clock, so a browser crash/relaunch cannot
+  // silently add the time the app was closed to a player's elapsed time.
+  function serialize(g, now = Date.now()) {
+    if (!g) return null;
+    return {
+      version: 2, level: g.level, paths: copyPaths(g.paths),
+      undo: (g.undo || []).slice(-50), moves: g.moves, hints: g.hints,
+      resets: g.resets, startedAt: g.startedAt, finishedAt: g.finishedAt,
+      elapsedMs: elapsed(g, now), paused: true, attemptId: g.attemptId
+    };
+  }
+  function restore(data) {
+    if (!data || data.version !== 2 || !data.level || !SIZES.includes(data.level.size) ||
+        !Array.isArray(data.level.pairs) || !Array.isArray(data.level.solution)) return null;
+    const g = create(data.level);
+    g.paths = copyPaths(data.paths || {});
+    g.undo = Array.isArray(data.undo) ? data.undo.slice(-50) : [];
+    for (const k of ['moves','hints','resets']) g[k] = Number.isFinite(data[k]) ? Math.max(0, Math.floor(data[k])) : 0;
+    g.startedAt = Number.isFinite(data.startedAt) ? data.startedAt : Date.now();
+    g.finishedAt = Number.isFinite(data.finishedAt) ? data.finishedAt : null;
+    g.elapsedMs = Number.isFinite(data.elapsedMs) ? Math.max(0, data.elapsedMs) : 0;
+    g.clockStartedAt = null; g.paused = true; g.drag = null; g.snapshot = {};
+    g.attemptId = typeof data.attemptId === 'string' ? data.attemptId : g.attemptId;
+    // Only restore saved paths if they are well-formed and non-overlapping.
+    const seen = new Set();
+    for (const [id, path] of Object.entries(g.paths)) {
+      const pair = g.level.pairs[Number(id)];
+      if (!pair || !Array.isArray(path) || !path.length ||
+          !path.every((p,i) => p && Number.isInteger(p.x) && Number.isInteger(p.y) && p.x >= 0 && p.y >= 0 && p.x < g.level.size && p.y < g.level.size &&
+            (i === 0 || adjacent(path[i-1],p)) && !seen.has(key(p)))) return null;
+      if (!eq(path[0],pair.a) && !eq(path[0],pair.b)) return null;
+      path.forEach(p => seen.add(key(p)));
+    }
+    return g;
+
   }
   function endpoint(g, p) {
     const pair = g.level.pairs.find(q => eq(q.a, p) || eq(q.b, p));
@@ -134,10 +189,15 @@
   }
   function check(g) {
     if (g.level.pairs.every(pair => connected(g, pair.id)) &&
-        filled(g) === g.level.size ** 2) g.finishedAt = Date.now();
+        filled(g) === g.level.size ** 2) {
+      const now = Date.now();
+      g.elapsedMs = elapsed(g, now);
+      g.clockStartedAt = null;
+      g.finishedAt = now;
+    }
   }
   function begin(g, p) {
-    if (g.finishedAt) return false;
+    if (g.finishedAt || g.paused) return false;
     const existingId = owner(g, p);
     // Resume an unfinished path by pressing the final square of that path.
     if (existingId !== null) {
@@ -158,7 +218,7 @@
     return true;
   }
   function move(g, p) {
-    if (g.drag === null || g.finishedAt) return false;
+    if (g.drag === null || g.finishedAt || g.paused) return false;
     if (p.x < 0 || p.y < 0 || p.x >= g.level.size || p.y >= g.level.size) return false;
     const id = g.drag, path = g.paths[id], last = path[path.length - 1];
     if (!adjacent(last, p) || connected(g, id)) return false;
@@ -190,35 +250,58 @@
     g.paths = g.undo.pop();
     g.moves++;
   }
+  // Hint is a temporary preview, NOT a change to the player's paths.
+  // It uses one generated full-board answer; other valid solutions may exist.
+  // Prefer a segment that extends a player's matching partial route, then an
+  // untouched pair with a clear hint segment. Never erase the player's work.
   function hint(g) {
-    if (g.finishedAt) return;
-    let id = g.level.pairs.find(pair => !connected(g, pair.id))?.id;
-    if (id === undefined) {
-      id = g.level.pairs.find(pair => !samePath(g.paths[pair.id], g.level.solution[pair.id]))?.id;
-    }
-    if (id === undefined) return;
-    const answer = g.level.solution[id];
-    g.undo.push(copyPaths(g.paths));
-    if (g.undo.length > 50) g.undo.shift();
-    for (const other of g.level.pairs) {
-      if (other.id !== id && g.paths[other.id]?.some(p => answer.some(q => eq(p, q)))) {
-        delete g.paths[other.id];
+    if (!g || g.finishedAt || g.paused) return null;
+    const answerPaths = g.level.solution;
+    const allConnectedButIncomplete = g.level.pairs.every(pair => connected(g, pair.id)) && filled(g) < g.level.size**2;
+    const choices = [];
+    for (const pair of g.level.pairs) {
+      const answer = answerPaths[pair.id];
+      const current = g.paths[pair.id] || [];
+      if (connected(g, pair.id) && !allConnectedButIncomplete) continue;
+      if (allConnectedButIncomplete && samePath(current, answer)) continue;
+      let candidate = null;
+      if (current.length) {
+        const forward = answer.slice();
+        const backward = answer.slice().reverse();
+        const match = [forward, backward].find(full => current.every((p, i) => eq(p, full[i])));
+        if (match && match.length > current.length) {
+          // Include current loose end for a visible continuous guide.
+          candidate = match.slice(current.length-1, Math.min(match.length,current.length+4));
+        }
+      } else {
+        candidate = answer.slice(0, Math.min(5, answer.length));
       }
+      if (allConnectedButIncomplete) candidate = answer.slice(0, Math.min(5, answer.length));
+      if (!candidate || candidate.length < 2) continue;
+      const noConflict = candidate.every(p => {
+        const occupant = owner(g,p);
+        return occupant === null || occupant === pair.id;
+      });
+      if (noConflict || allConnectedButIncomplete) choices.push({pairId:pair.id, cells:candidate, reroute:allConnectedButIncomplete});
     }
-    g.paths[id] = answer.map(p => ({...p}));
-    g.moves++;g.hints++;
-    check(g);
+    if (!choices.length) return null;
+    choices.sort((a,b) => b.cells.length-a.cells.length);
+    g.hints++;
+    return choices[0];
   }
   function samePath(a, b) {
     return !!a && a.length === b.length &&
       (a.every((p, i) => eq(p, b[i])) || a.every((p, i) => eq(p, b[b.length - 1 - i])));
   }
   function reset(g) {
-    g.paths = {};g.undo = [];g.moves = 0;g.hints = 0;g.resets++;
-    g.startedAt = Date.now();g.finishedAt = null;g.drag = null;
+    if (g.finishedAt || g.paused) return;
+    g.paths = {};g.undo = [];g.moves++;g.resets++;
+    // Reset clears lines, not the clock or previously used hints/moves.
+    g.drag = null;g.tapClear = false;
   }
   const core = { SIZES, hash, generate, create, endpoint, owner, connected,
-    filled, begin, move, end, undo, hint, reset, adjacent, eq, samePath, quality };
+    filled, begin, move, end, undo, hint, reset, adjacent, eq, samePath, quality,
+    elapsed, pause, resume, serialize, restore, PAIR_RANGES };
   if (typeof module !== 'undefined' && module.exports) module.exports = core;
   root.GridCore = core;
 })(typeof globalThis === 'object' ? globalThis : this);

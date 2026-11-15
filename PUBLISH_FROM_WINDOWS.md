@@ -1,57 +1,34 @@
-# Grid Club · Dot Trails v0.3
+# Update Grid Club to v0.4a using Windows + GitHub Pages
 
-A playable, installable **web app** for Windows Chrome and iPhone Safari/Home Screen. No Mac or Xcode needed for this prototype. This is not yet a native App Store submission.
+Your live address stays: https://grid-club-preview.github.io/grid-club-preview/
 
-## What's changed since v0.2
+Your existing repository: https://github.com/grid-club-preview/grid-club-preview
 
-- Dot Connect is now **Dot Trails**. The game description explicitly says **connect**.
-- Free Play difficulty buttons: **Easy 5×5**, **Medium 7×7**, **Hard 9×9**, **Expert 11×11**.
-- Daily challenge: an **11×11** puzzle, identical for anyone playing on the same UTC date. The daily puzzle generator tests several candidate layouts and keeps the more winding one; this does not guarantee that all players find it harder than Expert.
-- More varied levels generated from complete winding paths. Every level has at least one full-board solution; **uniqueness and calibrated difficulty have not yet been verified**.
-- If you lift your finger or mouse midway through a line, it **stays put**. Restart at the line's open end to continue it.
-- Once all dots are connected but the grid isn't filled, the message says exactly: **“Oof, nice work, but all squares need filling”**. You can keep editing.
-- A prominent **Next puzzle** button appears after each completed Free Play puzzle. Difficulty remains selected.
-- Fixed colours for nine dot pairs, updated help text, and a clearer loose-end marker.
-- Completion statistics are stored in the device's local storage. There are **no live credits, advertisements, accounts or server sync** yet. The credits wallet is only a future-compatible data structure.
-- New v0.3 offline service-worker cache and network-first update behaviour.
+### Upload this update
 
-## Publish v0.3 to your existing GitHub Pages site
+1. Unzip `GridClub-Web-PWA-v0.4a.zip` on Windows.
+2. Open the **same repository** in GitHub; do not create a new one.
+3. Replace the **root** versions of **`index.html`**, **`game.js`**, **`puzzle.js`**, **`sw.js`**, and **`manifest.webmanifest`** with the five files from the v0.4a folder. Optionally update `README.md` and `PUBLISH_FROM_WINDOWS.md` for reference.
+4. You do **not** need to upload `tests/`. You also do **not** need to re-upload the existing `icons/` folder, as its images are unchanged.
+5. Commit the changes. GitHub Pages will deploy as before. If GitHub's browser uploader struggles with overwriting multiple files, use GitHub Desktop for Windows to replace the files locally, then commit and push.
+6. Open the Pages address in Chrome and verify that the footer reads **Prototype v0.4a**.
+7. Close and reopen the installed Grid Club Home Screen web app on your iPhone. A previous service worker might still serve the old version on the first launch; repeat the launch if necessary. If it remains stale, visit the live URL in Safari and reload it once.
 
-You already have a repository at `https://github.com/grid-club-preview/grid-club-preview` and a live Pages address:
+### Quick manual test plan
 
-`https://grid-club-preview.github.io/grid-club-preview/`
+1. Start Free Play, draw half a line, lift your finger, and continue from the loose endpoint.
+2. Tap **Pause**. The board disappears and the timer should stop. Tap Resume.
+3. Draw part of a line, return home, and open Free Play again. The same unfinished board should reopen with its timer still paused.
+4. Switch difficulty, play a few moves, and switch back. Each size should retain its own most recent unfinished puzzle.
+5. Use **Hint**. A short dashed route should appear temporarily without automatically modifying your coloured lines.
+6. Switch to Daily Challenge. Confirm the larger 11×11 puzzle now has variable numbers of pairs on different days (some boards show numbered dot pairs).
+7. Complete a puzzle and inspect the rotating success message and **Assisted/Unassisted** label. Note that leaderboard syncing is not live in v0.4a.
+8. For offline testing, launch the installed web app once while connected, then switch the iPhone to Airplane Mode and start it again. Complete a game and check the saved-achievement notice. The service worker is intended to keep the installed app playable offline once the initial files have been cached. Test it on your real device.
 
-1. Unzip `GridClub-Web-PWA-v0.3.zip` on your Windows laptop.
-2. Open your existing repository in GitHub. Choose **Add file → Upload files**.
-3. Upload the **contents of the unzipped folder**, not the ZIP itself or the outer folder. Place `index.html`, `game.js`, `puzzle.js`, `sw.js`, `manifest.webmanifest`, `.nojekyll` and `PUBLISH_FROM_WINDOWS.md` in the **repository root**. If GitHub asks to replace existing files, confirm the replacement. The existing `icons` folder does not need changing because the artwork has not changed.
-4. Click **Commit changes**. GitHub Pages should deploy the new files using your existing settings.
-5. Open the Pages URL on Windows and check the **Dot Trails** title and **Expert 11×11** button.
-6. Open the installed Home Screen web app on your iPhone. Reload it or close and reopen it. The v0.2 service worker may serve the old version on the first opening while it installs the v0.3 service worker. You may need a second launch or a fresh browser visit to see v0.3.
+### Ads and accounts
 
-**Do not create a new repository or change the GitHub Pages settings.** Your current site address stays the same.
+The 66px area beneath the puzzle buttons is a **future layout slot only**. It does not load advertising or collect data. A real banner will require an ad platform integration, privacy and consent controls, and further testing on narrow iPhones. No user information or purchases are transmitted in v0.4a.
 
-Tip: GitHub's browser uploader can be awkward when replacing many existing files. GitHub Desktop for Windows is an alternative: clone the repository, copy the new files over the old files, Commit and Push.
+### If something goes wrong
 
-## Local test
-
-- Open `index.html` with Chrome on Windows for a quick check. For the full Home Screen/offline behaviour, use GitHub Pages (`https://`), since service workers won't register for a local file.
-- Play a puzzle. Stop dragging halfway through one line, then drag from its loose end to continue. Change difficulty. Complete a Free Play level and use **Next puzzle**.
-- Verify the Daily challenge opens an 11×11 board.
-- If a line blocks squares, tap one of its coloured endpoint dots to clear it, or use Undo/Reset.
-
-## Automated checks
-
-In a terminal with Node installed, inside the extracted folder run:
-
-`node tests/engine.test.js`
-
-This checks 400 deterministic generated boards for full-grid coverage and drawable solutions, plus pause/resume, undo, clear-line and incomplete-grid behaviour. A separate automated browser check was run on a mobile-sized viewport and the pointer controls.
-
-## Known limitations / next phases
-
-- The path generator guarantees *solvability*, not uniqueness or consistently human-graded difficulty. Some puzzles may have several solutions or feel unintuitive.
-- Expert uses smaller touch targets. Test on the real iPhone before deciding whether to reduce to 10×10.
-- The app does not save an incomplete board if you navigate back or close the app. Completion counts and the Daily solved tag are saved *locally* in the browser.
-- Undo and Hint are free in v0.3. Shared Club Credits, Boosts, time-limited challenges, disappearance mechanics and accessible number/letter markers are planned, not implemented.
-- No ad SDK or personal-information collection is bundled in this prototype.
-- For eventual App Store submission, an iOS package, device testing, privacy work and an Apple Developer membership will be required.
+Leave the current web app installed and refresh the GitHub Pages URL in Safari. Existing saved statistics belong to the same origin and are not deleted by this update. Do not clear website data to force an update unless you are willing to lose locally saved achievements.

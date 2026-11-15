@@ -1,4 +1,4 @@
-const CACHE = 'gridclub-pwa-v0.3';
+const CACHE = 'gridclub-pwa-v0.4a';
 const APP_FILES = [
   './',
   './index.html',
