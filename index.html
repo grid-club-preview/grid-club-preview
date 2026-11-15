@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#0e1424">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="description" content="Daily Dot Connect puzzles and unlimited colourful challenges. Play offline.">
+  <meta name="apple-mobile-web-app-title" content="Grid Club">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+  <title>Grid Club · Dot Connect</title>
+  <style>
+    :root { color-scheme: dark; --bg:#0e1424; --surface:#1a243a; --tile:#253147; --muted:#9daabe; --mint:#7be3d4; --purple:#a178ff; }
+    * { box-sizing: border-box; }
+    html, body { margin:0; min-height:100%; background:var(--bg); color:#f6f8fc; font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; }
+    body { background: radial-gradient(circle at 95% -20%, #322653 0, transparent 40%), var(--bg); }
+    button { -webkit-tap-highlight-color: transparent; cursor:pointer; border:0; color:inherit; font:inherit; }
+    .shell { max-width:560px; margin:auto; padding:calc(18px + env(safe-area-inset-top)) 18px calc(30px + env(safe-area-inset-bottom)); }
+    .eyebrow { font-size:11px; font-weight:800; letter-spacing:2.5px; color:var(--mint); }
+    header { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:26px; }
+    h1 { font-size:clamp(26px,7vw,36px); font-weight:800; letter-spacing:-1.5px; line-height:1.08; margin:9px 0 0; }
+    .mark { width:52px; height:52px; border-radius:17px; background:var(--surface); display:grid;place-items:center; font-size:30px; }
+    .panel { background:var(--surface); border-radius:24px; padding:20px; margin-bottom:20px; border:1px solid rgba(255,255,255,.035); }
+    .hero { padding:22px; }
+    .hero h2 { font-size:27px; margin:14px 0 7px; letter-spacing:-.5px; }
+    .hero p { color:var(--muted); font-size:14px; line-height:1.6; margin:0 0 18px; }
+    .primary { background:var(--mint); color:var(--bg); font-weight:800; width:100%; border-radius:14px; padding:15px 18px; display:flex;justify-content:space-between; }
+    .tileButton { display:flex; align-items:center; gap:15px; width:100%; text-align:left; background:var(--surface); border-radius:20px; padding:15px; margin-top:12px; }
+    .tileIcon { width:68px; height:68px; flex:none; border-radius:15px;display:grid;place-items:center;background:#31294b;font-size:30px; }
+    .tileButton small { color:var(--muted);display:block;margin-top:5px; font-size:13px; }
+    .tileButton strong { font-size:18px; }
+    .back { width:44px;height:44px;display:grid;place-items:center;background:var(--surface);border-radius:50%;font-size:23px; }
+    .gamebar { display:flex;align-items:center;justify-content:space-between;margin-bottom:19px; }
+    .gamebar .center { text-align:center; }
+    .gamebar .center small { display:block;color:var(--muted);margin-top:3px; }
+    .difficulty { display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px; }
+    .difficulty button { background:var(--surface);padding:12px;border-radius:12px;font-weight:700; }
+    .difficulty button.active { background:var(--purple); }
+    .stats { display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px; }
+    .stat { background:var(--surface);padding:12px;text-align:center;border-radius:14px; }
+    .stat small { display:block;color:var(--muted);font-size:11px;margin-bottom:5px; }
+    .stat strong { font-size:20px;font-variant-numeric:tabular-nums; }
+    .boardPanel { padding:14px; }
+    .boardHeader { display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:10px; }
+    .boardHeader strong { font-size:19px; }
+    .boardHeader small { font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums; }
+    .progress { height:5px;border-radius:7px;background:#334057;overflow:hidden;margin-bottom:13px; }
+    .progress > div { height:100%;width:0;background:var(--mint);transition:width .16s; }
+    .boardWrap { position:relative; width:100%; aspect-ratio:1 / 1; }
+    canvas { display:block;width:100%;height:100%;touch-action:none;user-select:none;-webkit-user-select:none; border-radius:16px; }
+    .boardCaption { text-align:center;font-size:12px;color:var(--muted);line-height:1.5;margin:14px 0 0; }
+    .controls { display:grid;grid-template-columns:repeat(4,1fr);gap:9px; }
+    .controls button { background:var(--surface); border-radius:14px; padding:12px 2px; font-weight:700; font-size:12px; }
+    .controls span { display:block;font-size:20px;margin-bottom:6px; }
+    .win { display:none;position:absolute;inset:0;align-items:center;justify-content:center;background:rgba(9,13,22,.72);border-radius:16px;padding:13px; }
+    .win.show { display:flex; }
+    .winInner { background:var(--surface);border-radius:20px;padding:23px;text-align:center;width:100%;max-width:305px;box-shadow:0 12px 35px #0007; }
+    .winInner h3 { margin:10px 0 6px;font-size:24px; }
+    .winInner p { margin:0 0 17px;color:var(--muted);font-size:14px; }
+    .winInner button { width:100%;padding:13px;border-radius:12px;background:var(--mint);color:var(--bg);font-weight:800; }
+    .winInner button.secondary {background:transparent;color:white;margin-top:7px;}
+    footer { text-align:center;color:var(--muted);font-size:12px;margin-top:20px;line-height:1.5; }
+    [hidden] { display:none !important; }
+    @media (min-width:600px) { .shell{padding-top:40px;} }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section id="home">
+      <header><div><div class="eyebrow">GRID CLUB</div><h1>A little puzzle break.</h1></div><div class="mark">✦</div></header>
+      <div class="panel hero">
+        <div class="eyebrow">◷ &nbsp; TODAY'S CHALLENGE <span id="solvedTag" style="float:right;display:none">✓ SOLVED</span></div>
+        <h2>Dot Connect</h2>
+        <p>Link matching colours. Fill the entire grid. No crossing paths.</p>
+        <button class="primary" id="dailyStart"><span>Play today's puzzle</span><span>→</span></button>
+      </div>
+      <div class="eyebrow" style="color:var(--muted);margin:5px 0 12px">THE GAMES</div>
+      <button class="tileButton" id="freeStart"><span class="tileIcon">🟣</span><span><strong>Dot Connect</strong><small>Unlimited colourful puzzles</small></span><span style="margin-left:auto">›</span></button>
+      <div class="tileButton" style="opacity:.58"><span class="tileIcon">▧</span><span><strong>Block Slide</strong><small>Sliding-block puzzle · next release</small></span><span style="margin-left:auto;font-size:11px">SOON</span></div>
+      <footer>Independent prototype. No adverts, tracking or accounts.</footer>
+    </section>
+    <section id="gameScreen" hidden>
+      <div class="gamebar">
+        <button class="back" id="back" aria-label="Back">‹</button>
+        <div class="center"><div class="eyebrow">DOT CONNECT</div><small id="modeTitle">Free play</small></div>
+        <button class="back" id="help" aria-label="How to play">?</button>
+      </div>
+      <div class="difficulty" id="difficulty"><button data-size="5" class="active">5 × 5</button><button data-size="6">6 × 6</button><button data-size="7">7 × 7</button></div>
+      <div class="stats"><div class="stat"><small>◉ Pairs</small><strong id="pairs">0/5</strong></div><div class="stat"><small>☝ Moves</small><strong id="moves">0</strong></div><div class="stat"><small>◷ Time</small><strong id="time">00:00</strong></div></div>
+      <div class="panel boardPanel">
+        <div class="boardHeader"><strong>Connect the colours</strong><small id="cells">0/25 squares</small></div>
+        <div class="progress"><div id="progress"></div></div>
+        <div class="boardWrap"><canvas id="board" role="img" aria-label="Interactive Dot Connect puzzle board"></canvas>
+          <div class="win" id="win"><div class="winInner"><div style="font-size:36px;color:var(--mint)">✦</div><h3>Puzzle complete!</h3><p>Every square connected. Nicely done.</p><button id="next">Next puzzle</button><button class="secondary" id="share">↗ Share result</button></div></div>
+        </div>
+        <p class="boardCaption">Start from a coloured dot and drag to its match. Fill every square.</p>
+      </div>
+      <div class="controls"><button id="undo"><span>↶</span>Undo</button><button id="hint"><span>✧</span>Hint</button><button id="reset"><span>⟲</span>Reset</button><button id="new"><span>❖</span>New</button></div>
+      <footer>Grid Club · Prototype v0.2</footer>
+    </section>
+  </main>
+  <script src="puzzle.js"></script>
+  <script src="game.js"></script>
+  <script>
+    if ('serviceWorker' in navigator && location.protocol === 'https:') {
+      addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+    }
+  </script>
+</body>
+</html>
