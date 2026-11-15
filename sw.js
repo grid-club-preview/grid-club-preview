@@ -1,9 +1,9 @@
-const CACHE = 'gridclub-pwa-v0.4a.2';
+const CACHE = 'gridclub-pwa-v0.4a.4';
 const APP_FILES = [
   './',
   './index.html',
-  './puzzle.js',
-  './game.js',
+  './puzzle.js?v=0.4a.4',
+  './game.js?v=0.4a.4',
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png',

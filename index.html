@@ -37,10 +37,17 @@
     .gamebar .center { text-align:center; }
     .gamebar .right { display:flex;gap:7px; }
     .gamebar .center small { display:block;color:var(--muted);margin-top:3px; }
-    .difficulty { display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-bottom:16px; }
-    .difficulty button { background:var(--surface);padding:10px 2px;border-radius:12px;font-weight:700;font-size:12px;line-height:1.3; }
-    .difficulty button small { display:block;opacity:.75;font-size:10px;margin-top:3px; }
-    .difficulty button.active { background:var(--purple); }
+    .chooseHeader {display:flex;align-items:center;gap:14px;margin-bottom:26px;}
+    .chooseHeader h2 {font-size:26px;line-height:1.2;margin:5px 0 0;}
+    .chooseIntro {color:var(--muted);font-size:14px;line-height:1.6;margin:0 0 22px;}
+    .levelList {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}
+    .levelChoice {display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;min-height:145px;text-align:left;background:var(--surface);padding:18px 16px;border:1px solid #3c4862;border-radius:18px;}
+    .levelChoice:active {background:#293754;}
+    .levelChoice:focus-visible {outline:2px solid var(--mint);outline-offset:3px;}
+    .levelChoice strong {font-size:21px;line-height:1.3;}
+    .levelChoice small {display:block;color:var(--muted);font-size:13px;margin-top:6px;}
+    .levelChoice .levelAction {font-size:12px;font-weight:750;color:var(--mint);margin-top:14px;}
+    .difficulty {display:none;}
     .stats { display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px; }
     .stat { background:var(--surface);padding:12px;text-align:center;border-radius:14px; }
     .stat small { display:block;color:var(--muted);font-size:11px;margin-bottom:5px; }
@@ -49,8 +56,8 @@
     .boardHeader { display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:10px; }
     .boardHeader strong { font-size:19px; }
     .boardHeader small { font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums; }
-    .accessibilityBar { display:flex;justify-content:flex-end;margin:-3px 0 10px; }
-    .numberToggle { display:inline-flex;align-items:center;gap:7px;border:1px solid #42506a;background:#253147;color:#e5ebf4;border-radius:999px;padding:7px 11px;font-size:12px;font-weight:700; }
+    .accessibilityBar { display:flex;justify-content:flex-end;margin:12px 0 4px; }
+    .numberToggle { display:inline-flex;align-items:center;justify-content:center;min-width:48px;min-height:38px;border:1px solid #42506a;background:#253147;color:#e5ebf4;border-radius:999px;padding:8px 12px;font-size:14px;font-weight:800; }
     .numberToggle .toggleIcon { font-size:13px;font-weight:850;color:var(--mint); }
     .numberToggle[aria-pressed="true"] {background:#304a52;border-color:#66c4b8;}
     .numberToggle:focus-visible {outline:2px solid var(--mint);outline-offset:3px;}
@@ -104,22 +111,35 @@
       <div class="tileButton" style="opacity:.58"><span class="tileIcon">▧</span><span><strong>Block Slide</strong><small>Sliding-block puzzle · next release</small></span><span style="margin-left:auto;font-size:11px">SOON</span></div>
       <footer>Independent prototype. No adverts, tracking or accounts. Progress is saved on this device.</footer>
     </section>
+    <section id="difficultyScreen" hidden>
+      <div class="chooseHeader">
+        <button class="back" id="chooseBack" aria-label="Back to Grid Club home">‹</button>
+        <div><div class="eyebrow">GRID CLUB · DOT TRAILS</div><h2>Choose your difficulty</h2></div>
+      </div>
+      <p class="chooseIntro">Connect matching dots and fill every square. Pick a size to start a new puzzle or carry on where you left off.</p>
+      <div class="levelList" id="levelList" aria-label="Free Play difficulties">
+        <button class="levelChoice" data-size="5"><span><strong>Easy</strong><small>5×5 squares</small></span><span class="levelAction">Start puzzle →</span></button>
+        <button class="levelChoice" data-size="7"><span><strong>Medium</strong><small>7×7 squares</small></span><span class="levelAction">Start puzzle →</span></button>
+        <button class="levelChoice" data-size="9"><span><strong>Hard</strong><small>9×9 squares</small></span><span class="levelAction">Start puzzle →</span></button>
+        <button class="levelChoice" data-size="11"><span><strong>Expert</strong><small>11×11 squares</small></span><span class="levelAction">Start puzzle →</span></button>
+      </div>
+      <footer>Each difficulty keeps its own unfinished puzzle.</footer>
+    </section>
     <section id="gameScreen" hidden>
       <div class="gamebar">
-        <button class="back" id="back" aria-label="Back">‹</button>
+        <button class="back" id="back" aria-label="Exit puzzle">‹</button>
         <div class="center"><div class="eyebrow">DOT TRAILS</div><small id="modeTitle">Free play</small></div>
         <div class="right"><button class="back" id="pauseButton" aria-label="Pause game" title="Pause">Ⅱ</button><button class="back" id="help" aria-label="How to play">?</button></div>
       </div>
       <div id="connectivity" class="offlineTag" role="status" hidden>Offline mode · progress saved locally</div>
-      <div class="difficulty" id="difficulty" aria-label="Puzzle difficulty"><button data-size="5" class="active" aria-pressed="true">Easy<small>5×5</small></button><button data-size="7">Medium<small>7×7</small></button><button data-size="9">Hard<small>9×9</small></button><button data-size="11">Expert<small>11×11</small></button></div>
       <div class="stats"><div class="stat"><small>◉ Pairs</small><strong id="pairs">0/5</strong></div><div class="stat"><small>☝ Moves</small><strong id="moves">0</strong></div><div class="stat"><small>◷ Time</small><strong id="time">00:00</strong></div></div>
       <div class="panel boardPanel">
         <div class="boardHeader"><strong id="boardTitle">Dot Trails</strong><small id="cells">0/25 squares</small></div>
-        <div class="accessibilityBar"><button class="numberToggle" type="button" id="numberToggle" aria-pressed="false" aria-label="Show numbers on coloured dots" title="Increase accessibility by showing numbers on each matching pair"><span class="toggleIcon" aria-hidden="true">123</span><span id="numberToggleText">Show numbers</span></button></div>
         <div class="progress"><div id="progress"></div></div>
         <div class="boardWrap"><canvas id="board" role="img" aria-label="Interactive Dot Trails puzzle board"></canvas>
           <div class="win" id="win"><div class="winInner"><div style="font-size:36px;color:var(--mint)">✦</div><h3 id="winTitle">Nice one.</h3><p id="winMessage">All squares filled.</p><div class="winCategory" id="winCategory"></div><div class="resultStatus" id="resultStatus"></div><div class="futureNotice" id="futureNotice"></div><button id="next">Next puzzle</button><button class="secondary" id="share">↗ Share result</button></div></div>
         </div>
+        <div class="accessibilityBar"><button class="numberToggle" type="button" id="numberToggle" aria-pressed="false" aria-label="Show numbers on coloured dots" title="Increase accessibility: show numbers on matching dot pairs">123</button></div>
         <p id="incomplete" class="boardAlert" role="status" aria-live="polite" hidden>Oof, nice work, but all squares need filling</p>
         <p id="hintStatus" class="hintAlert" role="status" aria-live="polite" hidden></p>
         <p id="saveWarning" class="tinyAlert" role="alert" hidden>Saving is unavailable in this browser. Progress may be lost when you leave.</p>
@@ -127,7 +147,7 @@
       </div>
       <div class="controls"><button id="undo"><span>↶</span>Undo</button><button id="hint"><span>✧</span>Hint</button><button id="reset"><span>⟲</span>Reset</button><button id="new"><span>❖</span>New</button></div>
       <div class="adSlot" id="adSlot" aria-hidden="true"><small>Space reserved for a possible banner advert · no adverts in v0.4a</small></div>
-      <footer>Grid Club · Prototype v0.4a.2</footer>
+      <footer>Grid Club · Prototype v0.4a.4</footer>
     </section>
   </main>
   <div class="pauseLayer" id="pauseLayer" hidden role="dialog" aria-modal="true" aria-labelledby="pauseTitle">
@@ -135,12 +155,12 @@
       <div style="font-size:47px;color:var(--mint)">Ⅱ</div>
       <h2 id="pauseTitle">Taking a breather?</h2>
       <p>The clock has stopped and your puzzle is hidden. Your progress is saved on this device.</p>
-      <button id="resumeButton">▶ Resume puzzle</button>
+      <button id="resumeButton">▶ Continue</button>
       <button class="secondary" id="pauseBack">Return to Grid Club</button>
     </div>
   </div>
-  <script src="puzzle.js"></script>
-  <script src="game.js"></script>
+  <script src="puzzle.js?v=0.4a.4"></script>
+  <script src="game.js?v=0.4a.4"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol === 'https:') {
       addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));

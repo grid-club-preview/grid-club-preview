@@ -1,4 +1,4 @@
-/* Grid Club · Dot Trails v0.4a.2 · numeric labels and silent Back navigation */
+/* Grid Club · Dot Trails v0.4a.4 · dedicated difficulty picker and clean navigation */
 (() => {
   'use strict';
   const core = GridCore;
@@ -31,6 +31,9 @@
   let mode = 'free', size = 5, game = null, activePointerId = null;
   let lastCell = null, side = 0, notified = false, hintPreview = null, hintUntil = 0;
   let storageAvailable = true, saveWarningShown = false;
+  // The visible pause overlay is ONLY for explicit user presses of Pause.
+  // Backgrounding, switching games and Back quietly suspend progress instead.
+  let explicitPause = false, backgroundSuspended = false;
   let showDotNumbers = false;
   try { showDotNumbers = localStorage.getItem(DOT_NUMBERS_KEY) === 'true'; } catch (_) {}
   function updateDotNumbersButton() {
@@ -38,7 +41,8 @@
     button.setAttribute('aria-pressed', String(showDotNumbers));
     button.setAttribute('aria-label', showDotNumbers ? 'Hide numbers on coloured dots' : 'Show numbers on coloured dots');
     button.title = showDotNumbers ? 'Hide numeric dot labels' : 'Increase accessibility by showing numbers on each matching pair';
-    $('numberToggleText').textContent = showDotNumbers ? 'Hide numbers' : 'Show numbers';
+    // The visible label is deliberately just '123'; aria-pressed and the title
+    // give screen readers and desktop users the state and explanation.
   }
 
   function readJSON(key, fallback) {
@@ -123,6 +127,7 @@
     // Re-entering a puzzle from Home is an explicit request to play, not to see
     // the Pause screen. Progress was saved when the player left.
     if (game.paused && !game.finishedAt) core.resume(game);
+    explicitPause = false; backgroundSuspended = false;
     notified = false; activePointerId = null;lastCell = null;hintPreview=null;hintUntil=0;
     $('win').classList.remove('show');
     $('incomplete').hidden = true; $('hintStatus').hidden = true;
@@ -130,33 +135,51 @@
     $('boardTitle').textContent = mode === 'daily' ? 'Daily Dot Trails' : `Dot Trails · ${label()}`;
     $('next').textContent = mode === 'daily' ? 'Try Free Play' : 'Next puzzle';
     $('new').hidden = mode === 'daily';
-    document.querySelectorAll('[data-size]').forEach(button => {
-      const selected = Number(button.dataset.size) === size;
-      button.classList.toggle('active',selected);
-      button.setAttribute('aria-pressed',String(selected));
-    });
-    $('pauseLayer').hidden = true;
+    syncPauseLayer();
     render();
     persist();
     requestAnimationFrame(resize);
   }
-  function start(nextMode) {
+  function showPage(page) {
+    $('home').hidden = page !== 'home';
+    $('difficultyScreen').hidden = page !== 'choose';
+    $('gameScreen').hidden = page !== 'game';
+    // Navigation never creates or retains a Pause overlay.
+    if (page !== 'game') { explicitPause = false; backgroundSuspended = false; }
+    syncPauseLayer();
+  }
+  function updateDifficultyMenu() {
+    document.querySelectorAll('[data-size]').forEach(button => {
+      const n = Number(button.dataset.size);
+      const saved = savedGame('free',n);
+      const unfinished = !!(saved && !saved.finishedAt &&
+        (Object.keys(saved.paths).length > 0 || core.elapsed(saved) > 3000));
+      button.querySelector('.levelAction').textContent = unfinished ? 'Continue puzzle →' : 'Start puzzle →';
+    });
+  }
+  function showDifficultyScreen() {
+    if (!$('gameScreen').hidden) suspendSilently();
+    showPage('choose');
+    updateDifficultyMenu();
+  }
+  function start(nextMode, chosenSize) {
+    if (!$('gameScreen').hidden) suspendSilently();
     mode = nextMode;
-    size = mode === 'daily' ? 11 : loadDifficulty();
-    $('home').hidden = true;$('gameScreen').hidden = false;
-    $('difficulty').hidden = mode === 'daily';
-    setGame(savedGame(mode,size) || freshGame());
+    size = mode === 'daily' ? 11 : (core.SIZES.includes(chosenSize) ? chosenSize : loadDifficulty());
+    if (mode === 'free') saveDifficulty();
+    explicitPause = false; backgroundSuspended = false;
+    showPage('game');
+    const saved = savedGame(mode,size);
+    // Re-enter a completed daily to review its result; Free Play should start
+    // a fresh board instead of reopening a completed board's victory screen.
+    const selected = saved && (mode === 'daily' || !saved.finishedAt) ? saved : freshGame();
+    setGame(selected);
   }
   function newGame(requested=size) {
-    if (mode === 'daily') return; // Today's ranked candidate should not regenerate.
-    size = core.SIZES.includes(requested) ? requested : 5;
-    saveDifficulty();setGame(freshGame());
-  }
-  function switchDifficulty(newSize) {
-    if (mode !== 'free') return;
-    suspendSilently();
-    size = newSize;saveDifficulty();
-    setGame(savedGame('free',size) || freshGame());
+    if (mode === 'daily') return;
+    size = core.SIZES.includes(requested) ? requested : size;
+    saveDifficulty();
+    setGame(freshGame());
   }
   function resize() {
     if ($('gameScreen').hidden || !game) return;
@@ -273,7 +296,7 @@
     $('cells').textContent=`${occupied}/${total} squares`;
     $('progress').style.width=`${occupied/total*100}%`;
     $('time').textContent=fmtSeconds(core.elapsed(game));
-    $('pauseButton').disabled=!!game.finishedAt || game.paused;
+    $('pauseButton').disabled=!!game.finishedAt || (game.paused && !explicitPause);
     $('incomplete').hidden=!!game.finishedAt||matched!==game.level.pairs.length||occupied===total;
     if(hintPreview && Date.now()>hintUntil){hintPreview=null;$('hintStatus').hidden=true;}
     if(game.finishedAt&&!notified){
@@ -286,35 +309,69 @@
   }
   function update() {persist();render();}
   function clearHint() {hintPreview=null;hintUntil=0;$('hintStatus').hidden=true;}
+  function syncPauseLayer() {
+    // A single source of truth for the overlay prevents stale pause screens
+    // surviving Back, difficulty changes and Home-to-Daily navigation.
+    $('pauseLayer').hidden = !(explicitPause && !($('gameScreen').hidden) && game && !game.finishedAt);
+  }
   function pauseGame() {
-    if(!game||game.finishedAt)return;
-    if(activePointerId!==null)release();
+    if (!game || game.finishedAt || $('gameScreen').hidden) return;
+    if (activePointerId !== null) release();
     clearHint();
-    if(core.pause(game)){
-      activePointerId=null;lastCell=null;
-      $('pauseLayer').hidden=false;persist();render();
-    }
+    if (!game.paused) core.pause(game);
+    explicitPause = true;
+    backgroundSuspended = false;
+    syncPauseLayer();
+    persist(); render();
   }
   function resumeGame() {
-    if(!game||game.finishedAt)return;
-    core.resume(game);$('pauseLayer').hidden=true;persist();render();
+    // Continue is only for the explicit Pause screen, never navigation.
+    if (!game || game.finishedAt || $('gameScreen').hidden) {
+      explicitPause = false; syncPauseLayer(); return;
+    }
+    explicitPause = false;
+    backgroundSuspended = false;
+    if (game.paused) core.resume(game);
+    syncPauseLayer();persist();render();
     requestAnimationFrame(resize);
   }
-  function saveAndSuspend() {if(game){pauseGame();persist();}}
   function suspendSilently() {
     if (!game) return;
     if (activePointerId !== null) release();
     clearHint();
-    if (!game.finishedAt) core.pause(game);
+    if (!game.finishedAt && !game.paused) core.pause(game);
     persist();
   }
   function returnHome() {
-    // Back is navigation, never a request to open the Pause overlay.
-    suspendSilently();
-    $('pauseLayer').hidden = true;
-    $('gameScreen').hidden = true;
-    $('home').hidden = false;
+    if (!$('gameScreen').hidden) suspendSilently();
+    showPage('home');
     updateHome();
+  }
+  function exitPuzzle() {
+    // The in-game Back follows the navigation hierarchy: Free Play returns
+    // to difficulty selection, Daily Challenge returns directly Home.
+    if (mode === 'daily') returnHome();
+    else showDifficultyScreen();
+  }
+  function onBackground() {
+    // NEVER call pauseGame here: switching apps must not open a dialog.
+    if ($('gameScreen').hidden || !game || game.finishedAt) return;
+    if (activePointerId !== null) release();
+    clearHint();
+    if (!game.paused) {
+      core.pause(game);
+      if (!explicitPause) backgroundSuspended = true;
+    }
+    persist();
+  }
+  function onForeground() {
+    if ($('gameScreen').hidden || !game) { syncPauseLayer(); return; }
+    if (backgroundSuspended && !explicitPause && !game.finishedAt) {
+      backgroundSuspended = false;
+      if (game.paused) core.resume(game);
+      persist(); render(); requestAnimationFrame(resize);
+    }
+    syncPauseLayer();
   }
   function pointerCell(event) {
     const rect=canvas.getBoundingClientRect();
@@ -360,18 +417,20 @@
   canvas.addEventListener('pointercancel',release);
   canvas.addEventListener('lostpointercapture',release);
   $('dailyStart').onclick=()=>start('daily');
-  $('freeStart').onclick=()=>start('free');
-  $('back').onclick=returnHome;
+  $('freeStart').onclick=showDifficultyScreen;
+  $('chooseBack').onclick=returnHome;
+  $('back').onclick=exitPuzzle;
   $('pauseButton').onclick=pauseGame;
   $('resumeButton').onclick=resumeGame;
   $('pauseBack').onclick=returnHome;
   $('numberToggle').onclick=()=>{
     showDotNumbers=!showDotNumbers;
     try { localStorage.setItem(DOT_NUMBERS_KEY,String(showDotNumbers)); } catch (_) {}
-    updateDotNumbersButton();draw();
+    updateDotNumbersButton();
+    if (side) draw(); else requestAnimationFrame(resize);
   };
   updateDotNumbersButton();
-  $('help').onclick=()=>alert('Connect matching dots without crossing lines and fill every square. Lift your finger to leave a partly drawn path, then continue from its loose end. Tap a coloured dot to clear its line. Use Show numbers to label matching dot pairs if helpful. Hint shows a short section of one possible solution without drawing it. Pausing is free and hides the entire puzzle. Undo and Reset do not rewind the clock.');
+  $('help').onclick=()=>alert('Connect matching dots without crossing lines and fill every square. Lift your finger to leave a partly drawn path, then continue from its loose end. Tap a coloured dot to clear its line. Use the 123 button below the board to label matching dot pairs if helpful. Hint shows a short section of one possible solution without drawing it. Pausing is free and hides the entire puzzle. Undo and Reset do not rewind the clock.');
   $('undo').onclick=()=>{if(game?.paused)return;clearHint();core.undo(game);update();};
   $('hint').onclick=()=>{
     if(!game||game.paused||game.finishedAt)return;
@@ -385,14 +444,18 @@
   };
   $('reset').onclick=()=>{if(!game||game.paused)return;clearHint();core.reset(game);update();};
   $('new').onclick=()=>{if(game && !game.finishedAt && core.filled(game)>0 && !confirm('Start a fresh puzzle? Your current unfinished puzzle will be replaced.'))return;newGame();};
-  $('next').onclick=()=>mode==='daily'?start('free'):newGame();
-  document.querySelectorAll('[data-size]').forEach(button=>button.onclick=()=>switchDifficulty(Number(button.dataset.size)));
+  $('next').onclick=()=>mode==='daily'?showDifficultyScreen():newGame();
+  document.querySelectorAll('[data-size]').forEach(button=>button.onclick=()=>start('free',Number(button.dataset.size)));
   $('share').onclick=async()=>{
     const text=`🧩 Grid Club · Dot Trails\n${mode==='daily'?`Daily challenge ${today()}`:`${label()} (${size}×${size})`} solved in ${game.moves} moves and ${fmtSeconds(core.elapsed(game))}${game.hints?' · Assisted':''}.`;
     try {if(navigator.share)await navigator.share({text});else if(navigator.clipboard){await navigator.clipboard.writeText(text);alert('Result copied!');}else prompt('Copy your result:',text);}catch(_){}
   };
-  document.addEventListener('visibilitychange',()=>{if(document.hidden)saveAndSuspend();});
-  window.addEventListener('pagehide',saveAndSuspend);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) onBackground(); else onForeground();
+  });
+  window.addEventListener('pagehide',onBackground);
+  window.addEventListener('pageshow',onForeground);
+  window.addEventListener('focus', () => { if (!document.hidden) onForeground(); });
   window.addEventListener('resize',resize);
   window.addEventListener('offline',()=>{$('connectivity').textContent='Offline mode · progress saved locally';$('connectivity').hidden=false;});
   window.addEventListener('online',()=>{$('connectivity').hidden=true;});
