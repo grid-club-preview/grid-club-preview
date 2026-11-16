@@ -66,6 +66,24 @@
     .chooseHeader {display:flex;align-items:center;gap:14px;margin-bottom:26px;}
     .chooseHeader h2 {font-size:26px;line-height:1.2;margin:5px 0 0;}
     .chooseIntro {color:var(--muted);font-size:14px;line-height:1.6;margin:0 0 22px;}
+    .levelsFeature{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;margin:16px 0 19px;padding:17px 18px;background:#2b3c53;border:1px solid #4d6674;border-radius:16px;text-align:left;color:var(--mint);}
+    .levelsFeature strong{display:block;font-size:18px;color:#edfff9;}
+    .levelsFeature small{display:block;font-size:12px;color:#b7d6d2;margin-top:5px;}
+    #levelsScreen{padding-top:22px;}
+    .walletCard{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:#243d46;border-radius:14px;margin-bottom:17px;color:var(--mint);}
+    .walletCard strong{font-size:24px;font-variant-numeric:tabular-nums;}
+    .stageList,.stagePuzzles{display:grid;gap:10px;}
+    .stageCard,.stagePuzzle{width:100%;padding:14px 16px;text-align:left;background:var(--surface);border:1px solid #43506a;border-radius:15px;display:flex;justify-content:space-between;align-items:center;gap:12px;}
+    .stageCard strong,.stagePuzzle strong{display:block;font-size:16px;}
+    .stageCard small,.stagePuzzle small{display:block;color:var(--muted);font-size:12px;margin-top:5px;line-height:1.4;}
+    .stageCard:disabled,.stagePuzzle:disabled{opacity:.45;cursor:not-allowed;}
+    .stageCard .tag,.stagePuzzle .tag{font-size:11px;color:var(--mint);white-space:nowrap;}
+    .levelProgressLine{display:flex;align-items:center;justify-content:space-between;color:#badddc;font-size:12px;margin:-6px 0 13px;}
+    .levelProgressLine strong{color:var(--mint);font-size:15px;}
+    .levelReward{background:#2a4149;color:#d8fff5;padding:12px;border-radius:12px;font-weight:750;font-size:13px;line-height:1.5;margin:6px 0 14px;}
+    .boostButton{position:relative;}
+    .controls button .boostCost{position:absolute;top:3px;right:5px;font-size:10px;line-height:1.2;color:var(--mint);font-weight:850;margin:0;}
+    .controls button:disabled{opacity:.4;cursor:not-allowed;}
     .levelList {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}
     .levelChoice {display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;min-height:145px;text-align:left;background:var(--surface);padding:18px 16px;border:1px solid #3c4862;border-radius:18px;}
     .levelChoice:active {background:#293754;}
@@ -155,7 +173,7 @@
 <body>
   <main class="shell">
     <section id="home">
-      <header><div><div class="eyebrow">GRID CLUB</div><h1>A little puzzle break.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.4b.4</span></div></header>
+      <header><div><div class="eyebrow">GRID CLUB</div><h1>A little puzzle break.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.5.0</span></div></header>
       <details class="backendCheck" aria-label="Leaderboard connection diagnostics">
         <summary class="backendCheckTitle">Connection diagnostics (beta)</summary>
         <p id="backendCheckMessage" role="status" aria-live="polite">Checking configuration…</p>
@@ -171,14 +189,14 @@
         <div><div class="eyebrow">GRID CLUB · DOT TRAILS</div><h2>Your statistics</h2></div></div>
       <p class="chooseIntro">Your averages are saved on this device. Community rankings are verified online and compare players on the same daily puzzle.</p>
       <div id="statsOverview" class="overviewRow" aria-label="Your performance overview"></div>
-      <div class="statHeading">Your Free Play averages</div>
+      <div class="statHeading">Your Free Play and Level averages</div>
       <div id="difficultyStats" class="difficultyStats" aria-label="Statistics by difficulty"></div>
       <div class="statHeading">Daily Challenge history</div>
       <div id="dailyStats" class="overviewRow"></div>
       <div class="statHeading">Today's verified community <span id="communityDay"></span></div>
       <div id="communitySummary" role="status" aria-live="polite">Connect to see today's results.</div>
       <button id="refreshCommunity" class="secondaryAction" type="button">Refresh leaderboard</button>
-      <footer>Local averages use your most recent 250 saved completions on this device. Leaderboard statistics include verified results only; assisted and unassisted times are kept separate.</footer>
+      <footer>Local averages use your most recent 250 saved completions on this device. Only verified unassisted Daily Challenges count towards community averages and rankings. Assisted results remain in your personal stats.</footer>
     </section>
     <section id="difficultyScreen" hidden>
       <div class="chooseHeader">
@@ -197,7 +215,20 @@
         <button class="levelChoice" data-size="9"><span><strong>Hard</strong><small>9×9 squares</small></span><span class="levelAction">Start →</span></button>
         <button class="levelChoice" data-size="11"><span><strong>Expert</strong><small>11×11 squares</small></span><span class="levelAction">Start →</span></button>
       </div>
+      <button type="button" id="levelsStart" class="levelsFeature"><span><strong>🏆 Play Levels</strong><small>75 puzzles · 15 levels · Earn credits</small></span><span aria-hidden="true">→</span></button>
       <button id="viewStats" class="statsLink dotStatsLink">Your stats &amp; daily leaderboard <span>→</span></button>
+    </section>
+    <section id="levelsScreen" hidden>
+      <div class="chooseHeader"><button class="back" id="levelsBack" aria-label="Back to Dot Trails">‹</button><div><div class="eyebrow">GRID CLUB · DOT TRAILS</div><h2>Play Levels</h2></div></div>
+      <div class="walletCard"><span>◉ Club Credits</span><strong id="levelsWallet">0</strong></div>
+      <p class="chooseIntro">Complete five puzzles per level. Finish each puzzle to unlock the next. First-time completions earn credits.</p>
+      <div id="stageList" class="stageList" aria-label="Level progression"></div>
+      <div id="stageDetail" hidden>
+        <button id="stageBack" class="secondaryAction" type="button">← All levels</button>
+        <h3 id="stageHeading" class="statHeading">Level 1</h3>
+        <p id="stageSubheading" class="chooseIntro"></p>
+        <div id="stagePuzzles" class="stagePuzzles"></div>
+      </div>
     </section>
     <section id="gameScreen" hidden>
       <div class="gamebar">
@@ -206,7 +237,8 @@
         <div class="right"><button class="back" id="pauseButton" aria-label="Pause game" title="Pause">Ⅱ</button><button class="back" id="help" aria-label="How to play">?</button></div>
       </div>
       <div id="connectivity" class="offlineTag" role="status" hidden>Offline mode · progress saved locally</div>
-      <div class="stats"><div class="stat"><small>◉ Pairs</small><strong id="pairs">0/5</strong></div><div class="stat"><small>☝ Moves</small><strong id="moves">0</strong></div><div class="stat"><small>◷ Time</small><strong id="time">00:00</strong></div></div>
+      <div class="stats"><div class="stat"><small>◉ Pairs</small><strong id="pairs">0/5</strong></div><div class="stat"><small>☝ Moves</small><strong id="moves">0</strong></div><div class="stat"><small id="timeLabel">◷ Time</small><strong id="time">00:00</strong></div></div>
+      <div id="levelProgressLine" class="levelProgressLine" hidden><span id="levelStepInfo">Level 1 · Puzzle 1/5</span><strong id="gameWallet">◉ 0</strong></div>
       <div class="panel boardPanel">
         <div class="boardHeader"><strong id="boardTitle">Dot Trails</strong><small id="cells">0/25 squares</small></div>
         <div class="progress"><div id="progress"></div></div>
@@ -214,9 +246,11 @@
           <div class="win" id="win" role="dialog" aria-modal="true" aria-labelledby="winTitle"><div class="winInner">
             <div class="victoryStar" aria-hidden="true">✦</div><h3 id="winTitle">Nice one.</h3><p id="winMessage">All squares filled.</p>
             <div id="rankingBox" class="rankingBox" hidden></div>
+            <div id="levelReward" class="levelReward" hidden></div>
             <div class="resultStatus" id="resultStatus" hidden aria-live="polite"></div>
             <button type="button" id="resultStatsLink" class="winStatsLink">Result added to your stats <span aria-hidden="true">→</span></button>
             <button id="next">Next puzzle</button>
+            <button type="button" id="winToLevels" class="secondary" hidden>Return to Levels</button>
             <div class="winDifficultyActions" id="winDifficultyActions">
               <button type="button" id="winEasier" class="difficultyShift">← Easier</button>
               <button type="button" id="winHarder" class="difficultyShift">Harder →</button>
@@ -225,7 +259,7 @@
           </div></div>
         </div>
         <div class="accessibilityBar"><button class="numberToggle" type="button" id="numberToggle" aria-pressed="false" aria-label="Show numbers on coloured dots" title="Increase accessibility: show numbers on matching dot pairs">123</button></div>
-        <div class="controls"><button id="undo"><span>↶</span>Undo</button><button id="hint"><span>✧</span>Hint</button><button id="reset"><span>⟲</span>Reset</button><button id="new"><span>❖</span>New</button></div>
+        <div class="controls"><button id="undo"><span>↶</span>Undo</button><button id="hint" class="boostButton"><span class="boostCost" id="hintCost" hidden>10 ◉</span><span>✧</span>Hint</button><button id="reset"><span>⟲</span>Reset</button><button id="new"><span>❖</span>New</button><button id="extraTime" class="boostButton" hidden><span class="boostCost">10 ◉</span><span>◷+</span>+15s</button></div>
         <aside id="playPrompt" class="playPrompt" hidden role="status" aria-live="polite"><div class="promptTop"><span id="playPromptMessage"></span><button type="button" id="playPromptDismiss" class="promptDismiss" aria-label="Dismiss suggestion">×</button></div><button type="button" id="playPromptAction" class="promptAction" hidden>Try Free Play →</button></aside>
         <p id="incomplete" class="boardAlert" role="status" aria-live="polite" hidden>Oof, nice work, but all squares need filling</p>
         <p id="hintStatus" class="hintAlert" role="status" aria-live="polite" hidden></p>
@@ -234,9 +268,10 @@
       </div>
       
       <div class="adSlot" id="adSlot" aria-hidden="true"><small>Reserved for possible future advertising · no adverts in this version</small></div>
-      <footer>Grid Club · v0.4b.4 beta</footer>
+      <footer>Grid Club · v0.5.0 beta</footer>
     </section>
   </main>
+  <div class="pauseLayer" id="timeUpLayer" hidden role="dialog" aria-modal="true" aria-labelledby="timeUpTitle"><div class="pauseInner"><div style="font-size:47px;color:var(--mint)">◷</div><h2 id="timeUpTitle">Time's up!</h2><p>Your progress is saved. You can try again, or spend 10 Club Credits for 15 more seconds (up to twice per attempt).</p><button id="timeUpBoost">+15 seconds · 10 ◉</button><button id="timeUpRetry" class="secondary">Retry puzzle</button><button id="timeUpBack" class="secondary">Return to Levels</button></div></div>
   <div class="pauseLayer" id="pauseLayer" hidden role="dialog" aria-modal="true" aria-labelledby="pauseTitle">
     <div class="pauseInner">
       <div style="font-size:47px;color:var(--mint)">Ⅱ</div>
@@ -247,11 +282,12 @@
     </div>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" defer></script>
-  <script src="backend-config.js?v=0.4b.4"></script>
-  <script src="ranked.js?v=0.4b.4"></script>
-  <script src="stats-utils.js?v=0.4b.4"></script>
-  <script src="puzzle.js?v=0.4b.4"></script>
-  <script src="game.js?v=0.4b.4"></script>
+  <script src="backend-config.js?v=0.5.0"></script>
+  <script src="ranked.js?v=0.5.0"></script>
+  <script src="stats-utils.js?v=0.5.0"></script>
+  <script src="puzzle.js?v=0.5.0"></script>
+  <script src="levels.js?v=0.5.0"></script>
+  <script src="game.js?v=0.5.0"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol === 'https:') {
       addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));

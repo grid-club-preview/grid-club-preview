@@ -18,7 +18,7 @@
     });
     return {
       total:list.length,
-      levels:levels.map(l=>({...l,...group(list.filter(r=>r.mode==='free'&&Number(r.size)===l.size))})),
+      levels:levels.map(l=>({...l,...group(list.filter(r=>(r.mode==='free'||r.mode==='level')&&Number(r.size)===l.size))})),
       daily:group(list.filter(r=>r.mode==='daily')),
       lastFive:list.slice(-5).reverse()
     };
