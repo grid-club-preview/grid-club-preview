@@ -760,10 +760,10 @@ const COST=10;
 const BY_ID=new Map(ITEMS.map(x=>[x.id,x]));
 function get(id){return BY_ID.get(Number(id))||null;}
 function stageItems(stage){return ITEMS.filter(x=>x.stage===Number(stage));}
-function initial(){return {version:1,completed:{},best:{},ledger:[],credits:0,spend:{}};}
+function initial(){return {version:1,completed:{},best:{},ledger:[],credits:0,spend:{},firstAttemptFailed:{}};}
 function normalize(data){
  const p=data&&data.version===1?data:initial();
- p.completed ||= {};p.best ||= {};p.ledger ||= [];p.spend ||= {};
+ p.completed ||= {};p.best ||= {};p.ledger ||= [];p.spend ||= {};p.firstAttemptFailed ||= {};
  // Derive credits entirely from the ledger to avoid drift. Still only a
  // LOCAL prototype, not suitable for paid balances or anti-cheat protection.
  p.credits=p.ledger.reduce((sum,e)=>sum+Number(e.amount||0),0);
@@ -773,6 +773,16 @@ function unlocked(progress,id){
  const p=normalize(progress),item=get(id);
  return !!item && (item.id===1 || !!p.completed[item.id-1]);
 }
+// A level puzzle's first attempt remains open when it is paused, backgrounded,
+// or extended with credits. Choosing Retry after time expires ends that first
+// attempt. Later successful completions still unlock progression but no longer
+// earn the puzzle's completion reward. Legacy v0.5.0 rewards stay untouched.
+function forfeitFirstAttempt(progress,id){
+ const p=normalize(progress),item=get(id);
+ if(!item||p.completed[id]||p.firstAttemptFailed[id])return false;
+ p.firstAttemptFailed[id]=true;
+ return true;
+}
 function record(progress,id,timeMs,moves,hints){
  const p=normalize(progress),item=get(id);
  if(!item||!unlocked(p,id))return {accepted:false,earned:0,stageBonus:0};
@@ -780,14 +790,15 @@ function record(progress,id,timeMs,moves,hints){
  if(!before||timeMs<before.elapsedMs)p.best[id]={elapsedMs:timeMs,moves,hints};
  if(p.completed[id])return {accepted:true,first:false,earned:0,stageBonus:0};
  p.completed[id]=true;
- const earned=COMPLETION[item.size];
- p.ledger.push({id:'complete:'+id,amount:earned,type:'completion',puzzleId:id});
+ const firstAttempt=!p.firstAttemptFailed[id];
+ const earned=firstAttempt?COMPLETION[item.size]:0;
+ if(earned)p.ledger.push({id:'complete:'+id,amount:earned,type:'completion',puzzleId:id});
  let stageBonus=0;
  if(stageItems(item.stage).every(v=>p.completed[v.id])&&!p.ledger.some(x=>x.id==='stage:'+item.stage)) {
   stageBonus=STAGE_BONUS;p.ledger.push({id:'stage:'+item.stage,amount:stageBonus,type:'stage',stage:item.stage});
  }
  p.credits+=earned+stageBonus;
- return {accepted:true,first:true,earned,stageBonus};
+ return {accepted:true,first:true,firstAttempt,earned,stageBonus};
 }
 function spend(progress,amount,kind,attemptId){
  const p=normalize(progress),cost=Number(amount);
@@ -799,6 +810,6 @@ function spend(progress,amount,kind,attemptId){
  p.credits-=cost;
  return true;
 }
-const api={ITEMS,COMPLETION,STAGE_BONUS,COST,get,stageItems,initial,normalize,unlocked,record,spend};
+const api={ITEMS,COMPLETION,STAGE_BONUS,COST,get,stageItems,initial,normalize,unlocked,forfeitFirstAttempt,record,spend};
 if(typeof module!=='undefined'&&module.exports)module.exports=api;root.GridLevels=api;
 })(typeof globalThis==='object'?globalThis:this);

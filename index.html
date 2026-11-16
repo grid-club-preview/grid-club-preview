@@ -72,8 +72,37 @@
     #levelsScreen{padding-top:22px;}
     .walletCard{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:#243d46;border-radius:14px;margin-bottom:17px;color:var(--mint);}
     .walletCard strong{font-size:24px;font-variant-numeric:tabular-nums;}
+    .levelSaveStatus{color:var(--muted);font-size:12px;margin:-7px 0 10px;line-height:1.45;}
+    .levelSaveStatus[data-error="true"]{color:#ffc09c;}
+    .levelBackupActions{display:flex;gap:9px;margin:0 0 18px;}
+    .levelBackupActions button{border:1px solid #466072;border-radius:11px;padding:9px 11px;background:#253950;color:#d4edee;font-size:12px;font-weight:750;flex:1;}
     .stageList,.stagePuzzles{display:grid;gap:10px;}
     .stageCard,.stagePuzzle{width:100%;padding:14px 16px;text-align:left;background:var(--surface);border:1px solid #43506a;border-radius:15px;display:flex;justify-content:space-between;align-items:center;gap:12px;}
+
+    /* Fifteen distinct, legible stage palettes. Palette variables also tint
+       the stage detail and completion dialogue without changing puzzle colours. */
+    .stageCard[data-stage] {background:var(--stage-bg);border-color:var(--stage-border);}
+    .stageCard[data-stage] .tag {color:var(--stage-accent);}
+    #stageDetail[data-stage] {border:1px solid var(--stage-border);background:linear-gradient(160deg,var(--stage-bg),#1d273a 82%);padding:15px;border-radius:16px;}
+    #stageDetail[data-stage] .stagePuzzle {background:var(--stage-bg);border-color:var(--stage-border);}
+    #stageDetail[data-stage] .stagePuzzle .tag,#stageDetail[data-stage] #stageHeading {color:var(--stage-accent);}
+    #win[data-stage] .winInner {border:1px solid var(--stage-border);background:linear-gradient(170deg,var(--stage-bg),var(--surface) 76%);}
+    #win[data-stage] .victoryStar {color:var(--stage-accent);}
+    :is(.stageCard,#stageDetail,#win)[data-stage="1"]{--stage-bg:#203f46;--stage-border:#438c91;--stage-accent:#94e8e1;}
+    :is(.stageCard,#stageDetail,#win)[data-stage="2"]{--stage-bg:#453427;--stage-border:#9b7250;--stage-accent:#f1bb8b;}
+    :is(.stageCard,#stageDetail,#win)[data-stage="3"]{--stage-bg:#343d4b;--stage-border:#8094ac;--stage-accent:#e0e8f5;}
+    :is(.stageCard,#stageDetail,#win)[data-stage="4"]{--stage-bg:#493d26;--stage-border:#b39950;--stage-accent:#ffe4a2;}
+    :is(.stageCard,#stageDetail,#win)[data-stage="5"]{--stage-bg:#263e56;--stage-border:#477aa2;--stage-accent:#b2dcff;}
+    :is(.stageCard,#stageDetail,#win)[data-stage="6"]{--stage-bg:#403052;--stage-border:#8766ab;--stage-accent:#dfbdff;}
+    :is(.stageCard,#stageDetail,#win)[data-stage="7"]{--stage-bg:#4a313c;--stage-border:#b96e82;--stage-accent:#ffc0d0;}
+    :is(.stageCard,#stageDetail,#win)[data-stage="8"]{--stage-bg:#26463a;--stage-border:#508d72;--stage-accent:#aaf0c8;}
+    :is(.stageCard,#stageDetail,#win)[data-stage="9"]{--stage-bg:#46362c;--stage-border:#a87d5b;--stage-accent:#f9ccab;}
+    :is(.stageCard,#stageDetail,#win)[data-stage="10"]{--stage-bg:#323a57;--stage-border:#6c82c2;--stage-accent:#c7d2ff;}
+    :is(.stageCard,#stageDetail,#win)[data-stage="11"]{--stage-bg:#422f45;--stage-border:#a572b0;--stage-accent:#f1c4ff;}
+    :is(.stageCard,#stageDetail,#win)[data-stage="12"]{--stage-bg:#233f57;--stage-border:#567fb2;--stage-accent:#b5deff;}
+    :is(.stageCard,#stageDetail,#win)[data-stage="13"]{--stage-bg:#23433c;--stage-border:#4f9d83;--stage-accent:#b4f5dc;}
+    :is(.stageCard,#stageDetail,#win)[data-stage="14"]{--stage-bg:#4d303e;--stage-border:#b56586;--stage-accent:#ffc2d5;}
+    :is(.stageCard,#stageDetail,#win)[data-stage="15"]{--stage-bg:#424651;--stage-border:#9fa9be;--stage-accent:#f2f5ff;}
     .stageCard strong,.stagePuzzle strong{display:block;font-size:16px;}
     .stageCard small,.stagePuzzle small{display:block;color:var(--muted);font-size:12px;margin-top:5px;line-height:1.4;}
     .stageCard:disabled,.stagePuzzle:disabled{opacity:.45;cursor:not-allowed;}
@@ -123,6 +152,9 @@
     .pauseInner p { color:var(--muted);font-size:14px;line-height:1.6;margin:0 0 23px; }
     .pauseInner button { display:block;width:100%;padding:15px;border-radius:14px;font-weight:800;background:var(--mint);color:var(--bg);margin-top:10px; }
     .pauseInner button.secondary {background:var(--surface);color:white;}
+    .pauseInner button:disabled {background:#3a4350;color:#88939d;opacity:.66;cursor:not-allowed;box-shadow:none;}
+    .pauseInner .timeUpBoostNote {font-size:13px;line-height:1.5;color:#f0bd9f;margin:8px 4px 14px;}
+    .pauseInner .timeUpBoostNote[data-available="true"] {color:#a9dfc8;}
     .rankingBox {text-align:left;background:#202f44;border-radius:12px;padding:13px;margin:12px 0;font-size:12px;line-height:1.7;color:#d8e6f0;}
     .rankingBox strong {display:block;font-size:14px;color:#e5fff6;margin-bottom:4px;}
     .winInner .resultStatus {font-size:12px;color:#bde9e0;background:#203b42;padding:10px;border-radius:10px;margin-bottom:8px;line-height:1.4;}
@@ -152,6 +184,17 @@
     .dotDailyCard p{margin-top:12px;}
     .dotSectionLabel{color:var(--muted);margin:4px 0 12px;}
     .dotStatsLink{margin:18px 0 14px;}
+    .playModeCard{width:100%;display:flex;gap:16px;align-items:center;text-align:left;padding:18px 17px;margin:11px 0;background:var(--surface);border:1px solid #38495f;border-radius:17px;color:#eff9fa;}
+    .playModeCard:focus-visible{outline:3px solid var(--mint);outline-offset:3px;}
+    .playModeCard .modeIcon{flex:none;width:50px;height:50px;border-radius:15px;display:grid;place-items:center;background:#2a435a;color:#a1e6ff;font-size:26px;font-weight:800;}
+    .playModeCard .modeCopy{display:block;flex:1;min-width:0;}
+    .playModeCard strong{display:block;font-size:18px;}
+    .playModeCard small{display:block;font-size:13px;color:#b8c6d2;margin-top:5px;line-height:1.4;}
+    .playModeCard .modeArrow{flex:none;color:var(--mint);font-size:26px;}
+    .levelsModeCard{background:#253d43;border-color:#417c73;}
+    .levelsModeCard .modeIcon{background:#3a4946;color:#ffdfa4;}
+    .levelsModeCard small{color:#a9ebcf;}
+    #randomScreen{padding-top:22px;}
     /* Short, celebratory headline entrance without changing the chosen phrase. */
     .victoryStar{font-size:36px;color:var(--mint);display:inline-block;}
     .win.show .victoryStar{animation:starPop .65s cubic-bezier(.2,1.6,.4,1) both;}
@@ -160,11 +203,33 @@
     @keyframes starPop{from{opacity:0;transform:scale(.38) rotate(-35deg);}to{opacity:1;transform:scale(1) rotate(0deg);}}
     @keyframes headlineIn{from{opacity:0;transform:translateY(20px) scale(.96);}to{opacity:1;transform:translateY(0) scale(1);}}
     @keyframes traceLine{from{transform:scaleX(0);opacity:0;}to{transform:scaleX(1);opacity:1;}}
+    .levelUpCelebration{position:relative;overflow:hidden;border:1px solid var(--stage-border,#529c96);background:linear-gradient(135deg,#18383a,#2e4b50);border-radius:17px;padding:19px 12px 17px;margin:0 0 17px;isolation:isolate;display:flex;flex-direction:column;align-items:center;gap:5px;}
+    .levelUpMedal{display:grid;place-items:center;width:64px;height:64px;border-radius:50%;font-size:32px;color:#2b3043;background:linear-gradient(140deg,#fff5c6,#ffbd67);box-shadow:0 0 0 6px #f2d99722,0 8px 24px #0005;animation:levelUpMedalIn .82s cubic-bezier(.18,1.48,.4,1) both;}
+    .levelUpHeading{color:#ffe3a6;font-size:24px;font-weight:900;letter-spacing:-.5px;animation:levelUpWords .54s ease .22s both;}
+    .levelUpCelebration>span{font-size:13px;color:#d8f0e9;animation:levelUpWords .54s ease .4s both;}
+    .levelUpConfetti{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:-1;}
+    .levelUpConfetti i{position:absolute;top:40%;left:50%;width:7px;height:11px;border-radius:2px;background:#ffd477;opacity:0;--dx:100px;--dy:-90px;--spin:230deg;animation:levelBurst .95s ease-out both;}
+    .levelUpConfetti i:nth-child(2){--dx:-108px;--dy:-88px;--spin:-260deg;background:#86dddb;animation-delay:.05s;}
+    .levelUpConfetti i:nth-child(3){--dx:90px;--dy:33px;--spin:330deg;background:#d9a2f0;animation-delay:.1s;}
+    .levelUpConfetti i:nth-child(4){--dx:-98px;--dy:26px;--spin:-290deg;background:#e8bc8e;animation-delay:.06s;}
+    .levelUpConfetti i:nth-child(5){--dx:37px;--dy:-111px;--spin:370deg;background:#7cdb9a;animation-delay:.13s;}
+    .levelUpConfetti i:nth-child(6){--dx:-41px;--dy:-117px;--spin:-180deg;background:#85b9ff;animation-delay:.08s;}
+    .levelUpConfetti i:nth-child(7){--dx:126px;--dy:-18px;--spin:285deg;background:#ff9aac;animation-delay:.12s;}
+    .levelUpConfetti i:nth-child(8){--dx:-124px;--dy:-26px;--spin:-330deg;background:#ffd477;animation-delay:.14s;}
+    .levelUpConfetti i:nth-child(9){--dx:5px;--dy:63px;--spin:480deg;background:#adbbef;animation-delay:.07s;}
+    .levelUpConfetti i:nth-child(10){--dx:-65px;--dy:69px;--spin:-340deg;background:#ffcf8b;animation-delay:.1s;}
+    .levelUpConfetti i:nth-child(11){--dx:66px;--dy:58px;--spin:390deg;background:#9ef0c4;animation-delay:.15s;}
+    .levelUpConfetti i:nth-child(12){--dx:-9px;--dy:-122px;--spin:-240deg;background:#ffb7d5;animation-delay:.04s;}
+    #win.levelUp .winInner{box-shadow:0 0 45px #91d4ba33,0 12px 35px #0007;}
+    #win.levelUp #next{background:linear-gradient(115deg,#85e7cd,#ffcf8b);}
+    @keyframes levelUpMedalIn{0%{opacity:0;transform:scale(.2) rotate(-45deg);}65%{opacity:1;transform:scale(1.15) rotate(8deg);}100%{transform:scale(1) rotate(0);}}
+    @keyframes levelUpWords{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+    @keyframes levelBurst{0%{transform:translate(0,0) rotate(0);opacity:0;}15%{opacity:1;}75%{opacity:1;}100%{transform:translate(var(--dx),var(--dy)) rotate(var(--spin));opacity:0;}}
     .winInner .winStatsLink{background:#24434a;color:var(--mint);font-size:13px;font-weight:750;margin:4px 0 15px;padding:13px 12px;display:flex;align-items:center;justify-content:space-between;gap:6px;text-align:left;}
     .winDifficultyActions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:9px;}
     .winInner .difficultyShift{background:#2b3a52;color:#edf3ff;font-size:14px;padding:13px 8px;}
     .winInner .difficultyShift:disabled{opacity:.3;cursor:not-allowed;color:#c5cfdf;}
-    @media (prefers-reduced-motion: reduce){.win.show .victoryStar,#winTitle.victoryAnimate,#winTitle.victoryAnimate::after{animation:none;}}
+    @media (prefers-reduced-motion: reduce){.win.show .victoryStar,#winTitle.victoryAnimate,#winTitle.victoryAnimate::after,.levelUpMedal,.levelUpHeading,.levelUpCelebration>span,.levelUpConfetti i{animation:none;}}
     footer { text-align:center;color:var(--muted);font-size:12px;margin-top:20px;line-height:1.5; }
     [hidden] { display:none !important; }
     @media (min-width:600px) { .shell{padding-top:40px;} }
@@ -173,7 +238,7 @@
 <body>
   <main class="shell">
     <section id="home">
-      <header><div><div class="eyebrow">GRID CLUB</div><h1>A little puzzle break.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.5.0</span></div></header>
+      <header><div><div class="eyebrow">GRID CLUB</div><h1>A little puzzle break.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.5.2</span></div></header>
       <details class="backendCheck" aria-label="Leaderboard connection diagnostics">
         <summary class="backendCheckTitle">Connection diagnostics (beta)</summary>
         <p id="backendCheckMessage" role="status" aria-live="polite">Checking configuration…</p>
@@ -208,20 +273,27 @@
         <p>Connect matching dots and fill the entire 11×11 grid.</p>
         <button class="primary" id="dailyStart"><span id="dailyStartText">Play today's puzzle</span><span>→</span></button>
       </div>
-      <div class="eyebrow dotSectionLabel">PLAY RANDOM · CHOOSE A DIFFICULTY</div>
+      <button type="button" id="randomStart" class="playModeCard"><span class="modeIcon" aria-hidden="true">⤨</span><span class="modeCopy"><strong>Play Random</strong><small>Choose a difficulty</small></span><span class="modeArrow" aria-hidden="true">›</span></button>
+      <button type="button" id="levelsStart" class="playModeCard levelsModeCard"><span class="modeIcon" aria-hidden="true">🏆</span><span class="modeCopy"><strong>Play Levels</strong><small>Complete levels · Earn credits</small></span><span class="modeArrow" aria-hidden="true">›</span></button>
+      <button id="viewStats" class="statsLink dotStatsLink">Your stats &amp; daily leaderboard <span>→</span></button>
+    </section>
+    <section id="randomScreen" hidden>
+      <div class="chooseHeader"><button class="back" id="randomBack" aria-label="Back to Dot Trails">‹</button><div><div class="eyebrow">GRID CLUB · DOT TRAILS</div><h2>Play Random</h2></div></div>
+      <p class="chooseIntro">Choose your difficulty. Every puzzle is a new challenge.</p>
       <div class="levelList" id="levelList" aria-label="Free Play difficulties">
         <button class="levelChoice" data-size="5"><span><strong>Beginner</strong><small>5×5 squares</small></span><span class="levelAction">Start →</span></button>
         <button class="levelChoice" data-size="7"><span><strong>Medium</strong><small>7×7 squares</small></span><span class="levelAction">Start →</span></button>
         <button class="levelChoice" data-size="9"><span><strong>Hard</strong><small>9×9 squares</small></span><span class="levelAction">Start →</span></button>
         <button class="levelChoice" data-size="11"><span><strong>Expert</strong><small>11×11 squares</small></span><span class="levelAction">Start →</span></button>
       </div>
-      <button type="button" id="levelsStart" class="levelsFeature"><span><strong>🏆 Play Levels</strong><small>75 puzzles · 15 levels · Earn credits</small></span><span aria-hidden="true">→</span></button>
-      <button id="viewStats" class="statsLink dotStatsLink">Your stats &amp; daily leaderboard <span>→</span></button>
     </section>
     <section id="levelsScreen" hidden>
       <div class="chooseHeader"><button class="back" id="levelsBack" aria-label="Back to Dot Trails">‹</button><div><div class="eyebrow">GRID CLUB · DOT TRAILS</div><h2>Play Levels</h2></div></div>
       <div class="walletCard"><span>◉ Club Credits</span><strong id="levelsWallet">0</strong></div>
-      <p class="chooseIntro">Complete five puzzles per level. Finish each puzzle to unlock the next. First-time completions earn credits.</p>
+      <p id="levelSaveStatus" class="levelSaveStatus" role="status" aria-live="polite">Checking this device’s saved progress…</p>
+      <div class="levelBackupActions"><button type="button" id="exportLevels">Backup progress</button><button type="button" id="importLevels">Restore backup</button></div>
+      <input id="importLevelsFile" type="file" accept="application/json,.json" hidden>
+      <p class="chooseIntro">Five puzzles per level. Completing a puzzle unlocks the next; its credits are earned only if you succeed on your first attempt. Finish all five for a level bonus.</p>
       <div id="stageList" class="stageList" aria-label="Level progression"></div>
       <div id="stageDetail" hidden>
         <button id="stageBack" class="secondaryAction" type="button">← All levels</button>
@@ -245,12 +317,18 @@
         <div class="boardWrap"><div id="rankGate" class="rankGate" hidden role="status" aria-live="polite">Preparing today's verified timer…</div><canvas id="board" role="img" aria-label="Interactive Dot Trails puzzle board"></canvas>
           <div class="win" id="win" role="dialog" aria-modal="true" aria-labelledby="winTitle"><div class="winInner">
             <div class="victoryStar" aria-hidden="true">✦</div><h3 id="winTitle">Nice one.</h3><p id="winMessage">All squares filled.</p>
+            <div id="levelUpCelebration" class="levelUpCelebration" hidden role="status" aria-live="polite">
+              <div class="levelUpConfetti" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+              <div class="levelUpMedal" aria-hidden="true">★</div>
+              <strong class="levelUpHeading">Credit boosted!</strong>
+              <span id="levelUpMessage">Level complete · +5 bonus credits</span>
+            </div>
             <div id="rankingBox" class="rankingBox" hidden></div>
             <div id="levelReward" class="levelReward" hidden></div>
             <div class="resultStatus" id="resultStatus" hidden aria-live="polite"></div>
             <button type="button" id="resultStatsLink" class="winStatsLink">Result added to your stats <span aria-hidden="true">→</span></button>
             <button id="next">Next puzzle</button>
-            <button type="button" id="winToLevels" class="secondary" hidden>Return to Levels</button>
+            <button type="button" id="winToLevels" class="secondary" hidden>Return to Levels overview</button>
             <div class="winDifficultyActions" id="winDifficultyActions">
               <button type="button" id="winEasier" class="difficultyShift">← Easier</button>
               <button type="button" id="winHarder" class="difficultyShift">Harder →</button>
@@ -268,10 +346,10 @@
       </div>
       
       <div class="adSlot" id="adSlot" aria-hidden="true"><small>Reserved for possible future advertising · no adverts in this version</small></div>
-      <footer>Grid Club · v0.5.0 beta</footer>
+      <footer>Grid Club · v0.5.2 beta</footer>
     </section>
   </main>
-  <div class="pauseLayer" id="timeUpLayer" hidden role="dialog" aria-modal="true" aria-labelledby="timeUpTitle"><div class="pauseInner"><div style="font-size:47px;color:var(--mint)">◷</div><h2 id="timeUpTitle">Time's up!</h2><p>Your progress is saved. You can try again, or spend 10 Club Credits for 15 more seconds (up to twice per attempt).</p><button id="timeUpBoost">+15 seconds · 10 ◉</button><button id="timeUpRetry" class="secondary">Retry puzzle</button><button id="timeUpBack" class="secondary">Return to Levels</button></div></div>
+  <div class="pauseLayer" id="timeUpLayer" hidden role="dialog" aria-modal="true" aria-labelledby="timeUpTitle"><div class="pauseInner"><div style="font-size:47px;color:var(--mint)">◷</div><h2 id="timeUpTitle">Time's up!</h2><p>Your progress is saved. Add 15 seconds to continue this attempt, or retry. Retrying forfeits this puzzle’s first-attempt credits, but you can still unlock the next puzzle.</p><button id="timeUpBoost" type="button">+15 seconds · 10 ◉</button><p id="timeUpBoostNote" class="timeUpBoostNote" role="status" aria-live="polite"></p><button id="timeUpRetry" class="secondary">Retry puzzle (forfeit puzzle credits)</button><button id="timeUpBack" class="secondary">Return to Levels</button></div></div>
   <div class="pauseLayer" id="pauseLayer" hidden role="dialog" aria-modal="true" aria-labelledby="pauseTitle">
     <div class="pauseInner">
       <div style="font-size:47px;color:var(--mint)">Ⅱ</div>
@@ -282,12 +360,12 @@
     </div>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" defer></script>
-  <script src="backend-config.js?v=0.5.0"></script>
-  <script src="ranked.js?v=0.5.0"></script>
-  <script src="stats-utils.js?v=0.5.0"></script>
-  <script src="puzzle.js?v=0.5.0"></script>
-  <script src="levels.js?v=0.5.0"></script>
-  <script src="game.js?v=0.5.0"></script>
+  <script src="backend-config.js?v=0.5.2"></script>
+  <script src="ranked.js?v=0.5.2"></script>
+  <script src="stats-utils.js?v=0.5.2"></script>
+  <script src="puzzle.js?v=0.5.2"></script>
+  <script src="levels.js?v=0.5.2"></script>
+  <script src="game.js?v=0.5.2"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol === 'https:') {
       addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));

@@ -1,13 +1,13 @@
-/* Grid Club v0.5.0 · updated cache key + stats module */
-const CACHE='gridclub-pwa-v0.5.0';
+/* Grid Club v0.5.2 · updated cache key + stats module */
+const CACHE='gridclub-pwa-v0.5.2';
 const APP_FILES=[
   './','./index.html',
-  './puzzle.js?v=0.5.0',
-  './levels.js?v=0.5.0',
-  './game.js?v=0.5.0',
-  './stats-utils.js?v=0.5.0',
-  './ranked.js?v=0.5.0',
-  './backend-config.js?v=0.5.0',
+  './puzzle.js?v=0.5.2',
+  './levels.js?v=0.5.2',
+  './game.js?v=0.5.2',
+  './stats-utils.js?v=0.5.2',
+  './ranked.js?v=0.5.2',
+  './backend-config.js?v=0.5.2',
   './manifest.webmanifest',
   './icons/icon-192.png','./icons/icon-512.png','./icons/apple-touch-icon.png'
 ];

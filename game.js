@@ -1,10 +1,11 @@
-/* Grid Club · Dot Trails v0.5.0 levels prototype · random play + ranked daily prototype */
+/* Grid Club · Dot Trails v0.5.2 level progression · random play + ranked daily prototype */
 (() => {
   'use strict';
   const core = GridCore;
   const statsUtil = GridStats;
   const levelCore = GridLevels;
   const LEVEL_STATE_KEY = 'gridclub-levels-progress-v1';
+  const LEVEL_FALLBACK_KEY = 'gridclub-levels-progress-v1-safety-copy';
   let levelId=1, selectedStage=null, levelReward=null, timedOut=false;
   const $ = id => document.getElementById(id);
   const colours = ['#ff667a','#55c5ff','#ffd15b','#70e6a0','#bd91ff',
@@ -49,7 +50,7 @@
   let mode = 'free', size = 5, game = null, activePointerId = null;
   let dailyStartDay=today();
   let lastCell = null, side = 0, notified = false, hintPreview = null, hintUntil = 0;
-  let storageAvailable = true, saveWarningShown = false;
+  let storageAvailable = true, saveWarningShown = false, levelSaveFailed = false;
   // The visible pause overlay is ONLY for explicit user presses of Pause.
   // Backgrounding, switching games and Back quietly suspend progress instead.
   let explicitPause = false, backgroundSuspended = false;
@@ -70,8 +71,15 @@
     catch (_) { return fallback; }
   }
   function writeJSON(key, value) {
-    try { localStorage.setItem(key, JSON.stringify(value)); storageAvailable = true; return true; }
-    catch (_) { storageAvailable = false; return false; }
+    try {
+      const encoded = JSON.stringify(value);
+      localStorage.setItem(key, encoded);
+      // Storage must actually accept and return the snapshot. A silent failure
+      // must never be reported as a saved puzzle or earned wallet balance.
+      if (localStorage.getItem(key) !== encoded) throw new Error('Storage did not confirm the write');
+      storageAvailable = true;
+      return true;
+    } catch (_) { storageAvailable = false; return false; }
   }
   function readStats() {
     const data = readJSON(STATS_KEY, {});
@@ -86,9 +94,105 @@
     data.games.dotTrails.headlines ||= [];
     return data;
   }
-  function loadLevelState(){return levelCore.normalize(readJSON(LEVEL_STATE_KEY,null));}
-  function saveLevelState(value){return writeJSON(LEVEL_STATE_KEY,value);}
+  // Levels and credits are deliberately kept on the device in this beta.
+  // A separate local safety copy helps with partial/corrupt writes; an
+  // IndexedDB mirror covers some storage failures. Neither is cloud sync,
+  // nor can either bridge separate Safari and Home Screen app containers.
+  function showLevelSaveStatus(message, error=false) {
+    if(levelSaveFailed&&!error)return;
+    const node=$('levelSaveStatus');
+    if(node){node.textContent=message;node.dataset.error=error?'true':'false';}
+    if(error){
+      levelSaveFailed=true;
+      $('saveWarning').hidden=false;
+      $('saveWarning').textContent='Your Levels progress could not be verified as saved. Keep this app open and export a backup.';
+    }
+  }
+  function validLevelRecord(record){
+    return !!record && record.version===1 && record.completed && typeof record.completed==='object' &&
+      !Array.isArray(record.completed) && Array.isArray(record.ledger);
+  }
+  function loadLevelState(){
+    let current=readJSON(LEVEL_STATE_KEY,null);
+    if(!validLevelRecord(current)){
+      const safe=readJSON(LEVEL_FALLBACK_KEY,null);
+      if(validLevelRecord(safe)){
+        current=safe;
+        writeJSON(LEVEL_STATE_KEY,safe);
+      }
+    }
+    return levelCore.normalize(current);
+  }
+  function openLevelMirror(){
+    if(!globalThis.indexedDB)return Promise.resolve(null);
+    return new Promise(resolve=>{
+      try{
+        const request=indexedDB.open('gridclub-level-mirror-v1',1);
+        request.onupgradeneeded=()=>{if(!request.result.objectStoreNames.contains('backups'))request.result.createObjectStore('backups');};
+        request.onsuccess=()=>resolve(request.result);
+        request.onerror=()=>resolve(null);
+        request.onblocked=()=>resolve(null);
+      }catch(_){resolve(null);}
+    });
+  }
+  async function mirrorLevelState(value){
+    const db=await openLevelMirror();if(!db)return;
+    try{
+      const tx=db.transaction('backups','readwrite');
+      tx.objectStore('backups').put(value,'levels');
+    }catch(_){}finally{db.close();}
+  }
+  async function recoverLevelMirror(){
+    // Never overwrite an existing localStorage wallet with an older mirror.
+    if(validLevelRecord(readJSON(LEVEL_STATE_KEY,null)) || validLevelRecord(readJSON(LEVEL_FALLBACK_KEY,null)))return;
+    const db=await openLevelMirror();if(!db)return;
+    const recovered=await new Promise(resolve=>{
+      try{
+        const req=db.transaction('backups','readonly').objectStore('backups').get('levels');
+        req.onsuccess=()=>resolve(req.result);
+        req.onerror=()=>resolve(null);
+      }catch(_){resolve(null);}
+    });db.close();
+    if(!validLevelRecord(recovered))return;
+    if(validLevelRecord(readJSON(LEVEL_STATE_KEY,null)))return;
+    if(saveLevelState(recovered)){
+      showLevelSaveStatus('Saved progress recovered from this device.');
+      if(!$('levelsScreen').hidden)renderLevelBrowser();
+    }
+  }
+  function saveLevelState(value){
+    const ok=writeJSON(LEVEL_STATE_KEY,value);
+    if(ok){
+      levelSaveFailed=false;
+      try{localStorage.setItem(LEVEL_FALLBACK_KEY,JSON.stringify(value));}catch(_){}
+      void mirrorLevelState(value);
+      showLevelSaveStatus('Progress and Club Credits saved on this device.');
+    }else showLevelSaveStatus('Saving failed. Export a backup before leaving.',true);
+    return ok;
+  }
   function walletBalance(){return loadLevelState().credits;}
+  function exportLevelBackup(){
+    const progress=readProgress();
+    const levelPuzzles=Object.fromEntries(Object.entries(progress).filter(([key])=>key.startsWith('level:')));
+    return {format:'gridclub-levels-backup-v1',exportedAt:new Date().toISOString(),
+      levelState:loadLevelState(),levelPuzzles};
+  }
+  function applyLevelBackup(backup){
+    if(backup?.format!=='gridclub-levels-backup-v1'||!validLevelRecord(backup.levelState))return false;
+    const puzzles=backup.levelPuzzles;
+    if(!puzzles||typeof puzzles!=='object'||Array.isArray(puzzles)||
+       Object.keys(puzzles).some(key=>!/^level:(?:[1-9]|[1-6][0-9]|7[0-5])$/.test(key)))return false;
+    // Replacing a backup is explicitly confirmed by the player, and touches
+    // Levels only: Daily and Random progress and statistics are not erased.
+    const previous=loadLevelState(),all=readProgress();
+    if(!saveLevelState(levelCore.normalize(backup.levelState)))return false;
+    for(const key of Object.keys(all))if(key.startsWith('level:'))delete all[key];
+    Object.assign(all,puzzles);
+    if(!writeJSON(PROGRESS_KEY,all)){
+      saveLevelState(previous);return false;
+    }
+    return true;
+  }
   function progressSlot(forMode=mode, forSize=size, forId=levelId) {
     return forMode==='daily'?`daily:${today()}`:forMode==='level'?`level:${forId}`:`free:${forSize}`;
   }
@@ -181,6 +285,9 @@
       game.extraTimeMs=game.extraTimeMs||0;game.extraTimeCount=game.extraTimeCount||0;
     }
     timedOut=mode==='level' && !game.finishedAt && remainingLevelMs()!==null && remainingLevelMs()<=0;
+    // A restored expired countdown must stop while the player chooses a boost
+    // or retry. Otherwise time would keep running behind the timeout dialog.
+    if(timedOut && !game.paused)core.pause(game);
     if (game.paused && !game.finishedAt && !timedOut) core.resume(game);
     explicitPause = false; backgroundSuspended = false;
     notified = false; activePointerId = null;lastCell = null;hintPreview=null;hintUntil=0;
@@ -197,15 +304,19 @@
         rankEligible=!!(rankedAttempt&&savedTrace.eligible!==false);
       }
     }
-    $('win').classList.remove('show');
+    $('win').classList.remove('show','levelUp');
+    $('levelUpCelebration').hidden=true;
     $('timeUpLayer').hidden=!timedOut;
+    if(timedOut)refreshTimeUpBoost();
     levelReward=null;
     $('incomplete').hidden = true; $('hintStatus').hidden = true;
     $('modeTitle').textContent = mode === 'daily' ? `Daily challenge · ${dailyStartDay}` : mode==='level'?`Level ${game.level.stage} · Puzzle ${game.level.step}/5`:`${label()} · ${size}×${size}`;
     $('boardTitle').textContent = mode === 'daily' ? 'Daily Dot Trails' : mode==='level'?`Dot Trails · ${labels[size]}`:`Dot Trails · ${label()}`;
-    $('next').textContent = mode === 'daily' ? 'Try Free Play' : mode==='level' && levelId===75 ? 'Back to Levels' : 'Next puzzle';
+    $('next').textContent = mode === 'daily' ? 'Try Free Play' : mode==='level' && levelId===75 ? 'Return to Levels overview' : mode==='level' ? `Continue Level ${game.level.stage+(game.level.step===5?1:0)} →` : 'Next puzzle';
     $('returnWinHome').hidden = mode !== 'daily';
     $('winToLevels').hidden = mode!=='level';
+    $('winToLevels').textContent='Return to Levels overview';
+    $('win').dataset.stage = mode==='level'?String(game.level.stage):'';
     $('winDifficultyActions').hidden = mode !== 'free';
     $('winEasier').disabled = size === 5;
     $('winHarder').disabled = size === 11;
@@ -226,12 +337,13 @@
   function showPage(page) {
     $('home').hidden = page !== 'home';
     $('difficultyScreen').hidden = page !== 'choose';
+    $('randomScreen').hidden = page !== 'random';
     $('gameScreen').hidden = page !== 'game';
     $('statsScreen').hidden = page !== 'stats';
     $('levelsScreen').hidden = page !== 'levels';
     // Leaving a result permanently closes its overlay. Stats never navigates back to it.
     if (page !== 'game') {
-      $('win').classList.remove('show');
+      $('win').classList.remove('show','levelUp');
       $('timeUpLayer').hidden=true;
       explicitPause = false; backgroundSuspended = false;rankStartGeneration++;gateRanked(false);
     }
@@ -245,6 +357,11 @@
         (Object.keys(saved.paths).length > 0 || core.elapsed(saved) > 3000));
       button.querySelector('.levelAction').textContent = unfinished ? 'Continue →' : 'Start →';
     });
+  }
+  function showRandomScreen(){
+    if(!$('gameScreen').hidden && !game?.finishedAt)suspendSilently();
+    updateDifficultyMenu();
+    showPage('random');
   }
   function showStatsScreen(){
     // Moving on from a completed result is final; the results panel is not reopened.
@@ -310,6 +427,7 @@
   function renderLevelBrowser(){
     const progress=loadLevelState();
     $('levelsWallet').textContent=String(progress.credits);
+    if(!saveWarningShown)showLevelSaveStatus(Object.keys(progress.completed).length?`Saved on this device · ${Object.keys(progress.completed).length}/75 puzzles complete`:'No completed levels found in this app’s local storage.');
     const list=$('stageList'),detail=$('stageDetail');
     const hasStage=!!selectedStage;
     list.hidden=hasStage;detail.hidden=!hasStage;
@@ -319,7 +437,7 @@
         const items=levelCore.stageItems(stage),first=items[0];
         const done=items.filter(x=>progress.completed[x.id]).length;
         const allowed=levelCore.unlocked(progress,first.id);
-        const btn=document.createElement('button');btn.type='button';btn.className='stageCard';btn.disabled=!allowed;
+        const btn=document.createElement('button');btn.type='button';btn.className='stageCard';btn.disabled=!allowed;btn.dataset.stage=String(stage);
         const left=document.createElement('span'),title=document.createElement('strong'),desc=document.createElement('small');
         title.textContent=`Level ${stage} · ${labels[first.size]}`;
         desc.textContent=`${done}/5 puzzles complete · ${first.size}×${first.size}`;
@@ -329,12 +447,13 @@
       }
     }else{
       const items=levelCore.stageItems(selectedStage),first=items[0];
+      detail.dataset.stage=String(selectedStage);
       $('stageHeading').textContent=`Level ${selectedStage} · ${labels[first.size]}`;
       $('stageSubheading').textContent=`Puzzle 1 is untimed. Puzzles 2–5 have shorter countdowns. Each completed puzzle unlocks the next.`;
       const list=$('stagePuzzles');list.replaceChildren();
       for(const item of items){
         const btn=document.createElement('button');btn.type='button';btn.className='stagePuzzle';
-        const unlocked=levelCore.unlocked(progress,item.id),done=!!progress.completed[item.id];btn.disabled=!unlocked;
+        const unlocked=levelCore.unlocked(progress,item.id),done=!!progress.completed[item.id];btn.disabled=!unlocked;btn.dataset.stage=String(item.stage);
         const left=document.createElement('span'),title=document.createElement('strong'),desc=document.createElement('small');
         title.textContent=`Puzzle ${item.step} · #${item.id}`;
         desc.textContent=item.limitSec===null?'Untimed warm-up':`Countdown ${fmtSeconds(item.limitSec*1000)}`;
@@ -358,19 +477,43 @@
     if(mode!=='level'||!game||game.level.limitMs===null||game.level.limitMs===undefined)return null;
     return game.level.limitMs+(game.extraTimeMs||0)-core.elapsed(game);
   }
+  function refreshTimeUpBoost(){
+    const balance=walletBalance();
+    const used=game?.extraTimeCount||0;
+    const remaining=Math.max(0,2-used);
+    const canBoost=mode==='level'&&game&&!game.finishedAt&&remaining>0&&balance>=10;
+    const button=$('timeUpBoost'),note=$('timeUpBoostNote');
+    button.disabled=!canBoost;
+    button.setAttribute('aria-disabled',String(!canBoost));
+    if(remaining===0){
+      note.textContent='Both time extensions have been used. Retry the puzzle or return to Levels.';
+    }else if(balance<10){
+      note.textContent=`Not enough Club Credits (${balance}/10). Retry the puzzle or return to Levels.`;
+    }else{
+      note.textContent=`Balance: ${balance} Club Credits · ${remaining} time extension${remaining===1?'':'s'} available.`;
+    }
+    note.dataset.available=String(!!canBoost);
+  }
   function triggerTimeout(){
     if(timedOut||!game||game.finishedAt)return;
     timedOut=true;
     if(activePointerId!==null)release();
     if(!game.paused)core.pause(game);
     hidePlayPrompt();$('timeUpLayer').hidden=false;
+    refreshTimeUpBoost();
     persist();
   }
   function buyExtraTime(){
     if(mode!=='level'||!game||game.finishedAt||game.level.limitMs===null)return false;
     const p=loadLevelState();
+    if((game.extraTimeCount||0)>=2 || p.credits<10){
+      if(timedOut)refreshTimeUpBoost();
+      else{$('hintStatus').hidden=false;$('hintStatus').textContent=(game.extraTimeCount||0)>=2?'Both time extensions have been used.':'You need 10 Club Credits for +15 seconds.';}
+      return false;
+    }
     if(!levelCore.spend(p,10,'extra-time',game.attemptId)){
-      if(!timedOut){$('hintStatus').hidden=false;$('hintStatus').textContent='Not enough credits, or you have already used two time extensions.';}
+      if(timedOut)refreshTimeUpBoost();
+      else{$('hintStatus').hidden=false;$('hintStatus').textContent='Could not spend Club Credits for this extension.';}
       return false;
     }
     if(!saveLevelState(p))return false;
@@ -382,6 +525,12 @@
   }
   function retryLevel(){
     if(mode!=='level')return;
+    // An unsuccessful first attempt is no longer eligible for puzzle credits.
+    // Spending +15s on the time-up screen instead continues the same attempt.
+    if(!game?.finishedAt){
+      const p=loadLevelState();
+      if(levelCore.forfeitFirstAttempt(p,levelId))saveLevelState(p);
+    }
     timedOut=false;$('timeUpLayer').hidden=true;
     setGame(freshGame());
   }
@@ -481,7 +630,7 @@
     if(mode==='level'){
       const p=loadLevelState();
       levelReward=levelCore.record(p,levelId,Math.round(core.elapsed(game)),game.moves,game.hints);
-      if(!saveLevelState(p))levelReward={accepted:false,earned:0,stageBonus:0};
+      if(!saveLevelState(p))levelReward={accepted:false,earned:0,stageBonus:0,saveFailed:true};
     }
     const k = mode==='daily' ? 'daily' : String(size);
     const elapsedMs = Math.round(core.elapsed(game));
@@ -660,13 +809,31 @@
     title.classList.add('victoryAnimate');
     $('winMessage').textContent=`${label()} · ${fmtSeconds(result.elapsedMs)} · ${result.moves} moves`;
     $('rankingBox').hidden = mode !== 'daily';
+    const newLevelUp=mode==='level'&&game.level.step===5&&Number(levelReward?.stageBonus||0)>0;
+    $('levelUpCelebration').hidden=!newLevelUp;
+    if(newLevelUp)$('win').classList.add('levelUp');
+    else $('win').classList.remove('levelUp');
+    if(newLevelUp){
+      $('levelUpMessage').textContent=`Level ${game.level.stage} complete · +${levelReward.stageBonus} bonus credits`;
+      $('next').textContent=levelId===75?'All levels complete →':'Level up →';
+    }
     $('levelReward').hidden=mode!=='level';
-    if(mode==='level')$('levelReward').textContent=levelReward?.first?`+${levelReward.earned} credits for this puzzle${levelReward.stageBonus?` · +${levelReward.stageBonus} level-completion bonus`:''} · Balance: ${walletBalance()} ◉`:'Puzzle completed. Rewards are earned on the first completion only.';
+    if(mode==='level'){
+      if(levelReward?.saveFailed){
+        $('levelReward').textContent='Your level reward could not be saved. Keep this app open and export a backup of any existing progress.';
+      }else if(!levelReward?.first){
+        $('levelReward').textContent='Puzzle replayed. No further credits are awarded.';
+      }else if(levelReward.earned){
+        $('levelReward').textContent=`+${levelReward.earned} credits for your first attempt${levelReward.stageBonus&&!newLevelUp?` · +${levelReward.stageBonus} level bonus`:''} · Balance: ${walletBalance()} ◉`;
+      }else{
+        $('levelReward').textContent=`Puzzle complete. No puzzle credits after a retry${levelReward.stageBonus&&!newLevelUp?` · +${levelReward.stageBonus} level bonus`:''} · Balance: ${walletBalance()} ◉`;
+      }
+    }
     $('winDifficultyActions').hidden = mode !== 'free';
     $('winEasier').disabled = size === 5;
     $('winHarder').disabled = size === 11;
     const failed=!storageAvailable||result.saveFailed;
-    $('resultStatsLink').hidden=failed;
+    $('resultStatsLink').hidden=failed||mode==='level';
     $('resultStatsLink').firstChild.textContent=mode==='daily'?'View your stats ':'Result added to your stats ';
     const status=$('resultStatus');
     status.hidden=false;
@@ -778,7 +945,7 @@
     // to difficulty selection, Daily Challenge returns directly Home.
     if (mode === 'daily') returnHome();
     else if(mode==='level')showLevelBrowser(game?.level?.stage||selectedStage);
-    else showDifficultyScreen();
+    else showRandomScreen();
   }
   function onBackground() {
     // NEVER call pauseGame here: switching apps must not open a dialog.
@@ -826,7 +993,12 @@
   canvas.addEventListener('pointerdown',event=>{
     event.preventDefault();
     if(mode==='level'&&remainingLevelMs()!==null&&remainingLevelMs()<=0){triggerTimeout();return;}
-    if(!game||game.finishedAt||game.paused||rankedGateActive||activePointerId!==null)return;
+    if(!game||game.finishedAt||game.paused||rankedGateActive)return;
+    if(activePointerId!==null){
+      // Safari may never deliver pointerup if a call/notification interrupts.
+      // Finish the abandoned gesture before accepting the new touch.
+      release(null);
+    }
     const p=pointerCell(event);
     incompleteDismissed=true; $('incomplete').hidden=true;
     if(!p||!core.begin(game,p))return;
@@ -855,12 +1027,12 @@
     if(late&&!timedOut)triggerTimeout();
   }
   canvas.addEventListener('pointerup',release);
-  canvas.addEventListener('pointercancel',release);
-  canvas.addEventListener('lostpointercapture',release);
+  canvas.addEventListener('pointercancel',()=>release(null));
+  canvas.addEventListener('lostpointercapture',()=>release(null));
   // Release even if Safari/Chrome loses pointer capture or the gesture ends
   // outside the canvas. A new touch can then always refocus the board.
   window.addEventListener('pointerup',release);
-  window.addEventListener('pointercancel',release);
+  window.addEventListener('pointercancel',()=>release(null));
   window.addEventListener('blur',()=>{if(activePointerId!==null)release();});
   for(const ev of ['contextmenu','selectstart','dragstart']){
     canvas.addEventListener(ev,e=>e.preventDefault());
@@ -896,9 +1068,42 @@
   refreshBackendCheck();
   $('dailyStart').onclick=()=>start('daily');
   $('levelsStart').onclick=()=>showLevelBrowser();
-  $('levelsBack').onclick=showDifficultyScreen;
+  $('randomStart').onclick=showRandomScreen;
+  $('randomBack').onclick=showDifficultyScreen;
+  $('levelsBack').onclick=()=>selectedStage===null?showDifficultyScreen():showLevelBrowser();
   $('stageBack').onclick=()=>showLevelBrowser();
-  $('winToLevels').onclick=()=>showLevelBrowser(game?.level?.stage||selectedStage);
+  $('exportLevels').onclick=async()=>{
+    const backup=JSON.stringify(exportLevelBackup(),null,2);
+    const name='GridClub-Levels-backup-'+today()+'.json';
+    try{
+      const file=new File([backup],name,{type:'application/json'});
+      if(navigator.canShare?.({files:[file]})&&navigator.share){
+        await navigator.share({title:'Grid Club Levels backup',files:[file]});
+      }else{
+        const url=URL.createObjectURL(file),a=document.createElement('a');
+        a.href=url;a.download=name;document.body.append(a);a.click();a.remove();
+        setTimeout(()=>URL.revokeObjectURL(url),15000);
+      }
+      showLevelSaveStatus('Levels backup exported. Keep it somewhere safe.');
+    }catch(e){
+      if(e?.name!=='AbortError')showLevelSaveStatus('Could not export backup. Please try in Safari.',true);
+    }
+  };
+  $('importLevels').onclick=()=>{$('importLevelsFile').click();};
+  $('importLevelsFile').addEventListener('change',async event=>{
+    const file=event.target.files?.[0];if(!file)return;
+    event.target.value='';
+    if(file.size>1024*1024){showLevelSaveStatus('Backup file is too large.',true);return;}
+    try{
+      const backup=JSON.parse(await file.text());
+      if(!validLevelRecord(backup?.levelState)||backup?.format!=='gridclub-levels-backup-v1')throw new Error('Unexpected backup format');
+      if(!confirm('Restore this Levels backup? This will replace this device’s existing Levels progress and credits. Daily and Random results will not be changed.'))return;
+      if(!applyLevelBackup(backup))throw new Error('Could not save restored progress');
+      renderLevelBrowser();
+      showLevelSaveStatus('Levels backup restored successfully.');
+    }catch(e){showLevelSaveStatus('That backup could not be restored. Existing data has been left unchanged.',true);}
+  });
+  $('winToLevels').onclick=()=>showLevelBrowser();
   $('timeUpRetry').onclick=retryLevel;
   $('timeUpBoost').onclick=buyExtraTime;
   $('timeUpBack').onclick=()=>showLevelBrowser(game?.level?.stage||selectedStage);
@@ -920,7 +1125,7 @@
   };
   updateDotNumbersButton();
   $('playPromptDismiss').onclick=hidePlayPrompt;
-  $('playPromptAction').onclick=()=>{hidePlayPrompt();showDifficultyScreen();};
+  $('playPromptAction').onclick=()=>{hidePlayPrompt();showRandomScreen();};
   $('help').onclick=()=>alert('Connect matching dots without crossing lines and fill every square. Lift your finger to leave a partly drawn path, then continue from its loose end. Tap a coloured dot to clear its line. Use the 123 button below the board to label matching dot pairs if helpful. Hint shows a short section of one possible solution without drawing it. Pausing is free and hides the entire puzzle. Undo and Reset do not rewind the clock.');
   $('undo').onclick=()=>{if(game?.paused)return;clearHint();if(game?.undo.length){core.undo(game);logRank('undo');}update();};
   $('hint').onclick=()=>{
@@ -940,7 +1145,7 @@
   };
   $('reset').onclick=()=>{if(!game||game.paused)return;clearHint();core.reset(game);logRank('reset');update();};
   $('new').onclick=()=>{if(game && !game.finishedAt && core.filled(game)>0 && !confirm('Start a fresh puzzle? Your current unfinished puzzle will be replaced.'))return;newGame();};
-  $('next').onclick=()=>mode==='daily'?showDifficultyScreen():mode==='level'?(levelId<75?startLevel(levelId+1):showLevelBrowser()):newGame();
+  $('next').onclick=()=>mode==='daily'?showRandomScreen():mode==='level'?(levelId<75?startLevel(levelId+1):showLevelBrowser()):newGame();
   $('resultStatsLink').onclick=showStatsScreen;
   // Easier/Harder choose adjacent difficulties and preserve any unfinished
   // puzzle already saved at the destination size.
@@ -952,6 +1157,47 @@
     const text=`🧩 Grid Club · Dot Trails\n${mode==='daily'?`Daily challenge ${today()}`:mode==='level'?`Level ${game.level.stage} puzzle ${game.level.step}`:`${label()} (${size}×${size})`} solved in ${game.moves} moves and ${fmtSeconds(core.elapsed(game))}${game.hints?' · Assisted':''}.`;
     try {if(navigator.share)await navigator.share({text});else if(navigator.clipboard){await navigator.clipboard.writeText(text);alert('Result copied!');}else prompt('Copy your result:',text);}catch(_){}
   };
+  // Left-edge swipe follows the same navigation targets as the visible Back
+  // controls, but never steals a drawing gesture or a modal interaction.
+  // In browser Safari the OS/browser's own back gesture may take precedence.
+  function gestureBack(){
+    if(!$('pauseLayer').hidden||!$('timeUpLayer').hidden)return;
+    if(!$('gameScreen').hidden){exitPuzzle();return;}
+    if(!$('statsScreen').hidden){showDifficultyScreen();return;}
+    if(!$('randomScreen').hidden){showDifficultyScreen();return;}
+    if(!$('levelsScreen').hidden){
+      if(selectedStage===null)showDifficultyScreen();else showLevelBrowser();
+      return;
+    }
+    if(!$('difficultyScreen').hidden)returnHome();
+  }
+  let edgeSwipe=null;
+  document.addEventListener('touchstart',event=>{
+    edgeSwipe=null;
+    if(event.touches.length!==1)return;
+    const point=event.touches[0];
+    if(point.clientX>48)return;
+    const target=event.target;
+    // The grid, puzzle buttons and any dialog must retain touch ownership.
+    if(target?.closest?.('#board,.boardWrap,.controls,.win,.pauseLayer,button,input,select,textarea'))return;
+    if(!$('pauseLayer').hidden||!$('timeUpLayer').hidden)return;
+    edgeSwipe={x:point.clientX,y:point.clientY,id:point.identifier};
+  },{passive:true});
+  document.addEventListener('touchmove',event=>{
+    if(!edgeSwipe)return;
+    if(event.touches.length!==1){edgeSwipe=null;return;}
+    const point=event.touches[0];
+    if(Math.abs(point.clientY-edgeSwipe.y)>45&&Math.abs(point.clientY-edgeSwipe.y)>Math.abs(point.clientX-edgeSwipe.x))edgeSwipe=null;
+  },{passive:true});
+  document.addEventListener('touchcancel',()=>{edgeSwipe=null;},{passive:true});
+  document.addEventListener('touchend',event=>{
+    const swipe=edgeSwipe;edgeSwipe=null;
+    if(!swipe||!event.changedTouches?.length)return;
+    const point=Array.from(event.changedTouches).find(p=>p.identifier===swipe.id);
+    if(!point)return;
+    const dx=point.clientX-swipe.x,dy=point.clientY-swipe.y;
+    if(dx>=80 && Math.abs(dy)<50 && dx>Math.abs(dy)*1.7)gestureBack();
+  },{passive:true});
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) onBackground(); else onForeground();
   });
@@ -962,6 +1208,8 @@
   window.addEventListener('offline',()=>{refreshBackendCheck(); $('connectivity').textContent='Offline mode · progress saved locally';$('connectivity').hidden=false;});
   window.addEventListener('online',()=>{refreshBackendCheck(); $('connectivity').hidden=true;retryPendingDaily();refreshLeaderboard();});
   if(!navigator.onLine){$('connectivity').textContent='Offline mode · progress saved locally';$('connectivity').hidden=false;}
+  void recoverLevelMirror();
+  try{void navigator.storage?.persist?.().catch(()=>{});}catch(_){}
   expireLocalSubmissions();
   updateHome();
   retryPendingDaily();
