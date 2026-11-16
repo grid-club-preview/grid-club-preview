@@ -22,6 +22,13 @@
     .eyebrow { font-size:11px; font-weight:800; letter-spacing:2.5px; color:var(--mint); }
     header { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:26px; }
     h1 { font-size:clamp(26px,7vw,36px); font-weight:800; letter-spacing:-1.5px; line-height:1.08; margin:9px 0 0; }
+    .homeBrand {display:flex; flex-direction:column; align-items:center; gap:5px; flex:none;}
+    .homeVersion {font-size:11px; font-weight:800; color:var(--mint); letter-spacing:.3px; white-space:nowrap;}
+    .backendCheck {background:var(--surface); border:1px solid #344157; border-radius:16px; padding:12px 14px; margin:-4px 0 19px;}
+    .backendCheckTitle {font-size:12px; font-weight:800; margin-bottom:7px;}
+    .backendCheck p {color:var(--muted); font-size:12px; line-height:1.5; margin:0 0 10px; overflow-wrap:anywhere;}
+    .backendCheck button {background:#2b4752;color:var(--mint);font-size:12px;padding:10px 14px;border-radius:10px;font-weight:800;}
+    .backendCheck button:disabled {opacity:.55;}
     .mark { width:52px; height:52px; border-radius:17px; background:var(--surface); display:grid;place-items:center; font-size:30px; }
     .panel { background:var(--surface); border-radius:24px; padding:20px; margin-bottom:20px; border:1px solid rgba(255,255,255,.035); }
     .hero { padding:22px; }
@@ -103,12 +110,17 @@
 <body>
   <main class="shell">
     <section id="home">
-      <header><div><div class="eyebrow">GRID CLUB</div><h1>A little puzzle break.</h1></div><div class="mark">✦</div></header>
+      <header><div><div class="eyebrow">GRID CLUB</div><h1>A little puzzle break.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.4b.1</span></div></header>
       <div class="panel hero">
         <div class="eyebrow">◷ &nbsp; TODAY'S CHALLENGE <span id="solvedTag" style="float:right" hidden>✓ SOLVED</span></div>
         <h2>Dot Trails</h2>
         <p>Connect matching dots. Fill the entire grid without crossing paths. Today’s puzzle is 11×11.</p>
         <button class="primary" id="dailyStart"><span id="dailyStartText">Play today's puzzle</span><span>→</span></button>
+      </div>
+      <div class="backendCheck" aria-label="Leaderboard connection diagnostics">
+        <div class="backendCheckTitle">Community leaderboard · beta connection check</div>
+        <p id="backendCheckMessage" role="status" aria-live="polite">Checking configuration…</p>
+        <button id="testBackend" type="button">Test connection</button>
       </div>
       <div class="eyebrow" style="color:var(--muted);margin:5px 0 12px">THE GAMES</div>
       <button class="tileButton" id="freeStart"><span class="tileIcon">🟣</span><span><strong id="freeStartText">Dot Trails</strong><small>Connect the dots · four difficulty levels</small></span><span style="margin-left:auto">›</span></button>
@@ -152,7 +164,7 @@
       </div>
       
       <div class="adSlot" id="adSlot" aria-hidden="true"><small>Reserved for possible future advertising · no adverts in this version</small></div>
-      <footer>Grid Club · v0.4b beta</footer>
+      <footer>Grid Club · v0.4b.1 beta</footer>
     </section>
   </main>
   <div class="pauseLayer" id="pauseLayer" hidden role="dialog" aria-modal="true" aria-labelledby="pauseTitle">
@@ -165,10 +177,10 @@
     </div>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" defer></script>
-  <script src="backend-config.js?v=0.4b"></script>
-  <script src="ranked.js?v=0.4b"></script>
-  <script src="puzzle.js?v=0.4b"></script>
-  <script src="game.js?v=0.4b"></script>
+  <script src="backend-config.js?v=0.4b.1"></script>
+  <script src="ranked.js?v=0.4b.1"></script>
+  <script src="puzzle.js?v=0.4b.1"></script>
+  <script src="game.js?v=0.4b.1"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol === 'https:') {
       addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));

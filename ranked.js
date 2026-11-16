@@ -24,7 +24,15 @@
   async function call(action,payload={}){
     const sb=await auth();
     const {data,error}=await sb.functions.invoke('daily-api',{body:{action,...payload}});
-    if(error)throw error;
+    if(error){
+      let detail='';
+      try {
+        const body=await error.context?.clone?.().json?.();
+        detail=body?.error||body?.message||'';
+      } catch (_) { /* response may not be JSON */ }
+      const code=error.context?.status;
+      throw new Error(`${code?'HTTP '+code+' · ':''}${detail||error.message||'Function request failed'}`);
+    }
     if(!data?.ok)throw new Error(data?.error||'Leaderboard request failed');
     return data;
   }

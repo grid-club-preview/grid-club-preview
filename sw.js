@@ -1,12 +1,12 @@
-const CACHE = 'gridclub-pwa-v0.4b';
+const CACHE = 'gridclub-pwa-v0.4b.1';
 const APP_FILES = [
   './',
   './index.html',
-  './puzzle.js?v=0.4a.4',
-  './game.js?v=0.4a.4',
+  './puzzle.js?v=0.4b.1',
+  './game.js?v=0.4b.1',
   './manifest.webmanifest',
-  './backend-config.js?v=0.4b',
-  './ranked.js?v=0.4b',
+  './backend-config.js?v=0.4b.1',
+  './ranked.js?v=0.4b.1',
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/apple-touch-icon.png'

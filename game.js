@@ -1,4 +1,4 @@
-/* Grid Club · Dot Trails v0.4b beta · random play + ranked daily prototype */
+/* Grid Club · Dot Trails v0.4b.1 beta · random play + ranked daily prototype */
 (() => {
   'use strict';
   const core = GridCore;
@@ -517,6 +517,34 @@
   canvas.addEventListener('pointerup',release);
   canvas.addEventListener('pointercancel',release);
   canvas.addEventListener('lostpointercapture',release);
+  // A Home-screen connection test can run even if today's daily has already
+  // been solved locally, avoiding false "not invoked" impressions.
+  const backendCheckMessage = $('backendCheckMessage');
+  const testBackendButton = $('testBackend');
+  function refreshBackendCheck() {
+    if(!window.GridRanked?.configured){
+      backendCheckMessage.textContent='Leaderboard not configured: check backend-config.js (public project URL and publishable key).';
+      return;
+    }
+    if(!navigator.onLine){
+      backendCheckMessage.textContent='You appear to be offline. Reconnect before checking the leaderboard.';
+      return;
+    }
+    backendCheckMessage.textContent='Configuration loaded. Tap Test connection to check authentication, Edge Function and database.';
+  }
+  testBackendButton.onclick=async()=>{
+    if(!window.GridRanked?.configured || !navigator.onLine){refreshBackendCheck();return;}
+    testBackendButton.disabled=true;
+    backendCheckMessage.textContent='Connecting to Supabase…';
+    try {
+      const res=await window.GridRanked.call('stats',{day:today()});
+      backendCheckMessage.textContent=`Connected to daily-api. Verified community results today: ${Number(res.total||0)}. ${res.total?'':'No completed ranked attempts yet.'}`;
+    } catch(e) {
+      backendCheckMessage.textContent='Connection failed: '+String(e?.message||e).slice(0,240);
+      console.warn('Grid Club leaderboard connection test:',e);
+    } finally { testBackendButton.disabled=false; }
+  };
+  refreshBackendCheck();
   $('dailyStart').onclick=()=>start('daily');
   $('freeStart').onclick=showDifficultyScreen;
   $('chooseBack').onclick=returnHome;
@@ -559,8 +587,8 @@
   window.addEventListener('pageshow',onForeground);
   window.addEventListener('focus', () => { if (!document.hidden) onForeground(); });
   window.addEventListener('resize',resize);
-  window.addEventListener('offline',()=>{$('connectivity').textContent='Offline mode · progress saved locally';$('connectivity').hidden=false;});
-  window.addEventListener('online',()=>{ $('connectivity').hidden=true; if(mode==='daily' && game?.finishedAt){ const r=readStats().games.dotTrails.daily[today()]; if(r)submitRankedResult(r); } });
+  window.addEventListener('offline',()=>{refreshBackendCheck(); $('connectivity').textContent='Offline mode · progress saved locally';$('connectivity').hidden=false;});
+  window.addEventListener('online',()=>{refreshBackendCheck(); $('connectivity').hidden=true; if(mode==='daily' && game?.finishedAt){ const r=readStats().games.dotTrails.daily[today()]; if(r)submitRankedResult(r); } });
   if(!navigator.onLine){$('connectivity').textContent='Offline mode · progress saved locally';$('connectivity').hidden=false;}
   updateHome();
   setInterval(()=>{
