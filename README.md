@@ -1,41 +1,34 @@
-# Grid Club · v0.4a.4
+# Grid Club v0.4b beta — Dot Trails
 
-**Dot Trails mobile web app · navigation / accessibility bug-fix release**
+Focus: **Daily Challenge + Play Random**. Numbered levels and time-trial medals deliberately postponed.
 
-This is a replacement for v0.4a.2 and the unshipped v0.4a.3 development patch. It continues to run on GitHub Pages and can be installed on an iPhone Home Screen. It is not yet an App Store app.
+## New in this candidate
 
-## What changed in v0.4a.4
+- Play Random with Easy/Medium/Hard/Expert (5×5 / 7×7 / 9×9 / 11×11).
+- Daily Challenge remains 11×11, fixed per UTC day.
+- An optional Supabase-backed anonymous daily leaderboard foundation. Assisted and Unassisted groups with average/median times and faster/fewer-moves comparison. Usernames not required.
+- Server replays submitted move logs using the same deterministic puzzle generator. Server-timed attempts; one attempt per anonymous identity and day; improbable <20 second results queued for review.
+- Offline achievements preserved locally, but offline attempts may be ineligible for rankings.
+- Daily completion offers Try Free Play **and** Return to Grid Club.
+- Shorter Start / Continue labels, additional top safe-area spacing, grid controls placed directly beneath the grid, incomplete-grid warning dismisses on the next grid press.
+- Existing PWA pause, partial hints, saved progress, and optional numbered dot labels preserved.
+- No live advertising, Club Credits, username form, payment flows or numbered levels.
 
-- **New screen flow:** Grid Club Home → Dot Trails → choose Easy (5×5), Medium (7×7), Hard (9×9), or Expert (11×11) → Free Play. The difficulty buttons are **no longer inside the puzzle**. Daily Challenge remains accessible directly from Home and remains 11×11.
-- **Back navigation:** Back during Free Play goes to the difficulty picker; Back there goes Home. Back during the Daily Challenge goes Home. None of these actions opens Pause or a confirmation. Unfinished puzzles are saved silently, separately for each size.
-- **Explicit Pause only:** Pressing the Pause button hides the whole puzzle and stops the timer. **Continue** resumes; **Return to Grid Club** actually returns Home. Switching apps or tabs silently freezes and resumes the timer without creating a Pause screen. If the user manually paused, that state stays paused until **Continue** is pressed.
-- **Accessibility numbers:** A small **123** button directly **below the grid** toggles number labels on matching dots. Numbers default to OFF, and the preference is remembered for the current website/app storage area. Labels also work with 10+ pairs. The toggle does not affect moves, ranking status, or elapsed time.
-- **Caching:** Versioned script URLs and a new service-worker cache name reduce the chance of the old v0.4a.2 code continuing to run after an update.
+## Running it
 
-## Existing game features retained
+Publish the static files to the existing GitHub Pages repo. Read **SETUP_BACKEND_WINDOWS.md** for the optional backend deployment, which requires your own Supabase project.
 
-- Free Play 5×5 / 7×7 / 9×9 / 11×11, fixed 11×11 Daily Challenge, seeded solvable puzzles with variable pair counts.
-- Draw paths in multiple finger/mouse gestures by lifting and resuming from a loose endpoint.
-- Partial hints, undo, reset, and New Puzzle (in Free Play); the exact incomplete-grid warning.
-- Local saving of unfinished puzzles and completed achievements; no backend or live rankings yet.
-- Completion phrases, Assisted/Unassisted flags, and placeholder banner-ad space. No real advertising or purchased credits.
+The default `backend-config.js` is intentionally blank, so the game runs locally and no online leaderboard is connected by accident.
 
-## Existing save data
+## Automated checks
 
-This release preserves `gridclub-progress-v04a`, `gridclub-stats-v1`, `gridclub-dottrails-show-numbers`, and the existing Daily Challenge puzzle seed. Do not delete your browser data merely to refresh the game: that could erase saved progress and achievements. Safari, Chrome, and an installed Home Screen web app may use separate storage.
+Run from the unzipped project folder:
 
-## Tests
-
-From this folder with Node.js 20+:
-
-```shell
+```sh
 node tests/engine.test.js
-node tests/v04a.test.js
 node tests/navigation.test.js
+node tests/v04a.test.js
+node tests/server-replay.test.js
 ```
 
-Tests cover 400 seeded boards, solution validity, save/pause/restart integrity, new menu navigation, silent backgrounding, explicit pause, and drawing of the optional numeric labels. A Chromium mobile-viewport smoke test also exercised the chooser, game, pause/continue, number toggle and Back without JavaScript errors. **The actual installed iPhone Home Screen app still needs to be checked by the user.**
-
-## Deliberately not yet implemented
-
-Online leaderboards, verified results, automatic uploading of offline attempts, shared Club Credits, countdown Daily Challenges, Block Slide and advertising. The game can store a local achievement while offline but cannot yet upload it.
+These do **not** establish that the production backend or a specific iPhone build works. Test both after deployment.
