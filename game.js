@@ -1,4 +1,4 @@
-/* Grid Club · Dot Trails v0.4b.2 beta · random play + ranked daily prototype */
+/* Grid Club · Dot Trails v0.4b.3 UX · random play + ranked daily prototype */
 (() => {
   'use strict';
   const core = GridCore;
@@ -132,7 +132,7 @@
   }
   function updateHome() {
     $('solvedTag').hidden = !dailySolved();
-    $('dailyStartText').textContent = dailySolved() ? 'View today’s result' :
+    $('dailyStartText').textContent = dailySolved() ? 'View today’s stats' :
       savedGame('daily',11) ? 'Continue today’s puzzle' : 'Play today’s puzzle';
     const freeSaved = core.SIZES.some(n => {
       const s = savedGame('free',n);
@@ -182,6 +182,9 @@
     $('boardTitle').textContent = mode === 'daily' ? 'Daily Dot Trails' : `Dot Trails · ${label()}`;
     $('next').textContent = mode === 'daily' ? 'Try Free Play' : 'Next puzzle';
     $('returnWinHome').hidden = mode !== 'daily';
+    $('winDifficultyActions').hidden = mode === 'daily';
+    $('winEasier').disabled = size === 5;
+    $('winHarder').disabled = size === 11;
     $('rankingBox').hidden=true;
     $('new').hidden = mode === 'daily';
     syncPauseLayer();
@@ -196,8 +199,11 @@
     $('difficultyScreen').hidden = page !== 'choose';
     $('gameScreen').hidden = page !== 'game';
     $('statsScreen').hidden = page !== 'stats';
-    // Navigation never creates or retains a Pause overlay.
-    if (page !== 'game') { explicitPause = false; backgroundSuspended = false;rankStartGeneration++;gateRanked(false); }
+    // Leaving a result permanently closes its overlay. Stats never navigates back to it.
+    if (page !== 'game') {
+      $('win').classList.remove('show');
+      explicitPause = false; backgroundSuspended = false;rankStartGeneration++;gateRanked(false);
+    }
     syncPauseLayer();
   }
   function updateDifficultyMenu() {
@@ -210,7 +216,8 @@
     });
   }
   function showStatsScreen(){
-    if(!$('gameScreen').hidden)suspendSilently();
+    // Moving on from a completed result is final; the results panel is not reopened.
+    if(!$('gameScreen').hidden && !game?.finishedAt)suspendSilently();
     showPage('stats');
     renderStatsPage();
     refreshLeaderboard();
@@ -266,7 +273,9 @@
     updateDifficultyMenu();
   }
   function start(nextMode, chosenSize) {
-    if (!$('gameScreen').hidden) suspendSilently();
+    if (!$('gameScreen').hidden && !game?.finishedAt) suspendSilently();
+    // Previously completed Daily Challenges lead to stats, not an old result screen.
+    if(nextMode==='daily' && dailySolved()) { showStatsScreen(); return; }
     mode = nextMode;
     if(mode==='daily')dailyStartDay=today();
     size = mode === 'daily' ? 11 : (core.SIZES.includes(chosenSize) ? chosenSize : loadDifficulty());
@@ -274,9 +283,8 @@
     explicitPause = false; backgroundSuspended = false;
     showPage('game');
     const saved = savedGame(mode,size);
-    // Re-enter a completed daily to review its result; Free Play should start
-    // a fresh board instead of reopening a completed board's victory screen.
-    const selected = saved && (mode === 'daily' || !saved.finishedAt) ? saved : freshGame();
+    // A completed board is never reopened after the player leaves its results.
+    const selected = saved && !saved.finishedAt ? saved : freshGame();
     setGame(selected);
   }
   function newGame(requested=size) {
@@ -422,24 +430,10 @@
       .catch(e=>console.warn('Ranked finish freeze could not reach server; retry will be attempted',e));
   }
   function dailyRecord(){return readStats().games.dotTrails.daily[today()]||null;}
-  function renderWinCommunity(result){
-    const box=$('rankingBox');box.hidden=false;box.replaceChildren();
-    const total=Number(lastCommunity?.total||0);
-    const head=document.createElement('strong');head.textContent=total===1?'Today\'s verified results · 1 player':`Today\'s verified results · ${total} players`;
-    box.append(head);
-    if(!total){box.append(document.createTextNode('No verified community results yet. Be among the first!'));return;}
-    if(result?.verified&&result.date===today()&&total===1){
-      box.append(document.createTextNode('You are the first verified player today! Community comparisons will appear as more players finish.'));
-      return;
-    }
-    for(const [name,group,assisted] of [['Unassisted',lastCommunity.unassisted,false],['Assisted',lastCommunity.assisted,true]]){
-      const line=document.createElement('div');
-      const r=statsUtil.communityLines(group,assisted);
-      line.textContent=`${name}: ${r.summary}`;
-      box.append(line);
-      if(result?.verified&&result.assisted===assisted&&r.detail){const extra=document.createElement('div');extra.textContent=r.detail;box.append(extra);}
-    }
-  }
+  // Community comparisons are deliberately on the dedicated Stats page,
+  // not on the completion screen. Keep the legacy element hidden for safe
+  // upgrades from cached versions of the UI.
+  function renderWinCommunity(){ $('rankingBox').hidden=true; }
   async function refreshLeaderboard(result){
     if(!window.GridRanked?.configured||!navigator.onLine)return;
     try{
@@ -463,6 +457,7 @@
     Object.assign(result,{verified:!!reply.verified,sync:reply.verified?'verified':'review',
       serverElapsedMs:reply.elapsedMs,serverMoves:reply.moves});
     if(mode==='daily'&&!$('gameScreen').hidden&&game?.attemptId===result.attemptId){
+      $('resultStatus').hidden=false;
       $('resultStatus').textContent=reply.verified?'Verified! Your result is on the community leaderboard.':'Your result is saved and awaiting a fair-play review.';
       $('winMessage').textContent=`Daily Challenge · ${fmtSeconds(reply.elapsedMs)} ranked time · ${reply.moves} moves`;
     }
@@ -517,17 +512,30 @@
     await retryPendingDaily();
   }
   function showWin(result) {
-    $('winTitle').textContent=result.headline||'Nice one.';
+    const title=$('winTitle');
+    title.textContent=result.headline||'Nice one.';
+    // Replay the entrance animation for each new completion.
+    title.classList.remove('victoryAnimate');
+    void title.offsetWidth;
+    title.classList.add('victoryAnimate');
     $('winMessage').textContent=`${label()} · ${fmtSeconds(result.elapsedMs)} · ${result.moves} moves`;
-    $('winCategory').textContent=result.assisted?'Assisted completion · hint used':'Unassisted completion';
-    if (!storageAvailable || result.saveFailed) {
-      $('resultStatus').textContent='Your browser could not save this result. Please keep this page open.';
-    } else if (!navigator.onLine) {
-      $('resultStatus').textContent="You're offline, but your achievement is saved. We'll try and get this result on the leaderboard once you're online.";
-    } else {
-      $('resultStatus').textContent='Achievement saved on this device.';
+    $('rankingBox').hidden = true;
+    $('winDifficultyActions').hidden = mode === 'daily';
+    $('winEasier').disabled = size === 5;
+    $('winHarder').disabled = size === 11;
+    const failed=!storageAvailable||result.saveFailed;
+    $('resultStatsLink').hidden=failed;
+    $('resultStatsLink').firstChild.textContent=mode==='daily'?'View your stats ':'Result added to your stats ';
+    const status=$('resultStatus');
+    status.hidden=false;
+    if(failed){
+      status.textContent='Your browser could not save this result. Please keep this page open.';
+    }else if(mode==='daily'){
+      status.textContent=navigator.onLine?'Checking your ranked result…':"You're offline, but your achievement is saved. We'll try to submit it while today's challenge is active.";
+    }else{
+      status.textContent='';
+      status.hidden=true;
     }
-    $('futureNotice').textContent='Only online, server-timed, validated daily attempts can join the verified leaderboard. Results are anonymous.';
     $('win').classList.add('show');
     if(mode==='daily')submitRankedResult(result);
   }
@@ -701,7 +709,7 @@
   refreshBackendCheck();
   $('dailyStart').onclick=()=>start('daily');
   $('viewStats').onclick=showStatsScreen;
-  $('statsBack').onclick=returnHome;
+  $('statsBack').onclick=showDifficultyScreen;
   $('refreshCommunity').onclick=()=>refreshLeaderboard();
   $('freeStart').onclick=showDifficultyScreen;
   $('chooseBack').onclick=returnHome;
@@ -731,6 +739,11 @@
   $('reset').onclick=()=>{if(!game||game.paused)return;clearHint();core.reset(game);logRank('reset');update();};
   $('new').onclick=()=>{if(game && !game.finishedAt && core.filled(game)>0 && !confirm('Start a fresh puzzle? Your current unfinished puzzle will be replaced.'))return;newGame();};
   $('next').onclick=()=>mode==='daily'?showDifficultyScreen():newGame();
+  $('resultStatsLink').onclick=showStatsScreen;
+  // Easier/Harder choose adjacent difficulties and preserve any unfinished
+  // puzzle already saved at the destination size.
+  $('winEasier').onclick=()=>{ if(mode==='free' && size>5) start('free',size-2); };
+  $('winHarder').onclick=()=>{ if(mode==='free' && size<11) start('free',size+2); };
   $('returnWinHome').onclick=returnHome;
   document.querySelectorAll('[data-size]').forEach(button=>button.onclick=()=>start('free',Number(button.dataset.size)));
   $('share').onclick=async()=>{

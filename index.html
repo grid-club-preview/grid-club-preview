@@ -121,6 +121,25 @@
     .winInner p { margin:0 0 17px;color:var(--muted);font-size:14px; }
     .winInner button { width:100%;padding:13px;border-radius:12px;background:var(--mint);color:var(--bg);font-weight:800; }
     .winInner button.secondary {background:transparent;color:white;margin-top:7px;}
+
+    /* Dot Trails owns its daily challenge and its statistics. Home remains a game hub. */
+    .dotDailyCard {margin-bottom:23px;}
+    .dotDailyCard p{margin-top:12px;}
+    .dotSectionLabel{color:var(--muted);margin:4px 0 12px;}
+    .dotStatsLink{margin:18px 0 14px;}
+    /* Short, celebratory headline entrance without changing the chosen phrase. */
+    .victoryStar{font-size:36px;color:var(--mint);display:inline-block;}
+    .win.show .victoryStar{animation:starPop .65s cubic-bezier(.2,1.6,.4,1) both;}
+    #winTitle.victoryAnimate{animation:headlineIn .58s cubic-bezier(.18,.88,.32,1.25) .14s both;}
+    #winTitle.victoryAnimate::after{content:"";display:block;width:42%;height:3px;margin:12px auto 0;border-radius:9px;background:var(--mint);transform-origin:left;animation:traceLine .68s ease .46s both;}
+    @keyframes starPop{from{opacity:0;transform:scale(.38) rotate(-35deg);}to{opacity:1;transform:scale(1) rotate(0deg);}}
+    @keyframes headlineIn{from{opacity:0;transform:translateY(20px) scale(.96);}to{opacity:1;transform:translateY(0) scale(1);}}
+    @keyframes traceLine{from{transform:scaleX(0);opacity:0;}to{transform:scaleX(1);opacity:1;}}
+    .winInner .winStatsLink{background:#24434a;color:var(--mint);font-size:13px;font-weight:750;margin:4px 0 15px;padding:13px 12px;display:flex;align-items:center;justify-content:space-between;gap:6px;text-align:left;}
+    .winDifficultyActions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:9px;}
+    .winInner .difficultyShift{background:#2b3a52;color:#edf3ff;font-size:14px;padding:13px 8px;}
+    .winInner .difficultyShift:disabled{opacity:.3;cursor:not-allowed;color:#c5cfdf;}
+    @media (prefers-reduced-motion: reduce){.win.show .victoryStar,#winTitle.victoryAnimate,#winTitle.victoryAnimate::after{animation:none;}}
     footer { text-align:center;color:var(--muted);font-size:12px;margin-top:20px;line-height:1.5; }
     [hidden] { display:none !important; }
     @media (min-width:600px) { .shell{padding-top:40px;} }
@@ -129,14 +148,7 @@
 <body>
   <main class="shell">
     <section id="home">
-      <header><div><div class="eyebrow">GRID CLUB</div><h1>A little puzzle break.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.4b.2</span></div></header>
-      <div class="panel hero">
-        <div class="eyebrow">◷ &nbsp; TODAY'S CHALLENGE <span id="solvedTag" style="float:right" hidden>✓ SOLVED</span></div>
-        <h2>Dot Trails</h2>
-        <p>Connect matching dots. Fill the entire grid without crossing paths. Today’s puzzle is 11×11.</p>
-        <button class="primary" id="dailyStart"><span id="dailyStartText">Play today's puzzle</span><span>→</span></button>
-      </div>
-      <button id="viewStats" class="statsLink">Your stats &amp; daily leaderboard <span>→</span></button>
+      <header><div><div class="eyebrow">GRID CLUB</div><h1>A little puzzle break.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.4b.3</span></div></header>
       <details class="backendCheck" aria-label="Leaderboard connection diagnostics">
         <summary class="backendCheckTitle">Connection diagnostics (beta)</summary>
         <p id="backendCheckMessage" role="status" aria-live="polite">Checking configuration…</p>
@@ -148,7 +160,7 @@
       <footer>No adverts. Daily rankings use anonymous player identifiers when enabled. Progress is saved on this device.</footer>
     </section>
     <section id="statsScreen" hidden>
-      <div class="statsHeader"><button class="back" id="statsBack" aria-label="Return to Grid Club">‹</button>
+      <div class="statsHeader"><button class="back" id="statsBack" aria-label="Back to Dot Trails">‹</button>
         <div><div class="eyebrow">GRID CLUB · DOT TRAILS</div><h2>Your statistics</h2></div></div>
       <p class="chooseIntro">Your averages are saved on this device. Community rankings are verified online and compare players on the same daily puzzle.</p>
       <div id="statsOverview" class="overviewRow" aria-label="Your performance overview"></div>
@@ -163,16 +175,22 @@
     </section>
     <section id="difficultyScreen" hidden>
       <div class="chooseHeader">
-        <button class="back" id="chooseBack" aria-label="Back to Grid Club home">‹</button>
-        <div><div class="eyebrow">GRID CLUB · DOT TRAILS</div><h2>Play Random</h2></div>
+        <button class="back" id="chooseBack" aria-label="Back to Grid Club games">‹</button>
+        <div><div class="eyebrow">GRID CLUB · DOT TRAILS</div><h2>Dot Trails</h2></div>
       </div>
-      <p class="chooseIntro">Play Random: choose a difficulty to start or continue an unlimited puzzle.</p>
+      <div class="panel hero dotDailyCard">
+        <div class="eyebrow">◷ &nbsp; TODAY'S CHALLENGE <span id="solvedTag" style="float:right" hidden>✓ SOLVED</span></div>
+        <p>Connect matching dots and fill the entire 11×11 grid.</p>
+        <button class="primary" id="dailyStart"><span id="dailyStartText">Play today's puzzle</span><span>→</span></button>
+      </div>
+      <div class="eyebrow dotSectionLabel">PLAY RANDOM · CHOOSE A DIFFICULTY</div>
       <div class="levelList" id="levelList" aria-label="Free Play difficulties">
         <button class="levelChoice" data-size="5"><span><strong>Easy</strong><small>5×5 squares</small></span><span class="levelAction">Start →</span></button>
         <button class="levelChoice" data-size="7"><span><strong>Medium</strong><small>7×7 squares</small></span><span class="levelAction">Start →</span></button>
         <button class="levelChoice" data-size="9"><span><strong>Hard</strong><small>9×9 squares</small></span><span class="levelAction">Start →</span></button>
         <button class="levelChoice" data-size="11"><span><strong>Expert</strong><small>11×11 squares</small></span><span class="levelAction">Start →</span></button>
       </div>
+      <button id="viewStats" class="statsLink dotStatsLink">Your stats &amp; daily leaderboard <span>→</span></button>
       <footer>Each difficulty keeps its own unfinished puzzle.</footer>
     </section>
     <section id="gameScreen" hidden>
@@ -187,7 +205,18 @@
         <div class="boardHeader"><strong id="boardTitle">Dot Trails</strong><small id="cells">0/25 squares</small></div>
         <div class="progress"><div id="progress"></div></div>
         <div class="boardWrap"><div id="rankGate" class="rankGate" hidden role="status" aria-live="polite">Preparing today's verified timer…</div><canvas id="board" role="img" aria-label="Interactive Dot Trails puzzle board"></canvas>
-          <div class="win" id="win"><div class="winInner"><div style="font-size:36px;color:var(--mint)">✦</div><h3 id="winTitle">Nice one.</h3><p id="winMessage">All squares filled.</p><div class="winCategory" id="winCategory"></div><div id="rankingBox" class="rankingBox" hidden></div><div class="resultStatus" id="resultStatus"></div><div class="futureNotice" id="futureNotice"></div><button id="next">Next puzzle</button><button class="secondary" id="returnWinHome" hidden>Return to Grid Club</button><button class="secondary" id="share">↗ Share result</button></div></div>
+          <div class="win" id="win" role="dialog" aria-modal="true" aria-labelledby="winTitle"><div class="winInner">
+            <div class="victoryStar" aria-hidden="true">✦</div><h3 id="winTitle">Nice one.</h3><p id="winMessage">All squares filled.</p>
+            <div id="rankingBox" class="rankingBox" hidden></div>
+            <div class="resultStatus" id="resultStatus" hidden aria-live="polite"></div>
+            <button type="button" id="resultStatsLink" class="winStatsLink">Result added to your stats <span aria-hidden="true">→</span></button>
+            <button id="next">Next puzzle</button>
+            <div class="winDifficultyActions" id="winDifficultyActions">
+              <button type="button" id="winEasier" class="difficultyShift">← Easier</button>
+              <button type="button" id="winHarder" class="difficultyShift">Harder →</button>
+            </div>
+            <button class="secondary" id="returnWinHome" hidden>Return to Grid Club</button><button class="secondary" id="share">↗ Share result</button>
+          </div></div>
         </div>
         <div class="accessibilityBar"><button class="numberToggle" type="button" id="numberToggle" aria-pressed="false" aria-label="Show numbers on coloured dots" title="Increase accessibility: show numbers on matching dot pairs">123</button></div>
         <div class="controls"><button id="undo"><span>↶</span>Undo</button><button id="hint"><span>✧</span>Hint</button><button id="reset"><span>⟲</span>Reset</button><button id="new"><span>❖</span>New</button></div>
@@ -198,7 +227,7 @@
       </div>
       
       <div class="adSlot" id="adSlot" aria-hidden="true"><small>Reserved for possible future advertising · no adverts in this version</small></div>
-      <footer>Grid Club · v0.4b.2 beta</footer>
+      <footer>Grid Club · v0.4b.3 beta</footer>
     </section>
   </main>
   <div class="pauseLayer" id="pauseLayer" hidden role="dialog" aria-modal="true" aria-labelledby="pauseTitle">
@@ -211,11 +240,11 @@
     </div>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" defer></script>
-  <script src="backend-config.js?v=0.4b.2"></script>
-  <script src="ranked.js?v=0.4b.2"></script>
-  <script src="stats-utils.js?v=0.4b.2"></script>
-  <script src="puzzle.js?v=0.4b.2"></script>
-  <script src="game.js?v=0.4b.2"></script>
+  <script src="backend-config.js?v=0.4b.3"></script>
+  <script src="ranked.js?v=0.4b.3"></script>
+  <script src="stats-utils.js?v=0.4b.3"></script>
+  <script src="puzzle.js?v=0.4b.3"></script>
+  <script src="game.js?v=0.4b.3"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol === 'https:') {
       addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));

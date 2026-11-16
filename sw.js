@@ -1,5 +1,5 @@
-/* Grid Club v0.4b.2 · updated cache key + stats module */
-const CACHE='gridclub-pwa-v0.4b.2';
+/* Grid Club v0.4b.3 · updated cache key + stats module */
+const CACHE='gridclub-pwa-v0.4b.3';
 const APP_FILES=[
   './','./index.html',
   './puzzle.js?v=0.4b.2',
