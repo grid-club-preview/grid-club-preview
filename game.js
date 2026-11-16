@@ -1,4 +1,4 @@
-/* Grid Club · Dot Trails v0.5.2 level progression · random play + ranked daily prototype */
+/* Grid Club · Dot Trails v0.5.3 level progression · random play + ranked daily prototype */
 (() => {
   'use strict';
   const core = GridCore;
@@ -818,15 +818,22 @@
       $('next').textContent=levelId===75?'All levels complete →':'Level up →';
     }
     $('levelReward').hidden=mode!=='level';
+    $('levelRewardBalance').hidden=true;
     if(mode==='level'){
+      const message=$('levelRewardMessage');
+      const balance=$('levelRewardBalance');
       if(levelReward?.saveFailed){
-        $('levelReward').textContent='Your level reward could not be saved. Keep this app open and export a backup of any existing progress.';
-      }else if(!levelReward?.first){
-        $('levelReward').textContent='Puzzle replayed. No further credits are awarded.';
-      }else if(levelReward.earned){
-        $('levelReward').textContent=`+${levelReward.earned} credits for your first attempt${levelReward.stageBonus&&!newLevelUp?` · +${levelReward.stageBonus} level bonus`:''} · Balance: ${walletBalance()} ◉`;
+        message.textContent='Your level reward could not be saved. Keep this app open and export a backup of any existing progress.';
       }else{
-        $('levelReward').textContent=`Puzzle complete. No puzzle credits after a retry${levelReward.stageBonus&&!newLevelUp?` · +${levelReward.stageBonus} level bonus`:''} · Balance: ${walletBalance()} ◉`;
+        if(!levelReward?.first){
+          message.textContent='Puzzle replayed · no further credits.';
+        }else if(levelReward.earned){
+          message.textContent=`First-attempt reward: +${levelReward.earned} credits${levelReward.stageBonus&&!newLevelUp?` · Level bonus: +${levelReward.stageBonus} credits`:''}`;
+        }else{
+          message.textContent=`Puzzle complete · no credits after a retry${levelReward.stageBonus&&!newLevelUp?` · Level bonus: +${levelReward.stageBonus} credits`:''}`;
+        }
+        balance.textContent=`Balance: ${walletBalance()} ◉`;
+        balance.hidden=false;
       }
     }
     $('winDifficultyActions').hidden = mode !== 'free';

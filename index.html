@@ -110,6 +110,11 @@
     .levelProgressLine{display:flex;align-items:center;justify-content:space-between;color:#badddc;font-size:12px;margin:-6px 0 13px;}
     .levelProgressLine strong{color:var(--mint);font-size:15px;}
     .levelReward{background:#2a4149;color:#d8fff5;padding:12px;border-radius:12px;font-weight:750;font-size:13px;line-height:1.5;margin:6px 0 14px;}
+    .levelRewardMessage{font-size:13px;line-height:1.45;font-weight:800;}
+    .levelRewardBalance{font-size:12px;font-weight:650;color:#c7e4df;border-top:1px solid #ffffff29;padding-top:8px;margin-top:8px;white-space:nowrap;}
+    /* iOS long-press selection on the result dialogue should not reveal browser text actions. */
+    #win,#win *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}
+
     .boostButton{position:relative;}
     .controls button .boostCost{position:absolute;top:3px;right:5px;font-size:10px;line-height:1.2;color:var(--mint);font-weight:850;margin:0;}
     .controls button:disabled{opacity:.4;cursor:not-allowed;}
@@ -238,7 +243,7 @@
 <body>
   <main class="shell">
     <section id="home">
-      <header><div><div class="eyebrow">GRID CLUB</div><h1>A little puzzle break.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.5.2</span></div></header>
+      <header><div><div class="eyebrow">GRID CLUB</div><h1>A little puzzle break.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.5.3</span></div></header>
       <details class="backendCheck" aria-label="Leaderboard connection diagnostics">
         <summary class="backendCheckTitle">Connection diagnostics (beta)</summary>
         <p id="backendCheckMessage" role="status" aria-live="polite">Checking configuration…</p>
@@ -324,7 +329,7 @@
               <span id="levelUpMessage">Level complete · +5 bonus credits</span>
             </div>
             <div id="rankingBox" class="rankingBox" hidden></div>
-            <div id="levelReward" class="levelReward" hidden></div>
+            <div id="levelReward" class="levelReward" hidden><div id="levelRewardMessage" class="levelRewardMessage"></div><div id="levelRewardBalance" class="levelRewardBalance" hidden></div></div>
             <div class="resultStatus" id="resultStatus" hidden aria-live="polite"></div>
             <button type="button" id="resultStatsLink" class="winStatsLink">Result added to your stats <span aria-hidden="true">→</span></button>
             <button id="next">Next puzzle</button>
@@ -346,7 +351,7 @@
       </div>
       
       <div class="adSlot" id="adSlot" aria-hidden="true"><small>Reserved for possible future advertising · no adverts in this version</small></div>
-      <footer>Grid Club · v0.5.2 beta</footer>
+      <footer>Grid Club · v0.5.3 beta</footer>
     </section>
   </main>
   <div class="pauseLayer" id="timeUpLayer" hidden role="dialog" aria-modal="true" aria-labelledby="timeUpTitle"><div class="pauseInner"><div style="font-size:47px;color:var(--mint)">◷</div><h2 id="timeUpTitle">Time's up!</h2><p>Your progress is saved. Add 15 seconds to continue this attempt, or retry. Retrying forfeits this puzzle’s first-attempt credits, but you can still unlock the next puzzle.</p><button id="timeUpBoost" type="button">+15 seconds · 10 ◉</button><p id="timeUpBoostNote" class="timeUpBoostNote" role="status" aria-live="polite"></p><button id="timeUpRetry" class="secondary">Retry puzzle (forfeit puzzle credits)</button><button id="timeUpBack" class="secondary">Return to Levels</button></div></div>
@@ -360,12 +365,12 @@
     </div>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" defer></script>
-  <script src="backend-config.js?v=0.5.2"></script>
-  <script src="ranked.js?v=0.5.2"></script>
-  <script src="stats-utils.js?v=0.5.2"></script>
-  <script src="puzzle.js?v=0.5.2"></script>
-  <script src="levels.js?v=0.5.2"></script>
-  <script src="game.js?v=0.5.2"></script>
+  <script src="backend-config.js?v=0.5.3"></script>
+  <script src="ranked.js?v=0.5.3"></script>
+  <script src="stats-utils.js?v=0.5.3"></script>
+  <script src="puzzle.js?v=0.5.3"></script>
+  <script src="levels.js?v=0.5.3"></script>
+  <script src="game.js?v=0.5.3"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol === 'https:') {
       addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
