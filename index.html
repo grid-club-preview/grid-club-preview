@@ -91,7 +91,10 @@
     .progress > div { height:100%;width:0;background:var(--mint);transition:width .16s; }
     .rankGate {position:absolute;inset:0;z-index:5;display:flex;align-items:center;justify-content:center;background:#121b2ef2;text-align:center;padding:22px;border-radius:16px;color:var(--mint);font-size:14px;font-weight:800;}
     .boardWrap { position:relative; width:100%; aspect-ratio:1 / 1; }
-    canvas { display:block;width:100%;height:100%;touch-action:none;user-select:none;-webkit-user-select:none; border-radius:16px; }
+    /* Canvas and its surrounding controls should never become selectable text.
+       Prevent touch callouts/dragging in iOS Safari and desktop Chrome. */
+    .boardPanel,.boardWrap,.boardPanel .controls,.boardPanel button {user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;}
+    canvas { display:block;width:100%;height:100%;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none; border-radius:16px; }
     .boardCaption { text-align:center;font-size:12px;color:var(--muted);line-height:1.5;margin:12px 0 0; }
     .hintAlert { padding:10px 12px;margin:10px 0 0;background:#253b47;color:#c9faf2;border-radius:10px;font-size:12px;line-height:1.4; }
     .tinyAlert {margin:9px 0 0;padding:10px 12px;border-radius:10px;background:#4a2a2d;color:#ffcccf;font-size:12px;}
@@ -111,6 +114,10 @@
     .adSlot small {font-size:10px;}
     .boardAlert { padding:11px 13px;margin-top:12px;background:#453021;color:#ffdfb1;border:1px solid #8b5a30;border-radius:11px;font-weight:700;text-align:center;font-size:12px;line-height:1.4; }
     .boardPanel .controls { margin-top:12px; }
+    .playPrompt{background:#243d45;border:1px solid #3c736d;border-radius:12px;padding:12px;margin:11px 0 0;color:#e3f9f3;font-size:13px;line-height:1.45;}
+    .promptTop{display:flex;gap:9px;justify-content:space-between;align-items:flex-start;}
+    .promptDismiss{background:transparent;color:#bad3d6;padding:0 5px;font-size:22px;line-height:1;}
+    .promptAction{background:#345e61;color:#f2fffe;font-size:12px;font-weight:800;border-radius:10px;padding:9px 13px;margin-top:10px;}
     .controls { display:grid;grid-template-columns:repeat(4,1fr);gap:9px; }
     .controls button { background:var(--surface); border-radius:14px; padding:12px 2px; font-weight:700; font-size:12px; }
     .controls span { display:block;font-size:20px;margin-bottom:6px; }
@@ -148,7 +155,7 @@
 <body>
   <main class="shell">
     <section id="home">
-      <header><div><div class="eyebrow">GRID CLUB</div><h1>A little puzzle break.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.4b.3</span></div></header>
+      <header><div><div class="eyebrow">GRID CLUB</div><h1>A little puzzle break.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.4b.4</span></div></header>
       <details class="backendCheck" aria-label="Leaderboard connection diagnostics">
         <summary class="backendCheckTitle">Connection diagnostics (beta)</summary>
         <p id="backendCheckMessage" role="status" aria-live="polite">Checking configuration…</p>
@@ -185,13 +192,12 @@
       </div>
       <div class="eyebrow dotSectionLabel">PLAY RANDOM · CHOOSE A DIFFICULTY</div>
       <div class="levelList" id="levelList" aria-label="Free Play difficulties">
-        <button class="levelChoice" data-size="5"><span><strong>Easy</strong><small>5×5 squares</small></span><span class="levelAction">Start →</span></button>
+        <button class="levelChoice" data-size="5"><span><strong>Beginner</strong><small>5×5 squares</small></span><span class="levelAction">Start →</span></button>
         <button class="levelChoice" data-size="7"><span><strong>Medium</strong><small>7×7 squares</small></span><span class="levelAction">Start →</span></button>
         <button class="levelChoice" data-size="9"><span><strong>Hard</strong><small>9×9 squares</small></span><span class="levelAction">Start →</span></button>
         <button class="levelChoice" data-size="11"><span><strong>Expert</strong><small>11×11 squares</small></span><span class="levelAction">Start →</span></button>
       </div>
       <button id="viewStats" class="statsLink dotStatsLink">Your stats &amp; daily leaderboard <span>→</span></button>
-      <footer>Each difficulty keeps its own unfinished puzzle.</footer>
     </section>
     <section id="gameScreen" hidden>
       <div class="gamebar">
@@ -220,6 +226,7 @@
         </div>
         <div class="accessibilityBar"><button class="numberToggle" type="button" id="numberToggle" aria-pressed="false" aria-label="Show numbers on coloured dots" title="Increase accessibility: show numbers on matching dot pairs">123</button></div>
         <div class="controls"><button id="undo"><span>↶</span>Undo</button><button id="hint"><span>✧</span>Hint</button><button id="reset"><span>⟲</span>Reset</button><button id="new"><span>❖</span>New</button></div>
+        <aside id="playPrompt" class="playPrompt" hidden role="status" aria-live="polite"><div class="promptTop"><span id="playPromptMessage"></span><button type="button" id="playPromptDismiss" class="promptDismiss" aria-label="Dismiss suggestion">×</button></div><button type="button" id="playPromptAction" class="promptAction" hidden>Try Free Play →</button></aside>
         <p id="incomplete" class="boardAlert" role="status" aria-live="polite" hidden>Oof, nice work, but all squares need filling</p>
         <p id="hintStatus" class="hintAlert" role="status" aria-live="polite" hidden></p>
         <p id="saveWarning" class="tinyAlert" role="alert" hidden>Saving is unavailable in this browser. Progress may be lost when you leave.</p>
@@ -227,7 +234,7 @@
       </div>
       
       <div class="adSlot" id="adSlot" aria-hidden="true"><small>Reserved for possible future advertising · no adverts in this version</small></div>
-      <footer>Grid Club · v0.4b.3 beta</footer>
+      <footer>Grid Club · v0.4b.4 beta</footer>
     </section>
   </main>
   <div class="pauseLayer" id="pauseLayer" hidden role="dialog" aria-modal="true" aria-labelledby="pauseTitle">
@@ -240,11 +247,11 @@
     </div>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" defer></script>
-  <script src="backend-config.js?v=0.4b.3"></script>
-  <script src="ranked.js?v=0.4b.3"></script>
-  <script src="stats-utils.js?v=0.4b.3"></script>
-  <script src="puzzle.js?v=0.4b.3"></script>
-  <script src="game.js?v=0.4b.3"></script>
+  <script src="backend-config.js?v=0.4b.4"></script>
+  <script src="ranked.js?v=0.4b.4"></script>
+  <script src="stats-utils.js?v=0.4b.4"></script>
+  <script src="puzzle.js?v=0.4b.4"></script>
+  <script src="game.js?v=0.4b.4"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol === 'https:') {
       addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));

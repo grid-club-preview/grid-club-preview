@@ -1,7 +1,7 @@
 /* Grid Club v0.4b.2 · local-only Dot Trails player stats + safe leaderboard formatting */
 (function(root){
   'use strict';
-  const levels=[{size:5,name:'Easy'},{size:7,name:'Medium'},{size:9,name:'Hard'},{size:11,name:'Expert'}];
+  const levels=[{size:5,name:'Beginner'},{size:7,name:'Medium'},{size:9,name:'Hard'},{size:11,name:'Expert'}];
   const num=v=>Number.isFinite(Number(v))?Number(v):0;
   const fmt=ms=>{const n=Math.max(0,Math.floor(num(ms)/1000));return `${String(Math.floor(n/60)).padStart(2,'0')}:${String(n%60).padStart(2,'0')}`;};
   const average=arr=>arr.length?Math.round(arr.reduce((a,b)=>a+b,0)/arr.length):null;
@@ -32,7 +32,7 @@
     let detail='';
     if(Number.isFinite(Number(stats.fasterCount))&&stats.fasterCount!==undefined){
       const others=Math.max(1,count-1),beats=num(stats.beatCount);
-      detail=`Your verified time ${fmt(stats.yourTimeMs)} · Rank #${num(stats.fasterCount)+1} of ${count} (ties share a rank) · ${plural(stats.fasterCount,'player')} faster · ${plural(stats.fewerMovesCount,'player')} used fewer moves · faster than ${Math.round(beats/others*100)}% of other verified players`;
+      detail=`${plural(stats.fasterCount,'player')} faster · ${plural(stats.fewerMovesCount,'player')} used fewer moves · faster than ${Math.round(beats/others*100)}% of other verified players`;
     }
     return {label:cat,summary,detail};
   }

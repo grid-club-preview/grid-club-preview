@@ -1,4 +1,4 @@
-/* Grid Club · Dot Trails v0.4b.3 UX · random play + ranked daily prototype */
+/* Grid Club · Dot Trails v0.4b.4 reliability · random play + ranked daily prototype */
 (() => {
   'use strict';
   const core = GridCore;
@@ -6,11 +6,12 @@
   const $ = id => document.getElementById(id);
   const colours = ['#ff667a','#55c5ff','#ffd15b','#70e6a0','#bd91ff',
     '#ff9a55','#53e2e4','#f780d8','#a8d25c','#c7adff','#fcafc0','#b8ee85'];
-  const labels = {5:'Easy',7:'Medium',9:'Hard',11:'Expert'};
+  const labels = {5:'Beginner',7:'Medium',9:'Hard',11:'Expert'};
   const STATS_KEY = 'gridclub-stats-v1';
   const PROGRESS_KEY = 'gridclub-progress-v04a';
   const DIFFICULTY_KEY = 'gridclub-dottrails-size';
   const DOT_NUMBERS_KEY = 'gridclub-dottrails-show-numbers';
+  const PROMPTS_KEY = 'gridclub-dottrails-prompt-seen-v1';
   const RANK_TRACE_PREFIX = 'gridclub-ranked-events-v1:';
   let rankedAttempt=null, rankEligible=false, rankEvents=[], incompleteDismissed=false;
   let rankClockQueue=Promise.resolve();
@@ -49,6 +50,7 @@
   // The visible pause overlay is ONLY for explicit user presses of Pause.
   // Backgrounding, switching games and Back quietly suspend progress instead.
   let explicitPause = false, backgroundSuspended = false;
+  let promptSeen = {};
   let showDotNumbers = false;
   try { showDotNumbers = localStorage.getItem(DOT_NUMBERS_KEY) === 'true'; } catch (_) {}
   function updateDotNumbersButton() {
@@ -166,6 +168,8 @@
     explicitPause = false; backgroundSuspended = false;
     notified = false; activePointerId = null;lastCell = null;hintPreview=null;hintUntil=0;
     incompleteDismissed=false;
+    promptSeen=readJSON(PROMPTS_KEY,{});
+    $('playPrompt').hidden=true;
     rankedAttempt=null;rankEligible=false;rankEvents=[];
     gateRanked(false);
     if(mode==='daily'){
@@ -430,10 +434,25 @@
       .catch(e=>console.warn('Ranked finish freeze could not reach server; retry will be attempted',e));
   }
   function dailyRecord(){return readStats().games.dotTrails.daily[today()]||null;}
-  // Community comparisons are deliberately on the dedicated Stats page,
-  // not on the completion screen. Keep the legacy element hidden for safe
-  // upgrades from cached versions of the UI.
-  function renderWinCommunity(){ $('rankingBox').hidden=true; }
+  function renderWinCommunity(result){
+    const box=$('rankingBox');box.hidden=true;box.replaceChildren();
+    return; // Detailed rankings and assisted/unassisted labels belong on Your statistics.
+    const total=Number(lastCommunity?.total||0);
+    const head=document.createElement('strong');head.textContent=total===1?'Today\'s verified results · 1 player':`Today\'s verified results · ${total} players`;
+    box.append(head);
+    if(!total){box.append(document.createTextNode('No verified community results yet. Be among the first!'));return;}
+    if(result?.verified&&result.date===today()&&total===1){
+      box.append(document.createTextNode('You are the first verified player today! Community comparisons will appear as more players finish.'));
+      return;
+    }
+    for(const [name,group,assisted] of [['Unassisted',lastCommunity.unassisted,false],['Assisted',lastCommunity.assisted,true]]){
+      const line=document.createElement('div');
+      const r=statsUtil.communityLines(group,assisted);
+      line.textContent=`${name}: ${r.summary}`;
+      box.append(line);
+      if(result?.verified&&result.assisted===assisted&&r.detail){const extra=document.createElement('div');extra.textContent=r.detail;box.append(extra);}
+    }
+  }
   async function refreshLeaderboard(result){
     if(!window.GridRanked?.configured||!navigator.onLine)return;
     try{
@@ -519,7 +538,7 @@
     void title.offsetWidth;
     title.classList.add('victoryAnimate');
     $('winMessage').textContent=`${label()} · ${fmtSeconds(result.elapsedMs)} · ${result.moves} moves`;
-    $('rankingBox').hidden = true;
+    $('rankingBox').hidden = mode !== 'daily';
     $('winDifficultyActions').hidden = mode === 'daily';
     $('winEasier').disabled = size === 5;
     $('winHarder').disabled = size === 11;
@@ -539,6 +558,24 @@
     $('win').classList.add('show');
     if(mode==='daily')submitRankedResult(result);
   }
+  function refreshPlayPrompt(){
+    const el=$('playPrompt');
+    if(!game||game.finishedAt||game.paused||$('gameScreen').hidden||explicitPause){el.hidden=true;return;}
+    // Hints should be gentle, optional reminders, never modal or repeated.
+    const elapsedSeconds=Math.floor(core.elapsed(game)/1000);
+    const key=game.attemptId;
+    const dailyFive=mode==='daily'&&elapsedSeconds>=300&&!promptSeen[key+':5'];
+    const hintThree=(mode==='daily'||size>=9)&&elapsedSeconds>=180&&!game.hints&&!promptSeen[key+':3'];
+    if(!dailyFive&&!hintThree){ if(!el.dataset.kind)el.hidden=true;return; }
+    const kind=dailyFive?'5':'3';
+    if(el.dataset.kind===kind&&!el.hidden)return;
+    promptSeen[key+':'+kind]=true;
+    writeJSON(PROMPTS_KEY,promptSeen);
+    el.dataset.kind=kind;el.hidden=false;
+    $('playPromptMessage').textContent=kind==='5'?'Fancy a change? Try Free Play instead.':'You can use a hint, you know.';
+    $('playPromptAction').hidden=kind!=='5';
+  }
+  function hidePlayPrompt(){ $('playPrompt').hidden=true;$('playPrompt').dataset.kind=''; }
   function render() {
     if(!game)return;
     const matched=game.level.pairs.filter(p=>core.connected(game,p.id)).length;
@@ -560,6 +597,7 @@
       updateHome();persist();
     }
     draw();
+    refreshPlayPrompt();
   }
   function update() {persist();render();}
   function clearHint() {hintPreview=null;hintUntil=0;$('hintStatus').hidden=true;}
@@ -571,7 +609,7 @@
   function pauseGame() {
     if (!game || game.finishedAt || $('gameScreen').hidden) return;
     if (activePointerId !== null) release();
-    clearHint();
+    clearHint();hidePlayPrompt();
     if (!game.paused) core.pause(game);
     explicitPause = true;
     backgroundSuspended = false;
@@ -654,6 +692,7 @@
     }
   }
   canvas.addEventListener('pointerdown',event=>{
+    event.preventDefault();
     if(!game||game.finishedAt||game.paused||rankedGateActive||activePointerId!==null)return;
     const p=pointerCell(event);
     incompleteDismissed=true; $('incomplete').hidden=true;
@@ -665,6 +704,7 @@
     render();
   });
   canvas.addEventListener('pointermove',event=>{
+    if(activePointerId===event.pointerId)event.preventDefault();
     if(activePointerId!==event.pointerId||!game||!lastCell)return;
     const p=pointerCell(event);
     if(p&&!core.eq(p,lastCell)){advance(lastCell,p);lastCell=p;render();}
@@ -678,6 +718,14 @@
   canvas.addEventListener('pointerup',release);
   canvas.addEventListener('pointercancel',release);
   canvas.addEventListener('lostpointercapture',release);
+  // Release even if Safari/Chrome loses pointer capture or the gesture ends
+  // outside the canvas. A new touch can then always refocus the board.
+  window.addEventListener('pointerup',release);
+  window.addEventListener('pointercancel',release);
+  window.addEventListener('blur',()=>{if(activePointerId!==null)release();});
+  for(const ev of ['contextmenu','selectstart','dragstart']){
+    canvas.addEventListener(ev,e=>e.preventDefault());
+  }
   // A Home-screen connection test can run even if today's daily has already
   // been solved locally, avoiding false "not invoked" impressions.
   const backendCheckMessage = $('backendCheckMessage');
@@ -724,6 +772,8 @@
     if (side) draw(); else requestAnimationFrame(resize);
   };
   updateDotNumbersButton();
+  $('playPromptDismiss').onclick=hidePlayPrompt;
+  $('playPromptAction').onclick=()=>{hidePlayPrompt();showDifficultyScreen();};
   $('help').onclick=()=>alert('Connect matching dots without crossing lines and fill every square. Lift your finger to leave a partly drawn path, then continue from its loose end. Tap a coloured dot to clear its line. Use the 123 button below the board to label matching dot pairs if helpful. Hint shows a short section of one possible solution without drawing it. Pausing is free and hides the entire puzzle. Undo and Reset do not rewind the clock.');
   $('undo').onclick=()=>{if(game?.paused)return;clearHint();if(game?.undo.length){core.undo(game);logRank('undo');}update();};
   $('hint').onclick=()=>{
