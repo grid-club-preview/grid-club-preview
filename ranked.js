@@ -1,4 +1,4 @@
-/* Grid Club optional ranked daily challenge integration. Offline remains fully playable. */
+/* Grid Club v0.4b.2 optional ranked daily challenge integration. Offline remains fully playable. */
 (() => {
   'use strict';
   const cfg=window.GRIDCLUB_BACKEND||{};

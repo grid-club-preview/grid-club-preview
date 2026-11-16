@@ -24,6 +24,24 @@
     h1 { font-size:clamp(26px,7vw,36px); font-weight:800; letter-spacing:-1.5px; line-height:1.08; margin:9px 0 0; }
     .homeBrand {display:flex; flex-direction:column; align-items:center; gap:5px; flex:none;}
     .homeVersion {font-size:11px; font-weight:800; color:var(--mint); letter-spacing:.3px; white-space:nowrap;}
+    .statsLink {display:flex;align-items:center;justify-content:space-between;width:100%;margin:-6px 0 20px;padding:14px 17px;border-radius:14px;background:#22384a;border:1px solid #3a5c64;color:var(--mint);font-weight:800;text-align:left;}
+    #statsScreen{padding-top:22px;}
+    .statsHeader {display:flex;align-items:center;gap:13px;margin-bottom:18px;}
+    .statsHeader h2{font-size:27px;margin:5px 0 0;}
+    .statHeading{font-size:17px;font-weight:800;margin:22px 0 11px;}
+    .overviewRow{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
+    .overviewItem{background:var(--surface);border:1px solid #344157;border-radius:15px;padding:15px;}
+    .overviewItem small{display:block;color:var(--muted);font-size:12px;margin-bottom:8px;}
+    .overviewItem strong{display:block;font-size:22px;font-variant-numeric:tabular-nums;}
+    .difficultyStats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
+    .difficultyStat{background:var(--surface);border-radius:15px;padding:14px;border:1px solid #354258;}
+    .difficultyStat strong{display:block;font-size:16px;margin-bottom:7px;}
+    .difficultyStat small{display:block;color:var(--muted);font-size:12px;line-height:1.55;}
+    .communityCard{background:var(--surface);border-radius:15px;padding:15px;border:1px solid #394a60;margin:10px 0;}
+    .communityCard strong{display:block;color:var(--mint);margin-bottom:6px;}
+    .communityCard p{margin:5px 0;font-size:13px;color:#dae5ef;line-height:1.5;}
+    .communityCard small{display:block;margin-top:6px;color:var(--muted);font-size:12px;line-height:1.5;}
+    .secondaryAction{background:#2d4454;border-radius:12px;padding:11px 16px;color:var(--mint);font-size:13px;font-weight:800;}
     .backendCheck {background:var(--surface); border:1px solid #344157; border-radius:16px; padding:12px 14px; margin:-4px 0 19px;}
     .backendCheckTitle {font-size:12px; font-weight:800; margin-bottom:7px;}
     .backendCheck p {color:var(--muted); font-size:12px; line-height:1.5; margin:0 0 10px; overflow-wrap:anywhere;}
@@ -71,6 +89,7 @@
     .numberToggle:focus-visible {outline:2px solid var(--mint);outline-offset:3px;}
     .progress { height:5px;border-radius:7px;background:#334057;overflow:hidden;margin-bottom:13px; }
     .progress > div { height:100%;width:0;background:var(--mint);transition:width .16s; }
+    .rankGate {position:absolute;inset:0;z-index:5;display:flex;align-items:center;justify-content:center;background:#121b2ef2;text-align:center;padding:22px;border-radius:16px;color:var(--mint);font-size:14px;font-weight:800;}
     .boardWrap { position:relative; width:100%; aspect-ratio:1 / 1; }
     canvas { display:block;width:100%;height:100%;touch-action:none;user-select:none;-webkit-user-select:none; border-radius:16px; }
     .boardCaption { text-align:center;font-size:12px;color:var(--muted);line-height:1.5;margin:12px 0 0; }
@@ -110,22 +129,37 @@
 <body>
   <main class="shell">
     <section id="home">
-      <header><div><div class="eyebrow">GRID CLUB</div><h1>A little puzzle break.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.4b.1</span></div></header>
+      <header><div><div class="eyebrow">GRID CLUB</div><h1>A little puzzle break.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.4b.2</span></div></header>
       <div class="panel hero">
         <div class="eyebrow">◷ &nbsp; TODAY'S CHALLENGE <span id="solvedTag" style="float:right" hidden>✓ SOLVED</span></div>
         <h2>Dot Trails</h2>
         <p>Connect matching dots. Fill the entire grid without crossing paths. Today’s puzzle is 11×11.</p>
         <button class="primary" id="dailyStart"><span id="dailyStartText">Play today's puzzle</span><span>→</span></button>
       </div>
-      <div class="backendCheck" aria-label="Leaderboard connection diagnostics">
-        <div class="backendCheckTitle">Community leaderboard · beta connection check</div>
+      <button id="viewStats" class="statsLink">Your stats &amp; daily leaderboard <span>→</span></button>
+      <details class="backendCheck" aria-label="Leaderboard connection diagnostics">
+        <summary class="backendCheckTitle">Connection diagnostics (beta)</summary>
         <p id="backendCheckMessage" role="status" aria-live="polite">Checking configuration…</p>
         <button id="testBackend" type="button">Test connection</button>
-      </div>
+      </details>
       <div class="eyebrow" style="color:var(--muted);margin:5px 0 12px">THE GAMES</div>
       <button class="tileButton" id="freeStart"><span class="tileIcon">🟣</span><span><strong id="freeStartText">Dot Trails</strong><small>Connect the dots · four difficulty levels</small></span><span style="margin-left:auto">›</span></button>
       <div class="tileButton" style="opacity:.58"><span class="tileIcon">▧</span><span><strong>Block Slide</strong><small>Sliding-block puzzle · next release</small></span><span style="margin-left:auto;font-size:11px">SOON</span></div>
       <footer>No adverts. Daily rankings use anonymous player identifiers when enabled. Progress is saved on this device.</footer>
+    </section>
+    <section id="statsScreen" hidden>
+      <div class="statsHeader"><button class="back" id="statsBack" aria-label="Return to Grid Club">‹</button>
+        <div><div class="eyebrow">GRID CLUB · DOT TRAILS</div><h2>Your statistics</h2></div></div>
+      <p class="chooseIntro">Your averages are saved on this device. Community rankings are verified online and compare players on the same daily puzzle.</p>
+      <div id="statsOverview" class="overviewRow" aria-label="Your performance overview"></div>
+      <div class="statHeading">Your Free Play averages</div>
+      <div id="difficultyStats" class="difficultyStats" aria-label="Statistics by difficulty"></div>
+      <div class="statHeading">Daily Challenge history</div>
+      <div id="dailyStats" class="overviewRow"></div>
+      <div class="statHeading">Today's verified community <span id="communityDay"></span></div>
+      <div id="communitySummary" role="status" aria-live="polite">Connect to see today's results.</div>
+      <button id="refreshCommunity" class="secondaryAction" type="button">Refresh leaderboard</button>
+      <footer>Local averages use your most recent 250 saved completions on this device. Leaderboard statistics include verified results only; assisted and unassisted times are kept separate.</footer>
     </section>
     <section id="difficultyScreen" hidden>
       <div class="chooseHeader">
@@ -152,7 +186,7 @@
       <div class="panel boardPanel">
         <div class="boardHeader"><strong id="boardTitle">Dot Trails</strong><small id="cells">0/25 squares</small></div>
         <div class="progress"><div id="progress"></div></div>
-        <div class="boardWrap"><canvas id="board" role="img" aria-label="Interactive Dot Trails puzzle board"></canvas>
+        <div class="boardWrap"><div id="rankGate" class="rankGate" hidden role="status" aria-live="polite">Preparing today's verified timer…</div><canvas id="board" role="img" aria-label="Interactive Dot Trails puzzle board"></canvas>
           <div class="win" id="win"><div class="winInner"><div style="font-size:36px;color:var(--mint)">✦</div><h3 id="winTitle">Nice one.</h3><p id="winMessage">All squares filled.</p><div class="winCategory" id="winCategory"></div><div id="rankingBox" class="rankingBox" hidden></div><div class="resultStatus" id="resultStatus"></div><div class="futureNotice" id="futureNotice"></div><button id="next">Next puzzle</button><button class="secondary" id="returnWinHome" hidden>Return to Grid Club</button><button class="secondary" id="share">↗ Share result</button></div></div>
         </div>
         <div class="accessibilityBar"><button class="numberToggle" type="button" id="numberToggle" aria-pressed="false" aria-label="Show numbers on coloured dots" title="Increase accessibility: show numbers on matching dot pairs">123</button></div>
@@ -164,7 +198,7 @@
       </div>
       
       <div class="adSlot" id="adSlot" aria-hidden="true"><small>Reserved for possible future advertising · no adverts in this version</small></div>
-      <footer>Grid Club · v0.4b.1 beta</footer>
+      <footer>Grid Club · v0.4b.2 beta</footer>
     </section>
   </main>
   <div class="pauseLayer" id="pauseLayer" hidden role="dialog" aria-modal="true" aria-labelledby="pauseTitle">
@@ -177,10 +211,11 @@
     </div>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" defer></script>
-  <script src="backend-config.js?v=0.4b.1"></script>
-  <script src="ranked.js?v=0.4b.1"></script>
-  <script src="puzzle.js?v=0.4b.1"></script>
-  <script src="game.js?v=0.4b.1"></script>
+  <script src="backend-config.js?v=0.4b.2"></script>
+  <script src="ranked.js?v=0.4b.2"></script>
+  <script src="stats-utils.js?v=0.4b.2"></script>
+  <script src="puzzle.js?v=0.4b.2"></script>
+  <script src="game.js?v=0.4b.2"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol === 'https:') {
       addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
