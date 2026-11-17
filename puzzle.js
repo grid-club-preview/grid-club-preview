@@ -109,6 +109,41 @@
       difficulty: options.daily ? 'daily' : String(size)
     };
   }
+  // Curated obstacles may be added ONLY to fixed numbered puzzles. The blocked
+  // squares correspond to complete paths in the original reference solution,
+  // so every remaining playable square still has an explicit valid route.
+  // Do not use this transformation for random or ranked Daily puzzles.
+  function withBlocked(level, cells) {
+    if (!Array.isArray(cells) || !cells.length) return level;
+    const blocked = new Set();
+    for (const raw of cells) {
+      const x = Array.isArray(raw) ? raw[0] : raw?.x;
+      const y = Array.isArray(raw) ? raw[1] : raw?.y;
+      if (!Number.isInteger(x) || !Number.isInteger(y) || x < 0 || y < 0 ||
+          x >= level.size || y >= level.size || blocked.has(`${x},${y}`))
+        throw new Error('Invalid blocked-square catalogue');
+      blocked.add(`${x},${y}`);
+    }
+    const kept=[];
+    const covered=new Set();
+    for (const path of level.solution) {
+      const count=path.filter(p=>blocked.has(key(p))).length;
+      if (count>0 && count!==path.length)
+        throw new Error('Blocked square intersects a required solution path');
+      if (count===path.length) for(const p of path)covered.add(key(p));
+      else kept.push(path);
+    }
+    if (covered.size!==blocked.size || kept.length<3)
+      throw new Error('Blocked-square catalogue does not preserve a valid board');
+    const solution=kept.map(path=>path.map(p=>({...p})));
+    return {...level, blocked:[...blocked].map(k=>{
+      const [x,y]=k.split(',').map(Number);return {x,y};
+    }), solution, pairs:solution.map((path,id)=>({id,a:path[0],b:path[path.length-1]}))};
+  }
+  function isBlocked(level,p){
+    return !!level?.blocked?.some(cell=>eq(cell,p));
+  }
+  function playableCells(level){return level.size*level.size-(level.blocked?.length||0);}
   function copyPaths(paths) { return JSON.parse(JSON.stringify(paths)); }
   function create(level) {
     const now = Date.now();
@@ -160,7 +195,7 @@
     for (const [id, path] of Object.entries(g.paths)) {
       const pair = g.level.pairs[Number(id)];
       if (!pair || !Array.isArray(path) || !path.length ||
-          !path.every((p,i) => p && Number.isInteger(p.x) && Number.isInteger(p.y) && p.x >= 0 && p.y >= 0 && p.x < g.level.size && p.y < g.level.size &&
+          !path.every((p,i) => p && Number.isInteger(p.x) && Number.isInteger(p.y) && p.x >= 0 && p.y >= 0 && p.x < g.level.size && p.y < g.level.size && !isBlocked(g.level,p) &&
             (i === 0 || adjacent(path[i-1],p)) && !seen.has(key(p)))) return null;
       if (!eq(path[0],pair.a) && !eq(path[0],pair.b)) return null;
       path.forEach(p => seen.add(key(p)));
@@ -189,7 +224,7 @@
   }
   function check(g) {
     if (g.level.pairs.every(pair => connected(g, pair.id)) &&
-        filled(g) === g.level.size ** 2) {
+        filled(g) === playableCells(g.level)) {
       const now = Date.now();
       g.elapsedMs = elapsed(g, now);
       g.clockStartedAt = null;
@@ -198,6 +233,7 @@
   }
   function begin(g, p) {
     if (g.finishedAt || g.paused) return false;
+    if(isBlocked(g.level,p))return false;
     const existingId = owner(g, p);
     // Resume an unfinished path by pressing the final square of that path.
     if (existingId !== null) {
@@ -219,7 +255,7 @@
   }
   function move(g, p) {
     if (g.drag === null || g.finishedAt || g.paused) return false;
-    if (p.x < 0 || p.y < 0 || p.x >= g.level.size || p.y >= g.level.size) return false;
+    if (p.x < 0 || p.y < 0 || p.x >= g.level.size || p.y >= g.level.size || isBlocked(g.level,p)) return false;
     const id = g.drag, path = g.paths[id], last = path[path.length - 1];
     if (!adjacent(last, p) || connected(g, id)) return false;
     const occupier = owner(g, p), marked = endpoint(g, p);
@@ -257,7 +293,7 @@
   function hint(g) {
     if (!g || g.finishedAt || g.paused) return null;
     const answerPaths = g.level.solution;
-    const allConnectedButIncomplete = g.level.pairs.every(pair => connected(g, pair.id)) && filled(g) < g.level.size**2;
+    const allConnectedButIncomplete = g.level.pairs.every(pair => connected(g, pair.id)) && filled(g) < playableCells(g.level);
     const choices = [];
     for (const pair of g.level.pairs) {
       const answer = answerPaths[pair.id];
@@ -299,7 +335,7 @@
     // Reset clears lines, not the clock or previously used hints/moves.
     g.drag = null;g.tapClear = false;
   }
-  const core = { SIZES, hash, generate, create, endpoint, owner, connected,
+  const core = { SIZES, hash, generate, withBlocked, isBlocked, playableCells, create, endpoint, owner, connected,
     filled, begin, move, end, undo, hint, reset, adjacent, eq, samePath, quality,
     elapsed, pause, resume, serialize, restore, PAIR_RANGES };
   if (typeof module !== 'undefined' && module.exports) module.exports = core;

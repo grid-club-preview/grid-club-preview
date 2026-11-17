@@ -114,6 +114,11 @@
     .levelRewardBalance{font-size:12px;font-weight:650;color:#c7e4df;border-top:1px solid #ffffff29;padding-top:8px;margin-top:8px;white-space:nowrap;}
     /* iOS long-press selection on the result dialogue should not reveal browser text actions. */
     #win,#win *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}
+    /* Nothing on the live game screen is editable or intended for text selection.
+       iOS can select a nearby footer/caption even when the canvas itself is protected. */
+    #gameScreen,#gameScreen *,#gameScreen *::before,#gameScreen *::after{
+      -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;
+    }
 
     .boostButton{position:relative;}
     .controls button .boostCost{position:absolute;top:3px;right:5px;font-size:10px;line-height:1.2;color:var(--mint);font-weight:850;margin:0;}
@@ -243,7 +248,7 @@
 <body>
   <main class="shell">
     <section id="home">
-      <header><div><div class="eyebrow">GRID CLUB</div><h1>A little puzzle break.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.5.3</span></div></header>
+      <header><div><div class="eyebrow">GRID CLUB</div><h1>A little puzzle break.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.7.0</span></div></header>
       <details class="backendCheck" aria-label="Leaderboard connection diagnostics">
         <summary class="backendCheckTitle">Connection diagnostics (beta)</summary>
         <p id="backendCheckMessage" role="status" aria-live="polite">Checking configuration…</p>
@@ -251,13 +256,13 @@
       </details>
       <div class="eyebrow" style="color:var(--muted);margin:5px 0 12px">THE GAMES</div>
       <button class="tileButton" id="freeStart"><span class="tileIcon">🟣</span><span><strong id="freeStartText">Dot Trails</strong><small>Connect the dots · four difficulty levels</small></span><span style="margin-left:auto">›</span></button>
-      <div class="tileButton" style="opacity:.58"><span class="tileIcon">▧</span><span><strong>Block Slide</strong><small>Sliding-block puzzle · next release</small></span><span style="margin-left:auto;font-size:11px">SOON</span></div>
-      <footer>No adverts. Daily rankings use anonymous player identifiers when enabled. Progress is saved on this device.</footer>
+      <div class="tileButton" style="opacity:.58"><span class="tileIcon">▧</span><span><strong>Block Slide</strong><small>Sliding pipe puzzle · coming later</small></span><span style="margin-left:auto;font-size:11px">SOON</span></div>
+      
     </section>
     <section id="statsScreen" hidden>
       <div class="statsHeader"><button class="back" id="statsBack" aria-label="Back to Dot Trails">‹</button>
         <div><div class="eyebrow">GRID CLUB · DOT TRAILS</div><h2>Your statistics</h2></div></div>
-      <p class="chooseIntro">Your averages are saved on this device. Community rankings are verified online and compare players on the same daily puzzle.</p>
+      <p class="chooseIntro">Your progress and daily results.</p>
       <div id="statsOverview" class="overviewRow" aria-label="Your performance overview"></div>
       <div class="statHeading">Your Free Play and Level averages</div>
       <div id="difficultyStats" class="difficultyStats" aria-label="Statistics by difficulty"></div>
@@ -266,7 +271,7 @@
       <div class="statHeading">Today's verified community <span id="communityDay"></span></div>
       <div id="communitySummary" role="status" aria-live="polite">Connect to see today's results.</div>
       <button id="refreshCommunity" class="secondaryAction" type="button">Refresh leaderboard</button>
-      <footer>Local averages use your most recent 250 saved completions on this device. Only verified unassisted Daily Challenges count towards community averages and rankings. Assisted results remain in your personal stats.</footer>
+      <footer>Only unassisted results count towards daily rankings. Personal progress is stored on this device.</footer>
     </section>
     <section id="difficultyScreen" hidden>
       <div class="chooseHeader">
@@ -275,16 +280,16 @@
       </div>
       <div class="panel hero dotDailyCard">
         <div class="eyebrow">◷ &nbsp; TODAY'S CHALLENGE <span id="solvedTag" style="float:right" hidden>✓ SOLVED</span></div>
-        <p>Connect matching dots and fill the entire 11×11 grid.</p>
+        <p>11×11 · Fill every square</p>
         <button class="primary" id="dailyStart"><span id="dailyStartText">Play today's puzzle</span><span>→</span></button>
       </div>
       <button type="button" id="randomStart" class="playModeCard"><span class="modeIcon" aria-hidden="true">⤨</span><span class="modeCopy"><strong>Play Random</strong><small>Choose a difficulty</small></span><span class="modeArrow" aria-hidden="true">›</span></button>
-      <button type="button" id="levelsStart" class="playModeCard levelsModeCard"><span class="modeIcon" aria-hidden="true">🏆</span><span class="modeCopy"><strong>Play Levels</strong><small>Complete levels · Earn credits</small></span><span class="modeArrow" aria-hidden="true">›</span></button>
+      <button type="button" id="levelsStart" class="playModeCard levelsModeCard"><span class="modeIcon" aria-hidden="true">🏆</span><span class="modeCopy"><strong>Play Levels</strong><small id="levelsSubtitle">Complete levels · Earn credits</small></span><span class="modeArrow" aria-hidden="true">›</span></button>
       <button id="viewStats" class="statsLink dotStatsLink">Your stats &amp; daily leaderboard <span>→</span></button>
     </section>
     <section id="randomScreen" hidden>
       <div class="chooseHeader"><button class="back" id="randomBack" aria-label="Back to Dot Trails">‹</button><div><div class="eyebrow">GRID CLUB · DOT TRAILS</div><h2>Play Random</h2></div></div>
-      <p class="chooseIntro">Choose your difficulty. Every puzzle is a new challenge.</p>
+  
       <div class="levelList" id="levelList" aria-label="Free Play difficulties">
         <button class="levelChoice" data-size="5"><span><strong>Beginner</strong><small>5×5 squares</small></span><span class="levelAction">Start →</span></button>
         <button class="levelChoice" data-size="7"><span><strong>Medium</strong><small>7×7 squares</small></span><span class="levelAction">Start →</span></button>
@@ -298,7 +303,7 @@
       <p id="levelSaveStatus" class="levelSaveStatus" role="status" aria-live="polite">Checking this device’s saved progress…</p>
       <div class="levelBackupActions"><button type="button" id="exportLevels">Backup progress</button><button type="button" id="importLevels">Restore backup</button></div>
       <input id="importLevelsFile" type="file" accept="application/json,.json" hidden>
-      <p class="chooseIntro">Five puzzles per level. Completing a puzzle unlocks the next; its credits are earned only if you succeed on your first attempt. Finish all five for a level bonus.</p>
+  
       <div id="stageList" class="stageList" aria-label="Level progression"></div>
       <div id="stageDetail" hidden>
         <button id="stageBack" class="secondaryAction" type="button">← All levels</button>
@@ -350,27 +355,27 @@
 
       </div>
       
-      <div class="adSlot" id="adSlot" aria-hidden="true"><small>Reserved for possible future advertising · no adverts in this version</small></div>
-      <footer>Grid Club · v0.5.3 beta</footer>
+      <div class="adSlot" id="adSlot" aria-hidden="true" hidden></div>
+      <footer>Grid Club · v0.7.0 beta</footer>
     </section>
   </main>
-  <div class="pauseLayer" id="timeUpLayer" hidden role="dialog" aria-modal="true" aria-labelledby="timeUpTitle"><div class="pauseInner"><div style="font-size:47px;color:var(--mint)">◷</div><h2 id="timeUpTitle">Time's up!</h2><p>Your progress is saved. Add 15 seconds to continue this attempt, or retry. Retrying forfeits this puzzle’s first-attempt credits, but you can still unlock the next puzzle.</p><button id="timeUpBoost" type="button">+15 seconds · 10 ◉</button><p id="timeUpBoostNote" class="timeUpBoostNote" role="status" aria-live="polite"></p><button id="timeUpRetry" class="secondary">Retry puzzle (forfeit puzzle credits)</button><button id="timeUpBack" class="secondary">Return to Levels</button></div></div>
+  <div class="pauseLayer" id="timeUpLayer" hidden role="dialog" aria-modal="true" aria-labelledby="timeUpTitle"><div class="pauseInner"><div style="font-size:47px;color:var(--mint)">◷</div><h2 id="timeUpTitle">Time's up!</h2><p>Retrying forfeits this puzzle’s credits.</p><button id="timeUpBoost" type="button">+15 seconds · 10 ◉</button><p id="timeUpBoostNote" class="timeUpBoostNote" role="status" aria-live="polite"></p><button id="timeUpRetry" class="secondary">Retry puzzle</button><button id="timeUpBack" class="secondary">Return to Levels</button></div></div>
   <div class="pauseLayer" id="pauseLayer" hidden role="dialog" aria-modal="true" aria-labelledby="pauseTitle">
     <div class="pauseInner">
       <div style="font-size:47px;color:var(--mint)">Ⅱ</div>
       <h2 id="pauseTitle">Taking a breather?</h2>
-      <p>The clock has stopped and your puzzle is hidden. Your progress is saved on this device.</p>
+      <p>Clock stopped · Progress saved</p>
       <button id="resumeButton">▶ Continue</button>
       <button class="secondary" id="pauseBack">Return to Grid Club</button>
     </div>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" defer></script>
-  <script src="backend-config.js?v=0.5.3"></script>
-  <script src="ranked.js?v=0.5.3"></script>
-  <script src="stats-utils.js?v=0.5.3"></script>
-  <script src="puzzle.js?v=0.5.3"></script>
-  <script src="levels.js?v=0.5.3"></script>
-  <script src="game.js?v=0.5.3"></script>
+  <script src="backend-config.js?v=0.7.0"></script>
+  <script src="ranked.js?v=0.7.0"></script>
+  <script src="stats-utils.js?v=0.7.0"></script>
+  <script src="puzzle.js?v=0.7.0"></script>
+  <script src="levels.js?v=0.7.0"></script>
+  <script src="game.js?v=0.7.0"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol === 'https:') {
       addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
