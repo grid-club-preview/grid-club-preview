@@ -34,7 +34,7 @@
     const n = Math.max(0, Math.floor(ms/1000));
     return `${String(Math.floor(n/60)).padStart(2,'0')}:${String(n%60).padStart(2,'0')}`;
   };
-  const groups = {
+  const groups = globalThis.GridClubWinMessages?.dotTrails || {
     general: ['You did it!','No flies on you.','You knew the score.','We have a winner!',
       'Nice one.','Consider it connected.','All tied up nicely.','You’ve cracked it.',
       'And that’s a wrap!','Not a square out of place.','Look at you go.',
@@ -838,8 +838,8 @@
       celebration.dataset.motion=String((n-1)%5+1);
       if(celebration.style?.setProperty)celebration.style.setProperty('--stage-hue',`${(n-1)*23}deg`);
       $('levelUpMedal').textContent=stageGlyphs[n-1]||'★';
-      $('levelUpHeading').textContent=finalLevelUp?'Grand finale!':'Credit boosted!';
-      if(finalLevelUp)title.textContent='Dot Trails mastered!';
+      $('levelUpHeading').textContent=finalLevelUp?(globalThis.GridClubWinMessages?.dotTrailsSpecial?.grandFinale||'Grand finale!'):(globalThis.GridClubWinMessages?.dotTrailsSpecial?.levelUp||'Credit boosted!');
+      if(finalLevelUp)title.textContent=globalThis.GridClubWinMessages?.dotTrailsSpecial?.mastered||'Dot Trails mastered!';
       $('levelUpMessage').textContent=finalLevelUp?`All 75 puzzles complete · +${levelReward.stageBonus} credits`:`Level ${n} complete · +${levelReward.stageBonus} bonus credits`;
       $('next').textContent=finalLevelUp?'View all levels →':'Level up →';
     }

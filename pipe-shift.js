@@ -1,4 +1,4 @@
-/* Grid Club · Pipe Shift v0.9.2 · Random Play & 30 sequential Levels */
+/* Grid Club · Pipe Shift v0.9.3 · Random Play & 30 sequential Levels */
 (function(){
 'use strict';
 const e=globalThis.PipeEngine;if(!e)return;
@@ -7,12 +7,21 @@ if(!root||!hub||!$('pipeShiftEntry'))return;
 const KEY='gridclub-pipeshift-progress-v1',BACKUP=KEY+'-v08-backup',MAX=e.MAX_LEVEL;
 const blank=()=>({version:2,completed:{},best:{},active:{},randomBest:{},randomCount:{},legacyArchived:{},moveStats:{random:{},levels:{count:0,total:0}}});
 let progress=blank(),section='menu',stage=1,mode='levels',currentLevel=null,currentSize=5,puzzle=null;
-let board=null,moves=0,elapsed=0,undo=[],selected=null,won=false,expired=false,justClearedStage=false;
+let board=null,moves=0,elapsed=0,undo=[],selected=null,won=false,expired=false,justClearedStage=false,trialPending=false;
 let timer=null,lastTick=null,flowTimer=null,pointerOrigin=null,ignoreClickUntil=0,nonce=0;
 function read(){
  try{
    const raw=localStorage.getItem(KEY),v=JSON.parse(raw||'null');if(!v||!v.completed||!v.active)return blank();
-   if(v.version===2)return {...blank(),...v,moveStats:{...blank().moveStats,...(v.moveStats||{})}};
+   if(v.version===2){
+     const next={...blank(),...v,moveStats:{...blank().moveStats,...(v.moveStats||{})}};
+     if(next.levelCatalog!==3){
+       next.olderLevelBests={...(next.olderLevelBests||{}),v092:next.best||{}};
+       next.best={};
+       for(const key of Object.keys(next.active||{}))if(key.startsWith('level:'))delete next.active[key];
+       next.levelCatalog=3;
+     }
+     return next;
+   }
    if(v.version===1){
      if(!localStorage.getItem(BACKUP))localStorage.setItem(BACKUP,raw);
      const next=blank();
@@ -22,6 +31,8 @@ function read(){
        if(v.active?.[n]&&e.validateBoard(v.active[n].board))next.active[`level:${n}`]={...v.active[n],elapsed:0};
      }
      for(let n=6;n<=10;n++)if(v.completed[n]||v.best?.[n]||v.active?.[n])next.legacyArchived[n]={completed:!!v.completed[n],best:v.best?.[n]||null};
+     next.olderLevelBests={v08:{...(next.best||{})}};
+     next.best={};next.active={};next.levelCatalog=3;
      return next;
    }
  }catch(_){}
@@ -34,7 +45,7 @@ function save(){
 function activeKey(){return mode==='random'?`random:${currentSize}`:`level:${currentLevel}`;}
 function clockSync(){if(lastTick===null||won||expired)return;const now=performance.now();if(document.hidden){lastTick=null;return;}elapsed+=Math.max(0,now-lastTick);lastTick=now;}
 function timerStop(){if(timer!==null){clearInterval(timer);timer=null;}lastTick=null;}
-function startTicker(){timerStop();lastTick=performance.now();timer=setInterval(()=>{
+function startTicker(){if(trialPending)return;timerStop();lastTick=performance.now();timer=setInterval(()=>{
    if(section!=='game'||won||expired||document.hidden)return;
    clockSync();updateClock();if(puzzle?.timerMs&&elapsed>=puzzle.timerMs)timeout();
  },100);}
@@ -45,14 +56,14 @@ function updateClock(){
  $('pipeClock').textContent=`${mm}:${ss}`;$('pipeClockBox').dataset.low=String(remaining<=30);
 }
 function saveCurrent(){if(!puzzle||!board||won)return;
- clockSync();progress.active[activeKey()]={board:e.clone(board),moves,elapsed,expired,seed:puzzle.seed??null,
+ clockSync();progress.active[activeKey()]={board:e.clone(board),moves,elapsed,expired,started:!trialPending,catalogVersion:mode==='levels'?3:null,seed:puzzle.seed??null,
    undo:undo.slice(-40).map(a=>({board:e.clone(a.board),moves:a.moves}))};save();
 }
 function clearFlow(){if(flowTimer!==null){clearTimeout(flowTimer);flowTimer=null;}}
 function route(name){
  clearFlow();timerStop();section=name;
  for(const n of ['menu','random','stages','levels','game','stats'])$('pipe-'+n).hidden=n!==name;
- $('pipeResult').hidden=true;$('pipeTimeout').hidden=true;selected=null;cancelDrag();
+ $('pipeResult').hidden=true;$('pipeTimeout').hidden=true;$('pipeTimeIntro').hidden=true;selected=null;cancelDrag();
 }
 function home(){cancelDrag();saveCurrent();route('menu');root.hidden=true;hub.hidden=false;}
 function menu(){saveCurrent();hub.hidden=true;root.hidden=false;route('menu');
@@ -122,19 +133,20 @@ function freshRandomSeed(){
 }
 function begin(p,kind,id,skipSave=false){
  if(!skipSave)saveCurrent();mode=kind;currentLevel=kind==='levels'?id:null;if(kind==='levels')stage=e.stageOf(id).id;currentSize=p.size;puzzle=p;
- won=false;expired=false;justClearedStage=false;selected=null;elapsed=0;moves=0;undo=[];
+ won=false;expired=false;justClearedStage=false;selected=null;elapsed=0;moves=0;undo=[];trialPending=!!p.timerMs;
  hub.hidden=true;root.hidden=false;route('game');
  const key=activeKey(),stored=progress.active[key];
  if(stored&&e.validateBoard(stored.board)&&stored.board.length===p.size*p.size&&
-   (kind==='levels'||stored.seed===p.seed)&&Number.isInteger(stored.moves)&&stored.moves>=0&&stored.moves<100000){
+   (kind==='levels'?stored.catalogVersion===3:stored.seed===p.seed)&&Number.isInteger(stored.moves)&&stored.moves>=0&&stored.moves<100000){
    board=e.clone(stored.board);moves=stored.moves;elapsed=Math.max(0,Number(stored.elapsed)||0);expired=!!stored.expired;
+   trialPending=!!p.timerMs&&!expired&&!stored.started&&moves===0&&elapsed===0;
    undo=Array.isArray(stored.undo)?stored.undo.filter(a=>e.validateBoard(a.board)&&a.board.length===board.length&&Number.isInteger(a.moves)).slice(-40):[];
  }else board=e.clone(p.board);
  $('pipeGameName').textContent=kind==='levels'?`Puzzle ${id-e.stageOf(id).first+1}/5`:(p.size===5?'Beginner':p.size===6?'Advanced':'Expert');
  $('pipeDifficultyTag').textContent=kind==='levels'?`Stage ${p.stage}`:'Random Play';
  $('pipeGridSize').textContent=`${p.size}×${p.size}`;$('pipeInstruction').textContent='';$('pipeNew').hidden=kind!=='random';
  $('pipeBoard').style.setProperty('--pipe-size',p.size);$('pipeBoard').dataset.pipeGridSize=String(p.size);
- render();updateClock();if(expired){$('pipeTimeout').hidden=false;}else if(p.timerMs&&elapsed>=p.timerMs)timeout();else startTicker();saveCurrent();
+ render();updateClock();if(expired){$('pipeTimeout').hidden=false;}else if(p.timerMs&&elapsed>=p.timerMs)timeout();else if(trialPending){$('pipeTimeIntro').hidden=false;}else startTicker();saveCurrent();
 }
 function startLevel(n){if(!Number.isInteger(n)||n<1||n>MAX||(n>1&&!progress.completed[n-1]))return;
  begin(e.get(n),'levels',n);
@@ -170,7 +182,7 @@ function render(flow=[]){if(!board)return;
  }
  $('pipeMoves').textContent=String(moves);$('pipeUndo').disabled=won||expired||undo.length===0;$('pipeReset').disabled=won||expired||moves===0;
 }
-function slide(from,to){if(won||expired||!e.canMove(board,from,to))return false;
+function slide(from,to){if(won||expired||trialPending||!e.canMove(board,from,to))return false;
  clockSync();if(puzzle.timerMs&&elapsed>=puzzle.timerMs){timeout();return false;}
  undo.push({board:e.clone(board),moves});if(undo.length>40)undo.shift();e.move(board,from,to);moves++;selected=null;
  const check=e.evaluate(board);
@@ -183,18 +195,18 @@ function slide(from,to){if(won||expired||!e.canMove(board,from,to))return false;
  }else{render();saveCurrent();}
  return true;
 }
-function clickCell(i){if(section!=='game'||won||expired||i<0||i>=board.length)return;
+function clickCell(i){if(section!=='game'||won||expired||trialPending||i<0||i>=board.length)return;
  if(selected!==null&&board[i].kind==='empty'&&slide(selected,i))return;
  const t=board[i];if(!['pipe','block'].includes(t.kind)||t.fixed){selected=null;render();return;}
  const options=board.map((_,k)=>e.canMove(board,i,k)?k:-1).filter(n=>n>=0);
  if(options.length===1){slide(i,options[0]);return;}
  selected=selected===i?null:i;render();
 }
-function undoMove(){if(won||expired||!undo.length)return;clockSync();const last=undo.pop();board=e.clone(last.board);moves=last.moves;selected=null;render();saveCurrent();}
-function reset(){if(won||expired)return;clockSync();board=e.clone(puzzle.board);moves=0;undo=[];selected=null;render();saveCurrent();}
+function undoMove(){if(won||expired||trialPending||!undo.length)return;clockSync();const last=undo.pop();board=e.clone(last.board);moves=last.moves;selected=null;render();saveCurrent();}
+function reset(){if(won||expired||trialPending)return;clockSync();board=e.clone(puzzle.board);moves=0;undo=[];selected=null;render();saveCurrent();}
 function timeout(){if(won||expired)return;clockSync();expired=true;timerStop();selected=null;updateClock();render();$('pipeTimeout').hidden=false;saveCurrent();}
 function retry(){delete progress.active[activeKey()];const fresh=mode==='levels'?e.get(currentLevel):e.random(currentSize,puzzle.seed);begin(fresh,mode,currentLevel,true);}
-function victory(){const names=['Flow restored!','Nicely connected.','Let it flow!','Pipes in perfect order.'];
+function victory(){const phrases=globalThis.GridClubWinMessages?.pipeShift||{};const names=phrases.general?.length?phrases.general:['Flow restored!','Nicely connected.','Let it flow!','Pipes in perfect order.'];
  const celebration=$('pipeStageCelebration'),result=$('pipeResult');
  result.classList.remove('pipeStageWin','pipeGrandFinale');
  celebration.hidden=true;
@@ -209,8 +221,8 @@ function victory(){const names=['Flow restored!','Nicely connected.','Let it flo
      result.classList.add('pipeStageWin');if(last)result.classList.add('pipeGrandFinale');
      celebration.dataset.stage=String(s.id);
      $('pipeStageBadge').textContent=badges[s.id-1]||'✦';
-     $('pipeStageHeading').textContent=last?'Pipe Shift mastered!':`Stage ${s.id} complete!`;
-     $('pipeResultTitle').textContent=last?'Every pipe connected!':'Flow upgraded!';
+     $('pipeStageHeading').textContent=last?(phrases.grandHeading||'Pipe Shift mastered!'):(phrases.stageHeading||'Stage {stage} complete!').replace('{stage}',String(s.id));
+     $('pipeResultTitle').textContent=last?(phrases.grandVictory||'Every pipe connected!'):(phrases.stageVictory||'Flow upgraded!');
      $('pipeResultNext').textContent=last?'All stages complete':'Level up →';
      celebration.hidden=false;
    }
@@ -225,6 +237,7 @@ $('pipeLevelsBack').onclick=stages;$('pipeGameBack').onclick=back;
 $('pipeRandomChoices').addEventListener('click',ev=>{const b=ev.target.closest('[data-pipe-size]');if(b)startRandom(Number(b.dataset.pipeSize));});
 $('pipeResultNext').onclick=()=>mode==='random'?startRandom(currentSize,true):startLevel(currentLevel+1);
 $('pipeResultLevels').onclick=()=>mode==='random'?randomMenu():stages();
+$('pipeTrialStart').onclick=()=>{if(!trialPending||section!=='game')return;trialPending=false;$('pipeTimeIntro').hidden=true;startTicker();saveCurrent();};
 $('pipeRetry').onclick=retry;$('pipeTimeoutBack').onclick=()=>mode==='random'?randomMenu():stageMenu(stage);
 $('pipeUndo').onclick=undoMove;$('pipeReset').onclick=reset;$('pipeNew').onclick=()=>startRandom(currentSize,true);
 const grid=$('pipeBoard');
@@ -272,7 +285,7 @@ function setDragVisual(p,ev){
 }
 grid.addEventListener('pointerdown',ev=>{
  const cell=ev.target.closest('[data-cell]');
- if(!cell||section!=='game'||won||expired||ev.isPrimary===false)return;
+ if(!cell||section!=='game'||won||expired||trialPending||ev.isPrimary===false)return;
  const from=Number(cell.dataset.cell),tile=board?.[from];
  if(!tile||tile.fixed||!['pipe','block'].includes(tile.kind))return;
  cancelDrag();
@@ -331,7 +344,7 @@ root.addEventListener('touchend',ev=>{
 },{passive:true});
 root.addEventListener('touchcancel',()=>edge=null,{passive:true});
 window.addEventListener('pagehide',()=>{cancelDrag();saveCurrent();timerStop();});
-document.addEventListener('visibilitychange',()=>{if(document.hidden){saveCurrent();timerStop();cancelDrag();}else if(section==='game'&&!won&&!expired)startTicker();});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){saveCurrent();timerStop();cancelDrag();}else if(section==='game'&&!won&&!expired&&!trialPending)startTicker();});
 progress=read();save();
 globalThis.PipeShiftApp={menu,randomMenu,stages,levels:stages,start:startLevel,startLevel,startRandom,back,readProgress:()=>JSON.parse(JSON.stringify(progress))};
 })();

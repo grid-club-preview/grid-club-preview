@@ -30,7 +30,7 @@
 .pipeTile:focus-visible{outline:3px solid #fff;outline-offset:-3px;z-index:2;}
 .pipeTile.pipeEmpty{background:#101c2c;border:1px dashed #31455b;}
 .pipeTile.pipeEmpty.pipeValidDrop{background:#1d4654;border:2px solid #66e8c9;box-shadow:inset 0 0 17px #64eac533;}
-.pipeTile.pipeWall{background:repeating-linear-gradient(135deg,#38495c 0 8px,#2d3c4f 8px 16px);border:1px solid #5e7187;}
+.pipeTile.pipeWall{background:linear-gradient(145deg,#8796a5,#536475 42%,#303e50);border:2px solid #a4b5c4;box-shadow:inset 1px 1px 4px #edf2f250,inset -3px -3px 8px #0005;}
 .pipeTile.pipeFixed{border-color:#97a6bf;background:#35465d;}
 .pipeTile.pipeSelected{outline:2px solid #80f0d8;outline-offset:-3px;z-index:2;background:#31566b;}
 .pipeTile.pipeSource{background:linear-gradient(135deg,#244d46,#284b54);border:2px solid #6ee5b0;}
@@ -44,7 +44,7 @@
 .pipeFixedMark{position:absolute;right:3px;top:1px;color:#dae5f7;font-size:11px;line-height:1;font-weight:900;}
 .pipeTerminal{position:absolute;bottom:2px;right:3px;font-size:9px;font-weight:900;letter-spacing:.2px;color:#b9f9de;text-shadow:0 1px 3px #001a;}
 .pipeSink .pipeTerminal{color:#e2d3ff;}
-.pipeTile.pipeWall::after{content:'×';font-size:18px;color:#91a2b5;opacity:.55;}
+.pipeTile.pipeWall::after{content:'';position:absolute;inset:3px;background:radial-gradient(circle at 9% 9%,#dce4ed 0 2px,#35495a 2.5px 4px,transparent 4.5px),radial-gradient(circle at 91% 9%,#dce4ed 0 2px,#35495a 2.5px 4px,transparent 4.5px),radial-gradient(circle at 9% 91%,#dce4ed 0 2px,#35495a 2.5px 4px,transparent 4.5px),radial-gradient(circle at 91% 91%,#dce4ed 0 2px,#35495a 2.5px 4px,transparent 4.5px);opacity:.95;pointer-events:none;}
 .pipeInstruction{font-size:12px;color:#aabdd1;margin:12px 3px 0;min-height:18px;}
 .pipeControls{display:flex;gap:9px;margin-top:13px;}
 .pipeControls button{flex:1;background:#2a4156;border:1px solid #43647d;color:#e0effb;border-radius:13px;padding:13px 12px;font-size:14px;font-weight:800;}
