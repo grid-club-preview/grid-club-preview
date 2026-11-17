@@ -1,18 +1,18 @@
-/* Grid Club · Pipe Shift v0.9.1 · Random Play & 30 sequential Levels */
+/* Grid Club · Pipe Shift v0.9.2 · Random Play & 30 sequential Levels */
 (function(){
 'use strict';
 const e=globalThis.PipeEngine;if(!e)return;
 const $=id=>document.getElementById(id),root=$('pipeShiftScreen'),hub=$('home');
 if(!root||!hub||!$('pipeShiftEntry'))return;
 const KEY='gridclub-pipeshift-progress-v1',BACKUP=KEY+'-v08-backup',MAX=e.MAX_LEVEL;
-const blank=()=>({version:2,completed:{},best:{},active:{},randomBest:{},randomCount:{},legacyArchived:{}});
+const blank=()=>({version:2,completed:{},best:{},active:{},randomBest:{},randomCount:{},legacyArchived:{},moveStats:{random:{},levels:{count:0,total:0}}});
 let progress=blank(),section='menu',stage=1,mode='levels',currentLevel=null,currentSize=5,puzzle=null;
 let board=null,moves=0,elapsed=0,undo=[],selected=null,won=false,expired=false,justClearedStage=false;
 let timer=null,lastTick=null,flowTimer=null,pointerOrigin=null,ignoreClickUntil=0,nonce=0;
 function read(){
  try{
    const raw=localStorage.getItem(KEY),v=JSON.parse(raw||'null');if(!v||!v.completed||!v.active)return blank();
-   if(v.version===2)return {...blank(),...v};
+   if(v.version===2)return {...blank(),...v,moveStats:{...blank().moveStats,...(v.moveStats||{})}};
    if(v.version===1){
      if(!localStorage.getItem(BACKUP))localStorage.setItem(BACKUP,raw);
      const next=blank();
@@ -51,12 +51,36 @@ function saveCurrent(){if(!puzzle||!board||won)return;
 function clearFlow(){if(flowTimer!==null){clearTimeout(flowTimer);flowTimer=null;}}
 function route(name){
  clearFlow();timerStop();section=name;
- for(const n of ['menu','random','stages','levels','game'])$('pipe-'+n).hidden=n!==name;
+ for(const n of ['menu','random','stages','levels','game','stats'])$('pipe-'+n).hidden=n!==name;
  $('pipeResult').hidden=true;$('pipeTimeout').hidden=true;selected=null;cancelDrag();
 }
 function home(){cancelDrag();saveCurrent();route('menu');root.hidden=true;hub.hidden=false;}
 function menu(){saveCurrent();hub.hidden=true;root.hidden=false;route('menu');
  $('pipeMainProgress').textContent=`${Object.keys(progress.completed).filter(n=>progress.completed[n]).length}/30`;
+}
+function statsMenu(){
+ saveCurrent();hub.hidden=true;root.hidden=false;route('stats');
+ const completed=Object.keys(progress.completed).filter(n=>progress.completed[n]).length;
+ const random=[5,6,7].reduce((n,size)=>n+(progress.randomCount[size]||0),0);
+ const s=progress.moveStats||{},records=[s.levels,...Object.values(s.random||{})].filter(Boolean);
+ const sum=records.reduce((a,v)=>a+(Number(v.total)||0),0);
+ const count=records.reduce((a,v)=>a+(Number(v.count)||0),0);
+ $('pipeStatsCompleted').textContent=String(completed+random);
+ $('pipeStatsAverage').textContent=count?(sum/count).toFixed(1):'—';
+ const list=$('pipeStatsDetails');list.replaceChildren();
+ for(const [label,size] of [['Beginner',5],['Advanced',6],['Expert',7],['Levels',0]]){
+   const record=size?(s.random||{})[size]:s.levels;
+   const played=size?(progress.randomCount[size]||0):completed;
+   const row=document.createElement('div');row.className='pipeStatRow';
+   const title=document.createElement('strong');title.textContent=label;
+   const detail=document.createElement('span');detail.textContent=`${played} completed · ${record?.count?(record.total/record.count).toFixed(1)+' avg. moves':'— avg. moves'}`;
+   row.append(title,detail);list.append(row);
+ }
+}
+function recordCompletion(kind,size,usedMoves){
+ const stats=progress.moveStats||(progress.moveStats={random:{},levels:{count:0,total:0}});
+ const bucket=kind==='random'?(stats.random[size]||(stats.random[size]={count:0,total:0})):(stats.levels||(stats.levels={count:0,total:0}));
+ bucket.count++;bucket.total+=usedMoves;
 }
 function randomMenu(){saveCurrent();hub.hidden=true;root.hidden=false;route('random');
  for(const btn of $('pipeRandomChoices').querySelectorAll('[data-pipe-size]')){
@@ -150,7 +174,7 @@ function slide(from,to){if(won||expired||!e.canMove(board,from,to))return false;
  clockSync();if(puzzle.timerMs&&elapsed>=puzzle.timerMs){timeout();return false;}
  undo.push({board:e.clone(board),moves});if(undo.length>40)undo.shift();e.move(board,from,to);moves++;selected=null;
  const check=e.evaluate(board);
- if(check.solved){won=true;timerStop();if(mode==='levels'){
+ if(check.solved){won=true;timerStop();recordCompletion(mode,currentSize,moves);if(mode==='levels'){
      justClearedStage=!progress.completed[currentLevel]&&currentLevel===e.stageOf(currentLevel).last;
      progress.completed[currentLevel]=true;if(!progress.best[currentLevel]||moves<progress.best[currentLevel].moves)progress.best[currentLevel]={moves,elapsed,when:new Date().toISOString()};
    }else{progress.randomCount[currentSize]=(progress.randomCount[currentSize]||0)+1;
@@ -194,9 +218,9 @@ function victory(){const names=['Flow restored!','Nicely connected.','Let it flo
  result.hidden=false;
 }
 function back(){if(section==='game')mode==='random'?randomMenu():stageMenu(stage);
- else if(section==='levels')stages();else if(section==='random'||section==='stages')menu();else home();}
+ else if(section==='levels')stages();else if(section==='random'||section==='stages'||section==='stats')menu();else home();}
 $('pipeShiftEntry').onclick=menu;$('pipeHomeBack').onclick=home;$('pipeRandomEntry').onclick=randomMenu;
-$('pipeLevelsEntry').onclick=stages;$('pipeRandomBack').onclick=menu;$('pipeStagesBack').onclick=menu;
+$('pipeLevelsEntry').onclick=stages;$('pipeStatsEntry').onclick=statsMenu;$('pipeStatsBack').onclick=menu;$('pipeRandomBack').onclick=menu;$('pipeStagesBack').onclick=menu;
 $('pipeLevelsBack').onclick=stages;$('pipeGameBack').onclick=back;
 $('pipeRandomChoices').addEventListener('click',ev=>{const b=ev.target.closest('[data-pipe-size]');if(b)startRandom(Number(b.dataset.pipeSize));});
 $('pipeResultNext').onclick=()=>mode==='random'?startRandom(currentSize,true):startLevel(currentLevel+1);
@@ -213,12 +237,17 @@ function cancelDrag(){
  grid?.querySelectorAll('.pipeDragSource,.pipeDragTarget').forEach(t=>t.classList.remove('pipeDragSource','pipeDragTarget'));
  pointerOrigin=null;
 }
-function dropTarget(x,y){
- for(const cell of grid.querySelectorAll('[data-cell]')){
-  const r=cell.getBoundingClientRect();
-  if(x>=r.left&&x<r.right&&y>=r.top&&y<r.bottom)return Number(cell.dataset.cell);
+// Cache the two/four legal adjacent destinations on touch-down rather than
+// repeatedly measuring every square during each pointermove. A drop is also
+// accepted near a square's centre so the user needn't hit a tiny target.
+function dropTarget(p,x,y){
+ let target=null,dist=Infinity;
+ for(const cell of p.validCells){
+   const dx=x-cell.x,dy=y-cell.y,delta=Math.hypot(dx,dy);
+   if(delta<dist){dist=delta;target=cell;}
  }
- return null;
+ if(!target||dist>Math.max(18,target.width*.78))return null;
+ return target.index;
 }
 function setDragVisual(p,ev){
  if(!p.ghost){
@@ -229,17 +258,16 @@ function setDragVisual(p,ev){
   ghost.removeAttribute('data-cell');ghost.classList.remove('pipeSelected','pipeValidDrop','pipeDragSource');
   ghost.classList.add('pipeDragGhost');ghost.setAttribute('aria-hidden','true');
   ghost.style.width=`${r.width}px`;ghost.style.height=`${r.height}px`;
-  grid.append(ghost);p.ghost=ghost;
+  // Fixed-position composited transform avoids full-grid layouts and clipping.
+  document.body.append(ghost);p.ghost=ghost;
  }
- const bounds=grid.getBoundingClientRect();
- p.ghost.style.left=`${ev.clientX-bounds.left}px`;
- p.ghost.style.top=`${ev.clientY-bounds.top}px`;
- const target=dropTarget(ev.clientX,ev.clientY),valid=target!==null&&e.canMove(board,p.from,target);
- if(p.lastTarget!==target||p.lastValid!==valid){
+ p.ghost.style.transform=`translate3d(${ev.clientX}px, ${ev.clientY}px, 0) translate(-50%, -50%) scale(1.045)`;
+ const target=dropTarget(p,ev.clientX,ev.clientY),valid=target!==null;
+ if(p.lastTarget!==target){
   grid.querySelector('.pipeDragTarget')?.classList.remove('pipeDragTarget');
   if(valid)grid.querySelector(`[data-cell="${target}"]`)?.classList.add('pipeDragTarget');
  }
- p.lastTarget=target;p.lastValid=valid;
+ p.lastTarget=target;
  p.ghost.classList.toggle('pipeDragInvalid',!valid);
 }
 grid.addEventListener('pointerdown',ev=>{
@@ -248,12 +276,17 @@ grid.addEventListener('pointerdown',ev=>{
  const from=Number(cell.dataset.cell),tile=board?.[from];
  if(!tile||tile.fixed||!['pipe','block'].includes(tile.kind))return;
  cancelDrag();
- pointerOrigin={id:ev.pointerId,x:ev.clientX,y:ev.clientY,from,active:false,ghost:null,lastTarget:null,lastValid:false};
+ const validCells=[];
+ for(const move of e.legalMoves(board))if(move.from===from){
+  const dest=grid.querySelector(`[data-cell="${move.to}"]`),r=dest?.getBoundingClientRect();
+  if(r)validCells.push({index:move.to,x:r.left+r.width/2,y:r.top+r.height/2,width:r.width});
+ }
+ pointerOrigin={id:ev.pointerId,x:ev.clientX,y:ev.clientY,from,active:false,ghost:null,lastTarget:null,validCells};
  try{grid.setPointerCapture(ev.pointerId);}catch(_){}
 });
 grid.addEventListener('pointermove',ev=>{
  const p=pointerOrigin;if(!p||p.id!==ev.pointerId||section!=='game')return;
- if(!p.active&&Math.hypot(ev.clientX-p.x,ev.clientY-p.y)>=10)p.active=true;
+ if(!p.active&&Math.hypot(ev.clientX-p.x,ev.clientY-p.y)>=7)p.active=true;
  if(!p.active)return;
  if(ev.cancelable)ev.preventDefault();
  setDragVisual(p,ev);
@@ -261,8 +294,8 @@ grid.addEventListener('pointermove',ev=>{
 grid.addEventListener('pointerup',ev=>{
  const p=pointerOrigin;if(!p||p.id!==ev.pointerId)return;
  if(p.active){
-  ignoreClickUntil=performance.now()+180;
-  const target=dropTarget(ev.clientX,ev.clientY);
+  ignoreClickUntil=performance.now()+250;
+  const target=dropTarget(p,ev.clientX,ev.clientY);
   const valid=target!==null&&e.canMove(board,p.from,target);
   cancelDrag();
   if(valid)slide(p.from,target);
@@ -297,7 +330,7 @@ root.addEventListener('touchend',ev=>{
  if((fromLeftEdge||swipeLeft)&&Math.abs(dy)<55&&Math.abs(dx)>Math.abs(dy)*1.7)back();
 },{passive:true});
 root.addEventListener('touchcancel',()=>edge=null,{passive:true});
-window.addEventListener('pagehide',()=>{saveCurrent();timerStop();});
+window.addEventListener('pagehide',()=>{cancelDrag();saveCurrent();timerStop();});
 document.addEventListener('visibilitychange',()=>{if(document.hidden){saveCurrent();timerStop();cancelDrag();}else if(section==='game'&&!won&&!expired)startTicker();});
 progress=read();save();
 globalThis.PipeShiftApp={menu,randomMenu,stages,levels:stages,start:startLevel,startLevel,startRandom,back,readProgress:()=>JSON.parse(JSON.stringify(progress))};

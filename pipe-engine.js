@@ -1,4 +1,4 @@
-/* Grid Club Pipe Shift v0.9.1 · seeded pipe networks and movable blank blocks */
+/* Grid Club Pipe Shift v0.9.2 · seeded pipe networks and movable blank blocks */
 (function(root,factory){const api=factory();if(typeof module!=='undefined'&&module.exports)module.exports=api;if(root)root.PipeEngine=api;})(typeof globalThis!=='undefined'?globalThis:this,function(){
 'use strict';
 const N=1,E=2,S=4,W=8,SIZE=5,MAX_LEVEL=30;
@@ -63,11 +63,13 @@ function network({size,mode,seed,complexity=1,fixedCount=0,walls=0,decoys=0,bloc
  for(const i of candidates.slice(0,fixedCount))board[i].fixed=true;
  const unused=shuffle(board.map((t,i)=>t.kind==='empty'?i:-1).filter(i=>i>=0),rand);
  for(const i of unused.splice(0,walls))board[i]={kind:'wall',mask:0,fixed:true};
- for(const i of unused.splice(0,decoys))board[i]={kind:'pipe',mask:DECORS[Math.floor(rand()*DECORS.length)],fixed:false,decoy:true};
- // Solid, movable, pipe-free pieces occupy a cell but cannot carry water.
- // Keep a few genuinely empty spaces for sliding; all blocks begin in a
- // confirmed solvable arrangement and are scrambled only via legal slides.
- for(const i of unused.slice(0,Math.min(blocks,Math.max(0,unused.length-3))))board[i]={kind:'block',mask:0,fixed:false};
+ // Keep at least six genuine gaps on crowded boards; they are essential
+ // for moving pipes around without relying on rapid repeated tapping.
+ // Reserve solid sliding blocks first so extra decoy pipes do not displace
+ // the advanced mechanic from the later fixed stages.
+ const gaps=size===7?6:3;
+ for(const i of unused.splice(0,Math.min(blocks,Math.max(0,unused.length-gaps))))board[i]={kind:'block',mask:0,fixed:false};
+ for(const i of unused.splice(0,Math.min(decoys,Math.max(0,unused.length-gaps))))board[i]={kind:'pipe',mask:DECORS[Math.floor(rand()*DECORS.length)],fixed:false,decoy:true};
  if(!evaluate(board).solved)throw Error('Authored flow does not connect');
  return board;
 }
@@ -117,7 +119,10 @@ function get(n){if(!Number.isInteger(n)||n<1||n>MAX_LEVEL)return null;
    if(n<=5)cache.set(n,{...LEGACY[n-1],stage:1,mode:'levels',timerMs:timerFor(n)});
    else{const s=stageOf(n),k=n-s.first,seed=(0x190f5600+n*7727)>>>0;
      const options={size:s.size,mode:s.mode,seed,complexity:1+k%3,fixedCount:s.id===2?k+1:Math.min(5,s.id-2+Math.floor(k/2)),
-       walls:s.id===2?Math.floor(k/2):Math.min(5,s.id-3+Math.floor(k/2)),decoys:s.id===2?2+k:3+Math.min(5,k+s.id-3),
+       walls:s.id===2?Math.floor(k/2):Math.min(5,s.id-3+Math.floor(k/2)),
+       // Expert has a dense mixture of useful and decoy pipes, rather than
+       // an almost empty 7x7 board. Every puzzle remains reverse-solvable.
+       decoys:s.id===2?2+k:s.id===3?10+2*k:12+2*k+2*(s.id-4),
        blocks:s.id===3?(k>=2?1+Math.floor((k-2)/2):0):s.id>=4?2+(s.id-4)+Math.floor(k/2):0};
      const solvedBoard=network(options),scrambled=scramble(solvedBoard,seed^0x123acdca,10+s.id*5+k*6);
      cache.set(n,{level:n,stage:s.id,size:s.size,mode:'levels',networkType:s.mode,timerMs:timerFor(n),...scrambled,solvedBoard,initialMoves:scrambled.solutionMoves.length,
@@ -130,7 +135,8 @@ function random(size,seed){if(![5,6,7].includes(size))throw Error('Unknown Rando
  seed=Number.isFinite(seed)?seed>>>0:((Date.now()^Math.floor(Math.random()*0xffffffff))>>>0);
  const variety=seed%6,mode=size===7?'loop':'path';
  const options={size,mode,seed,complexity:1+variety%3,fixedCount:size===5?0:size===6?1+variety%3:2+variety%4,
-   walls:size===5?0:size===6?variety%3:1+variety%3,decoys:size===5?variety%3:2+variety%4,
+   walls:size===5?0:size===6?variety%3:1+variety%3,
+   decoys:size===5?variety%3:size===6?2+variety%4:13+2*variety,
    blocks:size===7?1+variety%4:0};
  const solvedBoard=network(options),scrambled=scramble(solvedBoard,seed^0x4f4b1133,14+size*6+variety*6);
  return {mode:'random',size,seed,timerMs:null,level:null,stage:null,...scrambled,solvedBoard,initialMoves:scrambled.solutionMoves.length,networkType:mode};
