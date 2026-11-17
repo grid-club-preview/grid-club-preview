@@ -12,7 +12,7 @@
       'And that’s a wrap!','Not a square out of place.','Look at you go.',
       'Another one bites the dust.','A tidy bit of connecting.','That’s all connected, then.',
       'That grid didn’t see you coming!','You’re good. Very good.','Step back. We have a winner!',
-      'Winning!','How did you get so good?','The results are in…'],
+      'Winning!','How did you get so good?','The results are in…','Never in doubt'],
     quick: ['Ooft. Quick draw!','Motoring through!','No hanging about, then.',
       'Blink and you’ll miss it.','Someone’s in a hurry.','A new personal best!'],
     effort: ['That one put up a fight.','Persistence pays off.','Got there in the end!',
@@ -30,10 +30,13 @@
         'Nicely connected.',
         'Let it flow!',
         'Pipes in perfect order.'
+        'Piping hot.'
+        'Perfectly piped.'
+        'Nice flow.'
       ],
       stageHeading: 'Stage {stage} complete!',
       stageVictory: 'Flow upgraded!',
-      grandHeading: 'Pipe Shift mastered!',
+      grandHeading: 'Pipe Shift master!',
       grandVictory: 'Every pipe connected!'
     }
   };
