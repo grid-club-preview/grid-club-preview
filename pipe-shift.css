@@ -1,0 +1,64 @@
+/* Pipe Shift · Grid Club game two · v0.8.0 */
+#pipeShiftScreen{--pipe-blue:#6ac8ff;--pipe-border:#55768b;padding-top:7px;}
+#pipeShiftScreen button{-webkit-tap-highlight-color:transparent;}
+#pipeShiftScreen,#pipeShiftScreen *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}
+.pipeHeader{display:flex;align-items:center;gap:13px;margin-bottom:22px;}
+.pipeHeader .eyebrow{color:#9edcff;}
+.pipeHeader h2{font-size:27px;margin:4px 0 0;letter-spacing:-.5px;}
+.pipeHeader .pipeHeaderMeta{margin-left:auto;color:#9eafc7;font-size:12px;font-variant-numeric:tabular-nums;white-space:nowrap;}
+.pipeCard{background:#1c2b43;border:1px solid #344963;border-radius:20px;padding:17px;margin:13px 0;}
+.pipeButton{display:flex;align-items:center;gap:14px;padding:16px 17px;text-align:left;width:100%;border-radius:16px;background:linear-gradient(130deg,#233e51,#25304b);border:1px solid #3e6074;}
+.pipeButton .pipeButtonIcon{background:#25485a;border:1px solid #417589;width:49px;height:49px;border-radius:15px;display:grid;place-items:center;flex:none;}
+.pipeButton strong{display:block;font-size:18px;}
+.pipeButton small{display:block;color:#aac3d3;margin-top:3px;font-size:12px;}
+.pipeButton .pipeChevron{margin-left:auto;color:#92c3d4;font-size:25px;}
+.pipeProgressRow{display:flex;justify-content:space-between;align-items:center;color:#b9c8dc;font-size:13px;margin:10px 3px 14px;}
+.pipeProgressRow strong{color:#a1eaff;font-weight:850;font-variant-numeric:tabular-nums;}
+.pipeLevelList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
+.pipeLevel{background:#213249;border:1px solid #435a72;border-radius:15px;padding:15px;text-align:left;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;min-height:92px;}
+.pipeLevel strong{display:block;font-size:16px;margin-bottom:7px;}
+.pipeLevel small{display:block;font-size:11px;line-height:1.35;color:#aebdd3;}
+.pipeLevel .pipeTag{color:#9edcff;font-size:14px;white-space:nowrap;}
+.pipeLevel:disabled{opacity:.43;cursor:not-allowed;}
+.pipeLevel[data-complete="true"]{border-color:#477b74;background:#203a45;}
+.pipeBoardShell{background:#18263b;border:1px solid #344b63;padding:13px;border-radius:22px;margin-top:14px;}
+.pipeScoreline{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px;}
+.pipeScoreline small{font-size:11px;color:#acbed4;display:block;margin-bottom:5px;}
+.pipeScoreline strong{font-size:22px;font-variant-numeric:tabular-nums;}
+.pipeBoard{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;touch-action:none;aspect-ratio:1;width:100%;max-width:490px;margin:auto;border:4px solid #293d52;border-radius:16px;background:#293d52;overflow:hidden;}
+.pipeTile{width:100%;aspect-ratio:1;min-width:0;min-height:0;padding:0;display:grid;place-items:center;position:relative;background:#283c50;border-radius:5px;border:1px solid #425b70;touch-action:none;overflow:hidden;}
+.pipeTile:focus-visible{outline:3px solid #fff;outline-offset:-3px;z-index:2;}
+.pipeTile.pipeEmpty{background:#101c2c;border:1px dashed #31455b;}
+.pipeTile.pipeEmpty.pipeValidDrop{background:#1d4654;border:2px solid #66e8c9;box-shadow:inset 0 0 17px #64eac533;}
+.pipeTile.pipeWall{background:repeating-linear-gradient(135deg,#38495c 0 8px,#2d3c4f 8px 16px);border:1px solid #5e7187;}
+.pipeTile.pipeFixed{border-color:#97a6bf;background:#35465d;}
+.pipeTile.pipeSelected{outline:2px solid #80f0d8;outline-offset:-3px;z-index:2;background:#31566b;}
+.pipeTile.pipeSource{background:linear-gradient(135deg,#244d46,#284b54);border:2px solid #6ee5b0;}
+.pipeTile.pipeSink{background:linear-gradient(135deg,#3b405b,#273d63);border:2px solid #b9a3ff;}
+.pipeTile svg{width:100%;height:100%;overflow:visible;pointer-events:none;}
+.pipeTube{stroke:#101d2b;stroke-width:27;fill:none;stroke-linecap:round;stroke-linejoin:round;}
+.pipeChannel{stroke:#b3cee0;stroke-width:15;fill:none;stroke-linecap:round;stroke-linejoin:round;}
+.pipeWater{stroke:#6cd8ff;stroke-width:12;fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:12 16;opacity:0;}
+.pipeFlowing .pipeWater{opacity:1;animation:pipeWaterFlow .55s linear infinite;animation-delay:var(--flow-delay,0s);}
+@keyframes pipeWaterFlow{to{stroke-dashoffset:-28;}}
+.pipeFixedMark{position:absolute;right:3px;top:1px;color:#dae5f7;font-size:11px;line-height:1;font-weight:900;}
+.pipeTerminal{position:absolute;bottom:2px;right:3px;font-size:9px;font-weight:900;letter-spacing:.2px;color:#b9f9de;text-shadow:0 1px 3px #001a;}
+.pipeSink .pipeTerminal{color:#e2d3ff;}
+.pipeTile.pipeWall::after{content:'×';font-size:18px;color:#91a2b5;opacity:.55;}
+.pipeInstruction{font-size:12px;color:#aabdd1;margin:12px 3px 0;min-height:18px;}
+.pipeControls{display:flex;gap:9px;margin-top:13px;}
+.pipeControls button{flex:1;background:#2a4156;border:1px solid #43647d;color:#e0effb;border-radius:13px;padding:13px 12px;font-size:14px;font-weight:800;}
+.pipeControls button:disabled{opacity:.34;cursor:not-allowed;}
+.pipeControls .pipeMenuButton{background:#213247;}
+.pipeResult{position:absolute;inset:0;background:#101c2dd9;z-index:4;display:flex;align-items:center;justify-content:center;padding:12px;}
+.pipeBoardHolder{position:relative;}
+.pipeResultInner{text-align:center;background:#243a4e;border:1px solid #6a92a4;border-radius:20px;padding:20px 16px;box-shadow:0 15px 40px #0009;width:min(100%,340px);}
+.pipeResultInner .pipeVictoryIcon{font-size:37px;color:#8de4db;animation:pipeVictoryPop .65s cubic-bezier(.2,.8,.2,1) both;}
+.pipeResultInner h3{font-size:23px;line-height:1.12;margin:9px 0;}
+.pipeResultInner p{font-size:13px;color:#d2dfeb;margin:10px 0 17px;}
+.pipeResultInner button{display:block;width:100%;background:#8be0d7;color:#0d2532;border-radius:13px;font-size:14px;font-weight:850;padding:14px 12px;margin-top:9px;}
+.pipeResultInner button.pipeSecondary{background:#314a60;color:#e0effb;}
+@keyframes pipeVictoryPop{0%{transform:scale(.35) rotate(-25deg);opacity:0;}75%{transform:scale(1.2) rotate(6deg);opacity:1;}100%{transform:scale(1);}}
+.pipeHelp{font-size:12px;line-height:1.55;color:#a8bed4;margin:13px 0 0;}
+.pipeSaveNotice{color:#ffc0a5;font-size:12px;margin-top:12px;}
+@media(prefers-reduced-motion:reduce){.pipeFlowing .pipeWater{animation:none;stroke-dasharray:none;}.pipeResultInner .pipeVictoryIcon{animation:none;}}

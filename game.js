@@ -1,4 +1,4 @@
-/* Grid Club · Dot Trails v0.7.1 level progression · random play + ranked daily prototype */
+/* Grid Club · Dot Trails v0.8.0 level progression · random play + ranked daily prototype */
 (() => {
   'use strict';
   const core = GridCore;
@@ -249,11 +249,7 @@
     $('solvedTag').hidden = !dailySolved();
     $('dailyStartText').textContent = dailySolved() ? 'View today’s stats' :
       savedGame('daily',11) ? 'Continue today’s puzzle' : 'Play today’s puzzle';
-    const freeSaved = core.SIZES.some(n => {
-      const s = savedGame('free',n);
-      return s && !s.finishedAt && (Object.keys(s.paths).length > 0 || core.elapsed(s) > 3000);
-    });
-    $('freeStartText').textContent = freeSaved ? 'Dot Trails · Continue or play' : 'Dot Trails';
+    $('freeStartText').textContent = 'Dot Trails';
     const progress=loadLevelState();
     const finished=Object.keys(progress.completed).filter(id=>progress.completed[id]).length;
     if($('levelsSubtitle'))$('levelsSubtitle').textContent=finished?`${finished}/75 complete · Earn credits`:'Complete levels · Earn credits';
