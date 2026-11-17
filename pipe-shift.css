@@ -97,3 +97,56 @@
 /* Keep all three controls readable on narrow iPhones. */
 .pipeControls{flex-wrap:wrap;}
 .pipeControls #pipeNew:not([hidden]){flex:1 1 100%;}
+
+/* v0.9.1: distinct stage victories and dedicated four-terminal finale. */
+.pipeStageCelebration{position:relative;isolation:isolate;overflow:hidden;border:1px solid var(--stage-edge,#6ba6a9);border-radius:17px;background:radial-gradient(circle at 50% 25%,var(--stage-glow,#46848c65),transparent 70%),#1a3046;margin:14px 0 12px;padding:17px 12px 15px;display:flex;align-items:center;flex-direction:column;gap:7px;}
+.pipeStageBadge{width:66px;height:66px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(145deg,#e9f9ff,var(--stage-colour,#93e8d4));border:3px solid #ffffff65;color:#183247;font-size:33px;font-weight:900;box-shadow:0 0 0 6px #ffffff13,0 7px 23px #0008;z-index:1;}
+.pipeStageHeading{font-size:18px;color:var(--stage-colour,#93e8d4);font-weight:900;z-index:1;}
+.pipeStageParticles{position:absolute;inset:0;overflow:hidden;pointer-events:none;}
+.pipeStageParticles i{position:absolute;left:50%;top:49%;width:8px;height:11px;background:#95d9ff;border-radius:3px;--x:92px;--y:-65px;--rotate:240deg;animation:pipeParty 1.05s ease-out both;}
+.pipeStageParticles i:nth-child(2){--x:-95px;--y:-70px;--rotate:-260deg;background:#e7b9ff;animation-delay:.05s;}
+.pipeStageParticles i:nth-child(3){--x:115px;--y:15px;--rotate:300deg;background:#a7eed1;animation-delay:.07s;}
+.pipeStageParticles i:nth-child(4){--x:-112px;--y:20px;--rotate:-230deg;background:#f1cb90;animation-delay:.1s;}
+.pipeStageParticles i:nth-child(5){--x:38px;--y:-108px;--rotate:150deg;background:#ffd5de;animation-delay:.03s;}
+.pipeStageParticles i:nth-child(6){--x:-39px;--y:-109px;--rotate:-180deg;background:#a8c5ff;animation-delay:.08s;}
+.pipeStageParticles i:nth-child(7){--x:57px;--y:85px;--rotate:270deg;background:#efe49d;animation-delay:.12s;}
+.pipeStageParticles i:nth-child(8){--x:-61px;--y:84px;--rotate:-200deg;background:#8ce5e1;animation-delay:.06s;}
+.pipeStageCelebration[data-stage="1"]{--stage-colour:#8bead2;--stage-edge:#579e92;--stage-glow:#478f8965;}
+.pipeStageCelebration[data-stage="2"]{--stage-colour:#edba8f;--stage-edge:#a87b56;--stage-glow:#ab774b6b;}
+.pipeStageCelebration[data-stage="3"]{--stage-colour:#e0e8f2;--stage-edge:#96a7c0;--stage-glow:#9eadd870;}
+.pipeStageCelebration[data-stage="4"]{--stage-colour:#ffe4a4;--stage-edge:#ba9f51;--stage-glow:#a88e4a6f;}
+.pipeStageCelebration[data-stage="5"]{--stage-colour:#c1b4ff;--stage-edge:#8578b8;--stage-glow:#6e67a976;}
+.pipeStageCelebration[data-stage="6"]{--stage-colour:#ffb9d8;--stage-edge:#cb8ca7;--stage-glow:#b0749a78;}
+.pipeStageCelebration[data-stage="1"] .pipeStageBadge{animation:pipeMedalPop .72s cubic-bezier(.2,1.5,.4,1) both;}
+.pipeStageCelebration[data-stage="2"] .pipeStageBadge{animation:pipeMedalRise .88s cubic-bezier(.18,1.15,.3,1) both;}
+.pipeStageCelebration[data-stage="3"] .pipeStageBadge{animation:pipeMedalSpin .94s cubic-bezier(.17,1.2,.4,1) both;}
+.pipeStageCelebration[data-stage="4"] .pipeStageBadge{animation:pipeMedalWave .85s ease-out both;}
+.pipeStageCelebration[data-stage="5"] .pipeStageBadge{animation:pipeMedalOrbit 1.0s ease-out both;}
+.pipeStageCelebration[data-stage="6"] .pipeStageBadge{animation:pipeGrandBadge 1.35s cubic-bezier(.14,1.2,.3,1) both;}
+.pipeStageCelebration[data-stage="6"]{min-height:163px;background:radial-gradient(circle at 50% 32%,#e9b96750,transparent 65%),linear-gradient(150deg,#493052,#183f55);border:2px solid #f2ce96;}
+.pipeStageCelebration[data-stage="6"]:before,.pipeStageCelebration[data-stage="6"]:after{content:"";position:absolute;left:calc(50% - 50px);top:7px;width:100px;height:100px;border-radius:50%;border:2px solid #f8d8a7;animation:pipeFinalHalo 1.6s ease-out both;}
+.pipeStageCelebration[data-stage="6"]:after{animation-delay:.28s;}
+.pipeStageCelebration[data-stage="6"] .pipeStageHeading{font-size:21px;color:#ffe6bd;}
+.pipeGrandFinale .pipeResultInner{border:2px solid #e9cda0;box-shadow:0 0 65px #c4a2ef4b,0 15px 40px #000a;}
+.pipeGrandFinale .pipeVictoryIcon{color:#f7d39e;}
+.pipeGrandFinale .pipeStageParticles i{animation-duration:1.75s;}
+@keyframes pipeParty{0%{opacity:0;transform:translate(0,0) rotate(0)}15%{opacity:1}80%{opacity:1}100%{opacity:0;transform:translate(var(--x),var(--y)) rotate(var(--rotate))}}
+@keyframes pipeMedalPop{from{opacity:0;transform:scale(.2) rotate(-37deg)}72%{opacity:1;transform:scale(1.16) rotate(8deg)}to{transform:scale(1) rotate(0)}}
+@keyframes pipeMedalRise{from{opacity:0;transform:translateY(48px) scale(.25)}70%{opacity:1;transform:translateY(-12px) scale(1.16)}to{transform:translateY(0) scale(1)}}
+@keyframes pipeMedalSpin{from{opacity:0;transform:rotate(-180deg) scale(.2)}80%{opacity:1;transform:rotate(20deg) scale(1.12)}to{transform:rotate(0) scale(1)}}
+@keyframes pipeMedalWave{from{opacity:0;transform:translateX(-58px) rotate(-35deg) scale(.5)}65%{opacity:1;transform:translateX(12px) rotate(8deg) scale(1.13)}to{transform:translateX(0) rotate(0) scale(1)}}
+@keyframes pipeMedalOrbit{from{opacity:0;transform:translate(42px,-48px) rotate(100deg) scale(.2)}75%{opacity:1;transform:translate(-6px,4px) rotate(-9deg) scale(1.12)}to{transform:translate(0,0) rotate(0) scale(1)}}
+@keyframes pipeGrandBadge{from{opacity:0;transform:translateY(42px) scale(.08) rotate(-65deg)}68%{opacity:1;transform:translateY(-10px) scale(1.4) rotate(12deg)}to{transform:translateY(0) scale(1) rotate(0)}}
+@keyframes pipeFinalHalo{from{opacity:1;transform:scale(.3)}to{opacity:0;transform:scale(2.4)}}
+@media(prefers-reduced-motion:reduce){.pipeStageCelebration .pipeStageBadge,.pipeStageCelebration .pipeStageParticles i,.pipeStageCelebration[data-stage="6"]:before,.pipeStageCelebration[data-stage="6"]:after{animation:none!important;}}
+
+/* v0.9.1 drag-and-drop and movable pipe-free tiles */
+.pipeBoard{position:relative;overscroll-behavior:contain;}
+.pipeTile.pipeBlankBlock{background:linear-gradient(145deg,#74634a,#54473b);border:2px solid #c7a371;box-shadow:inset 0 1px 8px #f5d9a321;cursor:grab;}
+.pipeBlockGrip{font-size:16px;letter-spacing:2px;font-weight:900;color:#e8c992;pointer-events:none;}
+.pipeTile.pipePiece:not(.pipeFixed){cursor:grab;}
+.pipeTile.pipeDragSource{opacity:.25;}
+.pipeTile.pipeDragTarget{background:#25596a!important;outline:3px solid #75eed6!important;outline-offset:-3px;}
+.pipeDragGhost{position:absolute;pointer-events:none!important;z-index:25!important;opacity:.94;transform:translate(-50%,-50%) scale(1.08);box-shadow:0 8px 24px #000a,0 0 0 2px #8dffe3;border-color:#91f5e0!important;touch-action:none;cursor:grabbing!important;}
+.pipeDragGhost.pipeDragInvalid{border-color:#bd8798!important;box-shadow:0 8px 24px #0009,0 0 0 2px #ec9aae;opacity:.76;}
+@media(prefers-reduced-motion:reduce){.pipeDragGhost{transform:translate(-50%,-50%);}}

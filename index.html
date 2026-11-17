@@ -12,7 +12,7 @@
   <link rel="icon" href="./icons/icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
   <title>Grid Club · Dot Trails &amp; Pipe Shift</title>
-  <link rel="stylesheet" href="pipe-shift.css?v=0.9.0">
+  <link rel="stylesheet" href="pipe-shift.css?v=0.9.1">
   <style>
     :root { color-scheme: dark; --bg:#0e1424; --surface:#1a243a; --tile:#253147; --muted:#9daabe; --mint:#7be3d4; --purple:#a178ff; }
     * { box-sizing: border-box; }
@@ -236,6 +236,30 @@
     .levelUpConfetti i:nth-child(12){--dx:-9px;--dy:-122px;--spin:-240deg;background:#ffb7d5;animation-delay:.04s;}
     #win.levelUp .winInner{box-shadow:0 0 45px #91d4ba33,0 12px 35px #0007;}
     #win.levelUp #next{background:linear-gradient(115deg,#85e7cd,#ffcf8b);}
+    /* Each stage gets its own badge symbol, colour and choreography. The first
+       retains the familiar coin pop; the last is a dedicated grand finale. */
+    .levelUpCelebration[data-stage]{border-color:var(--stage-border,#529c96);background:radial-gradient(circle at 50% 9%,color-mix(in srgb,var(--stage-accent,#85e7cd) 18%,transparent),transparent 64%),linear-gradient(145deg,var(--stage-bg,#1c3e48),#1d2942 80%);}
+    .levelUpCelebration[data-stage] .levelUpHeading{color:var(--stage-accent,#ffe3a6);}
+    .levelUpCelebration[data-stage] .levelUpMedal{background:linear-gradient(140deg,#fff8d9,var(--stage-accent,#ffc77a));}
+    .levelUpCelebration[data-motion="2"] .levelUpMedal{animation:levelUpRise .82s cubic-bezier(.16,1.5,.45,1) both;}
+    .levelUpCelebration[data-motion="3"] .levelUpMedal{animation:levelUpSpin .95s cubic-bezier(.21,1.2,.46,1) both;}
+    .levelUpCelebration[data-motion="4"] .levelUpMedal{animation:levelUpBounce .9s cubic-bezier(.15,1.15,.3,1) both;}
+    .levelUpCelebration[data-motion="5"] .levelUpMedal{animation:levelUpOrbit 1.04s ease-out both;}
+    .levelUpCelebration[data-stage] .levelUpConfetti{filter:hue-rotate(var(--stage-hue,0deg));}
+    @keyframes levelUpRise{0%{opacity:0;transform:translateY(42px) scale(.4)}72%{opacity:1;transform:translateY(-8px) scale(1.13)}100%{transform:translateY(0) scale(1)}}
+    @keyframes levelUpSpin{0%{opacity:0;transform:rotate(-145deg) scale(.1)}72%{opacity:1;transform:rotate(12deg) scale(1.18)}100%{transform:rotate(0) scale(1)}}
+    @keyframes levelUpBounce{0%{opacity:0;transform:translateX(-56px) rotate(-28deg) scale(.45)}60%{opacity:1;transform:translateX(10px) rotate(10deg) scale(1.14)}100%{transform:translateX(0) rotate(0) scale(1)}}
+    @keyframes levelUpOrbit{0%{opacity:0;transform:translate(52px,-37px) rotate(100deg) scale(.25)}65%{opacity:1;transform:translate(-7px,6px) rotate(-13deg) scale(1.13)}100%{transform:translate(0,0) rotate(0) scale(1)}}
+    #win.finale .winInner{border:2px solid #f6d690;box-shadow:0 0 0 2px #deb75c2f,0 0 68px #d7b4ff35,0 15px 50px #0009;}
+    #win.finale .levelUpCelebration{min-height:174px;background:radial-gradient(circle at 50% 45%,#7364a66a,transparent 66%),linear-gradient(135deg,#402f5b,#22384e);border:1px solid #f6d690;}
+    #win.finale .levelUpCelebration::before,#win.finale .levelUpCelebration::after{content:"";position:absolute;width:95px;height:95px;top:15px;left:calc(50% - 47px);border:2px solid #f6d690b5;border-radius:50%;pointer-events:none;animation:grandFinaleHalo 1.65s ease-out both;}
+    #win.finale .levelUpCelebration::after{animation-delay:.25s;}
+    #win.finale .levelUpMedal{background:linear-gradient(135deg,#fff0b7,#e8b965);animation:grandFinaleCrown 1.4s cubic-bezier(.18,1.25,.4,1) both;z-index:1;}
+    #win.finale .levelUpHeading{color:#ffe7a3;font-size:26px;}
+    #win.finale .levelUpConfetti i{animation-duration:1.65s;}
+    @keyframes grandFinaleHalo{from{opacity:1;transform:scale(.35)}to{opacity:0;transform:scale(2.45)}}
+    @keyframes grandFinaleCrown{0%{opacity:0;transform:translateY(55px) scale(.12) rotate(-60deg)}64%{opacity:1;transform:translateY(-10px) scale(1.34) rotate(10deg)}100%{transform:translateY(0) scale(1) rotate(0)}}
+
     @keyframes levelUpMedalIn{0%{opacity:0;transform:scale(.2) rotate(-45deg);}65%{opacity:1;transform:scale(1.15) rotate(8deg);}100%{transform:scale(1) rotate(0);}}
     @keyframes levelUpWords{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
     @keyframes levelBurst{0%{transform:translate(0,0) rotate(0);opacity:0;}15%{opacity:1;}75%{opacity:1;}100%{transform:translate(var(--dx),var(--dy)) rotate(var(--spin));opacity:0;}}
@@ -243,7 +267,25 @@
     .winDifficultyActions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:9px;}
     .winInner .difficultyShift{background:#2b3a52;color:#edf3ff;font-size:14px;padding:13px 8px;}
     .winInner .difficultyShift:disabled{opacity:.3;cursor:not-allowed;color:#c5cfdf;}
-    @media (prefers-reduced-motion: reduce){.win.show .victoryStar,#winTitle.victoryAnimate,#winTitle.victoryAnimate::after,.levelUpMedal,.levelUpHeading,.levelUpCelebration>span,.levelUpConfetti i{animation:none;}}
+
+    /* A different entrance vector for every Dot Trails stage. Stage 1 retains
+       the original coin pop, while Stage 15 has its own grand finale. */
+    .levelUpCelebration[data-stage]:not([data-stage="1"]):not([data-stage="15"]) .levelUpMedal{animation:stagePersonalIntro var(--intro-time,.84s) cubic-bezier(.17,1.3,.36,1) both;}
+    @keyframes stagePersonalIntro{0%{opacity:0;transform:translate(var(--intro-x,0px),var(--intro-y,35px)) rotate(var(--intro-rot,0deg)) scale(.24)}72%{opacity:1;transform:translate(calc(var(--intro-x,0px) * -.15),calc(var(--intro-y,35px) * -.16)) rotate(10deg) scale(1.16)}100%{transform:translate(0,0) rotate(0) scale(1)}}
+    .levelUpCelebration[data-stage="2"]{--intro-x:-52px;--intro-y:30px;--intro-rot:-45deg;--intro-time:0.78s;}
+    .levelUpCelebration[data-stage="3"]{--intro-x:45px;--intro-y:-58px;--intro-rot:120deg;--intro-time:0.98s;}
+    .levelUpCelebration[data-stage="4"]{--intro-x:-62px;--intro-y:-27px;--intro-rot:-90deg;--intro-time:0.85s;}
+    .levelUpCelebration[data-stage="5"]{--intro-x:54px;--intro-y:38px;--intro-rot:145deg;--intro-time:0.91s;}
+    .levelUpCelebration[data-stage="6"]{--intro-x:0px;--intro-y:70px;--intro-rot:-165deg;--intro-time:1.04s;}
+    .levelUpCelebration[data-stage="7"]{--intro-x:-48px;--intro-y:-50px;--intro-rot:-125deg;--intro-time:0.86s;}
+    .levelUpCelebration[data-stage="8"]{--intro-x:68px;--intro-y:0px;--intro-rot:84deg;--intro-time:0.95s;}
+    .levelUpCelebration[data-stage="9"]{--intro-x:-35px;--intro-y:62px;--intro-rot:180deg;--intro-time:0.82s;}
+    .levelUpCelebration[data-stage="10"]{--intro-x:41px;--intro-y:55px;--intro-rot:-225deg;--intro-time:1.08s;}
+    .levelUpCelebration[data-stage="11"]{--intro-x:-67px;--intro-y:16px;--intro-rot:115deg;--intro-time:0.88s;}
+    .levelUpCelebration[data-stage="12"]{--intro-x:28px;--intro-y:-66px;--intro-rot:-180deg;--intro-time:1.0s;}
+    .levelUpCelebration[data-stage="13"]{--intro-x:-20px;--intro-y:72px;--intro-rot:230deg;--intro-time:0.9s;}
+    .levelUpCelebration[data-stage="14"]{--intro-x:64px;--intro-y:-40px;--intro-rot:-120deg;--intro-time:0.99s;}
+    @media (prefers-reduced-motion: reduce){.win.show .victoryStar,#winTitle.victoryAnimate,#winTitle.victoryAnimate::after,.levelUpMedal,.levelUpHeading,.levelUpCelebration>span,.levelUpConfetti i,#win.finale .levelUpCelebration::before,#win.finale .levelUpCelebration::after{animation:none!important;}}
     footer { text-align:center;color:var(--muted);font-size:12px;margin-top:20px;line-height:1.5; }
     [hidden] { display:none !important; }
     @media (min-width:600px) { .shell{padding-top:40px;} }
@@ -252,7 +294,7 @@
 <body>
   <main class="shell">
     <section id="home">
-      <header><div><div class="eyebrow">GRID CLUB</div><h1>A little puzzle break.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.0</span></div></header>
+      <header><div><div class="eyebrow">GRID CLUB</div><h1>A little puzzle break.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.1</span></div></header>
       <details class="backendCheck" aria-label="Leaderboard connection diagnostics">
         <summary class="backendCheckTitle">Connection diagnostics (beta)</summary>
         <p id="backendCheckMessage" role="status" aria-live="polite">Checking configuration…</p>
@@ -350,6 +392,11 @@
             <div class="pipeResult" id="pipeResult" hidden role="dialog" aria-label="Puzzle complete">
               <div class="pipeResultInner"><div class="pipeVictoryIcon" aria-hidden="true">✦</div>
                 <h3 id="pipeResultTitle">Flow restored!</h3><p id="pipeResultMessage"></p>
+                <div id="pipeStageCelebration" class="pipeStageCelebration" hidden role="status" aria-live="polite">
+                  <div class="pipeStageParticles" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+                  <div class="pipeStageBadge" id="pipeStageBadge" aria-hidden="true">◉</div>
+                  <strong id="pipeStageHeading" class="pipeStageHeading">Stage complete!</strong>
+                </div>
                 <button type="button" id="pipeResultNext">Next puzzle →</button>
                 <button type="button" class="pipeSecondary" id="pipeResultLevels">Back to Levels</button>
               </div>
@@ -442,8 +489,8 @@
             <div class="victoryStar" aria-hidden="true">✦</div><h3 id="winTitle">Nice one.</h3><p id="winMessage">All squares filled.</p>
             <div id="levelUpCelebration" class="levelUpCelebration" hidden role="status" aria-live="polite">
               <div class="levelUpConfetti" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-              <div class="levelUpMedal" aria-hidden="true">★</div>
-              <strong class="levelUpHeading">Credit boosted!</strong>
+              <div class="levelUpMedal" id="levelUpMedal" aria-hidden="true">★</div>
+              <strong class="levelUpHeading" id="levelUpHeading">Credit boosted!</strong>
               <span id="levelUpMessage">Level complete · +5 bonus credits</span>
             </div>
             <div id="rankingBox" class="rankingBox" hidden></div>
@@ -470,7 +517,7 @@
       </div>
       
       <div class="adSlot" id="adSlot" aria-hidden="true" hidden></div>
-      <footer>Grid Club · v0.9.0 beta</footer>
+      <footer>Grid Club · v0.9.1 beta</footer>
     </section>
   </main>
   <div class="pauseLayer" id="timeUpLayer" hidden role="dialog" aria-modal="true" aria-labelledby="timeUpTitle"><div class="pauseInner"><div style="font-size:47px;color:var(--mint)">◷</div><h2 id="timeUpTitle">Time's up!</h2><p>Retrying forfeits this puzzle’s credits.</p><button id="timeUpBoost" type="button">+15 seconds · 10 ◉</button><p id="timeUpBoostNote" class="timeUpBoostNote" role="status" aria-live="polite"></p><button id="timeUpRetry" class="secondary">Retry puzzle</button><button id="timeUpBack" class="secondary">Return to Levels</button></div></div>
@@ -489,9 +536,9 @@
   <script src="stats-utils.js?v=0.7.0"></script>
   <script src="puzzle.js?v=0.7.0"></script>
   <script src="levels.js?v=0.7.0"></script>
-  <script src="game.js?v=0.9.0"></script>
-  <script src="pipe-engine.js?v=0.9.0"></script>
-  <script src="pipe-shift.js?v=0.9.0"></script>
+  <script src="game.js?v=0.9.1"></script>
+  <script src="pipe-engine.js?v=0.9.1"></script>
+  <script src="pipe-shift.js?v=0.9.1"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol === 'https:') {
       addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));

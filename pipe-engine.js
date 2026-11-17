@@ -1,4 +1,4 @@
-/* Grid Club Pipe Shift v0.9 · seeded fixed and random pipe networks */
+/* Grid Club Pipe Shift v0.9.1 · seeded pipe networks and movable blank blocks */
 (function(root,factory){const api=factory();if(typeof module!=='undefined'&&module.exports)module.exports=api;if(root)root.PipeEngine=api;})(typeof globalThis!=='undefined'?globalThis:this,function(){
 'use strict';
 const N=1,E=2,S=4,W=8,SIZE=5,MAX_LEVEL=30;
@@ -45,7 +45,7 @@ function doubleDesign(seed){
  return {paths:paths.map(flip),sources:flip([[0,1],[0,5]]),sinks:flip([[6,1],[6,5]])};
 }
 const DECORS=[N|S,E|W,N|E,E|S,S|W,W|N];
-function network({size,mode,seed,complexity=1,fixedCount=0,walls=0,decoys=0}){
+function network({size,mode,seed,complexity=1,fixedCount=0,walls=0,decoys=0,blocks=0}){
  const graph=mode==='loop'?loopDesign(seed):mode==='multiple'?multipleDesign(seed):mode==='double'?doubleDesign(seed):pathDesign(size,seed,complexity);
  const rand=rng(seed^0x87661ab5),board=Array.from({length:size*size},()=>({kind:'empty',mask:0,fixed:false})),ports=new Map();
  for(const path of graph.paths)for(let i=1;i<path.length;i++){
@@ -63,16 +63,20 @@ function network({size,mode,seed,complexity=1,fixedCount=0,walls=0,decoys=0}){
  for(const i of candidates.slice(0,fixedCount))board[i].fixed=true;
  const unused=shuffle(board.map((t,i)=>t.kind==='empty'?i:-1).filter(i=>i>=0),rand);
  for(const i of unused.splice(0,walls))board[i]={kind:'wall',mask:0,fixed:true};
- for(const i of unused.slice(0,decoys))board[i]={kind:'pipe',mask:DECORS[Math.floor(rand()*DECORS.length)],fixed:false,decoy:true};
+ for(const i of unused.splice(0,decoys))board[i]={kind:'pipe',mask:DECORS[Math.floor(rand()*DECORS.length)],fixed:false,decoy:true};
+ // Solid, movable, pipe-free pieces occupy a cell but cannot carry water.
+ // Keep a few genuinely empty spaces for sliding; all blocks begin in a
+ // confirmed solvable arrangement and are scrambled only via legal slides.
+ for(const i of unused.slice(0,Math.min(blocks,Math.max(0,unused.length-3))))board[i]={kind:'block',mask:0,fixed:false};
  if(!evaluate(board).solved)throw Error('Authored flow does not connect');
  return board;
 }
 function legalMoves(board){const size=sizeOf(board);if(!size)return [];const result=[];
- for(let from=0;from<board.length;from++)if(board[from].kind==='pipe'&&!board[from].fixed){
+ for(let from=0;from<board.length;from++)if((board[from].kind==='pipe'||board[from].kind==='block')&&!board[from].fixed){
    for(const d of DIRECTIONS){const {x,y}=at(from,size),xx=x+d.dx,yy=y+d.dy;if(xx>=0&&yy>=0&&xx<size&&yy<size){const to=id(xx,yy,size);if(board[to].kind==='empty')result.push({from,to});}}
  }return result;
 }
-function canMove(board,from,to){const size=sizeOf(board);return !!size&&adjacent(from,to,size)&&board[from]?.kind==='pipe'&&!board[from].fixed&&board[to]?.kind==='empty';}
+function canMove(board,from,to){const size=sizeOf(board);return !!size&&adjacent(from,to,size)&&(board[from]?.kind==='pipe'||board[from]?.kind==='block')&&!board[from].fixed&&board[to]?.kind==='empty';}
 function move(board,from,to){if(!canMove(board,from,to))return false;[board[from],board[to]]=[board[to],board[from]];return true;}
 function evaluate(board){const size=sizeOf(board);if(!size)return {solved:false,flow:[],leaks:0};
  const sources=[],sinks=[];board.forEach((t,i)=>{if(t.kind==='source')sources.push(i);if(t.kind==='sink')sinks.push(i);});
@@ -113,7 +117,8 @@ function get(n){if(!Number.isInteger(n)||n<1||n>MAX_LEVEL)return null;
    if(n<=5)cache.set(n,{...LEGACY[n-1],stage:1,mode:'levels',timerMs:timerFor(n)});
    else{const s=stageOf(n),k=n-s.first,seed=(0x190f5600+n*7727)>>>0;
      const options={size:s.size,mode:s.mode,seed,complexity:1+k%3,fixedCount:s.id===2?k+1:Math.min(5,s.id-2+Math.floor(k/2)),
-       walls:s.id===2?Math.floor(k/2):Math.min(5,s.id-3+Math.floor(k/2)),decoys:s.id===2?2+k:3+Math.min(5,k+s.id-3)};
+       walls:s.id===2?Math.floor(k/2):Math.min(5,s.id-3+Math.floor(k/2)),decoys:s.id===2?2+k:3+Math.min(5,k+s.id-3),
+       blocks:s.id===3?(k>=2?1+Math.floor((k-2)/2):0):s.id>=4?2+(s.id-4)+Math.floor(k/2):0};
      const solvedBoard=network(options),scrambled=scramble(solvedBoard,seed^0x123acdca,10+s.id*5+k*6);
      cache.set(n,{level:n,stage:s.id,size:s.size,mode:'levels',networkType:s.mode,timerMs:timerFor(n),...scrambled,solvedBoard,initialMoves:scrambled.solutionMoves.length,
        fixedPipes:solvedBoard.filter(t=>t.kind==='pipe'&&t.fixed).length,walls:solvedBoard.filter(t=>t.kind==='wall').length});
@@ -125,10 +130,11 @@ function random(size,seed){if(![5,6,7].includes(size))throw Error('Unknown Rando
  seed=Number.isFinite(seed)?seed>>>0:((Date.now()^Math.floor(Math.random()*0xffffffff))>>>0);
  const variety=seed%6,mode=size===7?'loop':'path';
  const options={size,mode,seed,complexity:1+variety%3,fixedCount:size===5?0:size===6?1+variety%3:2+variety%4,
-   walls:size===5?0:size===6?variety%3:1+variety%3,decoys:size===5?variety%3:2+variety%4};
+   walls:size===5?0:size===6?variety%3:1+variety%3,decoys:size===5?variety%3:2+variety%4,
+   blocks:size===7?1+variety%4:0};
  const solvedBoard=network(options),scrambled=scramble(solvedBoard,seed^0x4f4b1133,14+size*6+variety*6);
  return {mode:'random',size,seed,timerMs:null,level:null,stage:null,...scrambled,solvedBoard,initialMoves:scrambled.solutionMoves.length,networkType:mode};
 }
-function validateBoard(b){const size=sizeOf(b);return !!size&&b.every(t=>t&&['empty','wall','pipe','source','sink'].includes(t.kind)&&Number.isInteger(t.mask)&&t.mask>=0&&t.mask<=15&&typeof t.fixed==='boolean'&&(t.kind==='pipe'||t.kind==='source'||t.kind==='sink'||t.mask===0))&&[1,2].includes(b.filter(t=>t.kind==='source').length)&&[1,2].includes(b.filter(t=>t.kind==='sink').length);}
+function validateBoard(b){const size=sizeOf(b);return !!size&&b.every(t=>t&&['empty','wall','block','pipe','source','sink'].includes(t.kind)&&Number.isInteger(t.mask)&&t.mask>=0&&t.mask<=15&&typeof t.fixed==='boolean'&&(t.kind==='pipe'||t.kind==='source'||t.kind==='sink'||t.mask===0))&&[1,2].includes(b.filter(t=>t.kind==='source').length)&&[1,2].includes(b.filter(t=>t.kind==='sink').length);}
 return Object.freeze({SIZE,MAX_LEVEL,N,E,S,W,DIRECTIONS,STAGES,sizeOf,at,id,adjacent,direction,clone,rng,get,random,stageOf,timerFor,move,canMove,legalMoves,evaluate,validateBoard,signature});
 });

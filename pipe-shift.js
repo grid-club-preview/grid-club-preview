@@ -1,4 +1,4 @@
-/* Grid Club · Pipe Shift v0.9.0 · Random Play & 30 sequential Levels */
+/* Grid Club · Pipe Shift v0.9.1 · Random Play & 30 sequential Levels */
 (function(){
 'use strict';
 const e=globalThis.PipeEngine;if(!e)return;
@@ -7,7 +7,7 @@ if(!root||!hub||!$('pipeShiftEntry'))return;
 const KEY='gridclub-pipeshift-progress-v1',BACKUP=KEY+'-v08-backup',MAX=e.MAX_LEVEL;
 const blank=()=>({version:2,completed:{},best:{},active:{},randomBest:{},randomCount:{},legacyArchived:{}});
 let progress=blank(),section='menu',stage=1,mode='levels',currentLevel=null,currentSize=5,puzzle=null;
-let board=null,moves=0,elapsed=0,undo=[],selected=null,won=false,expired=false;
+let board=null,moves=0,elapsed=0,undo=[],selected=null,won=false,expired=false,justClearedStage=false;
 let timer=null,lastTick=null,flowTimer=null,pointerOrigin=null,ignoreClickUntil=0,nonce=0;
 function read(){
  try{
@@ -52,9 +52,9 @@ function clearFlow(){if(flowTimer!==null){clearTimeout(flowTimer);flowTimer=null
 function route(name){
  clearFlow();timerStop();section=name;
  for(const n of ['menu','random','stages','levels','game'])$('pipe-'+n).hidden=n!==name;
- $('pipeResult').hidden=true;$('pipeTimeout').hidden=true;selected=null;pointerOrigin=null;
+ $('pipeResult').hidden=true;$('pipeTimeout').hidden=true;selected=null;cancelDrag();
 }
-function home(){saveCurrent();route('menu');root.hidden=true;hub.hidden=false;}
+function home(){cancelDrag();saveCurrent();route('menu');root.hidden=true;hub.hidden=false;}
 function menu(){saveCurrent();hub.hidden=true;root.hidden=false;route('menu');
  $('pipeMainProgress').textContent=`${Object.keys(progress.completed).filter(n=>progress.completed[n]).length}/30`;
 }
@@ -98,7 +98,7 @@ function freshRandomSeed(){
 }
 function begin(p,kind,id,skipSave=false){
  if(!skipSave)saveCurrent();mode=kind;currentLevel=kind==='levels'?id:null;if(kind==='levels')stage=e.stageOf(id).id;currentSize=p.size;puzzle=p;
- won=false;expired=false;selected=null;elapsed=0;moves=0;undo=[];
+ won=false;expired=false;justClearedStage=false;selected=null;elapsed=0;moves=0;undo=[];
  hub.hidden=true;root.hidden=false;route('game');
  const key=activeKey(),stored=progress.active[key];
  if(stored&&e.validateBoard(stored.board)&&stored.board.length===p.size*p.size&&
@@ -130,13 +130,14 @@ function render(flow=[]){if(!board)return;
  let numberIn=0,numberOut=0;
  for(let i=0;i<board.length;i++){
    const t=board[i],b=document.createElement('button');b.type='button';b.dataset.cell=String(i);
-   b.className='pipeTile '+(t.kind==='empty'?'pipeEmpty':t.kind==='wall'?'pipeWall':t.kind==='source'?'pipeSource':t.kind==='sink'?'pipeSink':'pipePiece')+
+   b.className='pipeTile '+(t.kind==='empty'?'pipeEmpty':t.kind==='wall'?'pipeWall':t.kind==='block'?'pipeBlankBlock':t.kind==='source'?'pipeSource':t.kind==='sink'?'pipeSink':'pipePiece')+
      (t.fixed?' pipeFixed':'')+(i===selected?' pipeSelected':'')+(valid.includes(i)?' pipeValidDrop':'')+(flowMap.has(i)?' pipeFlowing':'');
-   b.setAttribute('aria-label',`Row ${Math.floor(i/size)+1}, column ${i%size+1}: ${t.kind==='empty'?'Empty space':t.kind==='wall'?'Obstacle':t.kind==='source'?'Inlet':t.kind==='sink'?'Outlet':t.fixed?'Fixed pipe':'Movable pipe'}`);
+   b.setAttribute('aria-label',`Row ${Math.floor(i/size)+1}, column ${i%size+1}: ${t.kind==='empty'?'Empty space':t.kind==='wall'?'Fixed obstacle':t.kind==='block'?'Movable blank block':t.kind==='source'?'Inlet':t.kind==='sink'?'Outlet':t.fixed?'Fixed pipe':'Movable pipe'}`);
    if(flowMap.has(i))b.style.setProperty('--flow-delay',`${flowMap.get(i)*.065}s`);
    if(t.mask){const ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg');svg.setAttribute('viewBox','0 0 100 100');svg.setAttribute('aria-hidden','true');
      for(const name of ['pipeTube','pipeChannel','pipeWater']){const path=document.createElementNS(ns,'path');path.setAttribute('d',svgPath(t.mask));path.setAttribute('class',name);svg.append(path);}b.append(svg);
    }
+   if(t.kind==='block'){const grip=document.createElement('span');grip.className='pipeBlockGrip';grip.textContent='•••';b.append(grip);}
    if(t.fixed&&t.kind==='pipe'){const mark=document.createElement('span');mark.className='pipeFixedMark';mark.textContent='•';b.append(mark);}
    if(t.kind==='source'||t.kind==='sink'){const label=document.createElement('span');label.className='pipeTerminal';
      const nr=t.kind==='source'?++numberIn:++numberOut;label.textContent=t.kind==='source'?'IN'+(board.filter(x=>x.kind==='source').length>1?nr:''):'OUT'+(board.filter(x=>x.kind==='sink').length>1?nr:'');b.append(label);
@@ -150,6 +151,7 @@ function slide(from,to){if(won||expired||!e.canMove(board,from,to))return false;
  undo.push({board:e.clone(board),moves});if(undo.length>40)undo.shift();e.move(board,from,to);moves++;selected=null;
  const check=e.evaluate(board);
  if(check.solved){won=true;timerStop();if(mode==='levels'){
+     justClearedStage=!progress.completed[currentLevel]&&currentLevel===e.stageOf(currentLevel).last;
      progress.completed[currentLevel]=true;if(!progress.best[currentLevel]||moves<progress.best[currentLevel].moves)progress.best[currentLevel]={moves,elapsed,when:new Date().toISOString()};
    }else{progress.randomCount[currentSize]=(progress.randomCount[currentSize]||0)+1;
      if(!progress.randomBest[currentSize]||moves<progress.randomBest[currentSize].moves)progress.randomBest[currentSize]={moves,elapsed};}
@@ -159,7 +161,7 @@ function slide(from,to){if(won||expired||!e.canMove(board,from,to))return false;
 }
 function clickCell(i){if(section!=='game'||won||expired||i<0||i>=board.length)return;
  if(selected!==null&&board[i].kind==='empty'&&slide(selected,i))return;
- const t=board[i];if(t.kind!=='pipe'||t.fixed){selected=null;render();return;}
+ const t=board[i];if(!['pipe','block'].includes(t.kind)||t.fixed){selected=null;render();return;}
  const options=board.map((_,k)=>e.canMove(board,i,k)?k:-1).filter(n=>n>=0);
  if(options.length===1){slide(i,options[0]);return;}
  selected=selected===i?null:i;render();
@@ -169,14 +171,27 @@ function reset(){if(won||expired)return;clockSync();board=e.clone(puzzle.board);
 function timeout(){if(won||expired)return;clockSync();expired=true;timerStop();selected=null;updateClock();render();$('pipeTimeout').hidden=false;saveCurrent();}
 function retry(){delete progress.active[activeKey()];const fresh=mode==='levels'?e.get(currentLevel):e.random(currentSize,puzzle.seed);begin(fresh,mode,currentLevel,true);}
 function victory(){const names=['Flow restored!','Nicely connected.','Let it flow!','Pipes in perfect order.'];
+ const celebration=$('pipeStageCelebration'),result=$('pipeResult');
+ result.classList.remove('pipeStageWin','pipeGrandFinale');
+ celebration.hidden=true;
  $('pipeResultTitle').textContent=names[(moves+(currentLevel||0))%names.length];
  if(mode==='random'){$('pipeResultMessage').textContent=`${moves} moves`;$('pipeResultNext').hidden=false;$('pipeResultNext').textContent='Next puzzle →';$('pipeResultLevels').textContent='Back to Random Play';}
  else{
    const s=e.stageOf(currentLevel),last=currentLevel===MAX;
    $('pipeResultMessage').textContent=`Stage ${s.id} · Puzzle ${currentLevel-s.first+1}/5 · ${moves} moves`;
    $('pipeResultNext').hidden=last;$('pipeResultNext').textContent=currentLevel===s.last?'Next stage →':'Continue stage →';$('pipeResultLevels').textContent='Levels overview';
+   if(justClearedStage){
+     const badges=['◉','◆','✦','⌁','✺','♛'];
+     result.classList.add('pipeStageWin');if(last)result.classList.add('pipeGrandFinale');
+     celebration.dataset.stage=String(s.id);
+     $('pipeStageBadge').textContent=badges[s.id-1]||'✦';
+     $('pipeStageHeading').textContent=last?'Pipe Shift mastered!':`Stage ${s.id} complete!`;
+     $('pipeResultTitle').textContent=last?'Every pipe connected!':'Flow upgraded!';
+     $('pipeResultNext').textContent=last?'All stages complete':'Level up →';
+     celebration.hidden=false;
+   }
  }
- $('pipeResult').hidden=false;
+ result.hidden=false;
 }
 function back(){if(section==='game')mode==='random'?randomMenu():stageMenu(stage);
  else if(section==='levels')stages();else if(section==='random'||section==='stages')menu();else home();}
@@ -190,21 +205,100 @@ $('pipeRetry').onclick=retry;$('pipeTimeoutBack').onclick=()=>mode==='random'?ra
 $('pipeUndo').onclick=undoMove;$('pipeReset').onclick=reset;$('pipeNew').onclick=()=>startRandom(currentSize,true);
 const grid=$('pipeBoard');
 grid.addEventListener('click',ev=>{if(performance.now()<ignoreClickUntil)return;const b=ev.target.closest('[data-cell]');if(b)clickCell(Number(b.dataset.cell));});
-grid.addEventListener('pointerdown',ev=>{const b=ev.target.closest('[data-cell]');if(!b||section!=='game')return;
- pointerOrigin={id:ev.pointerId,x:ev.clientX,y:ev.clientY,from:Number(b.dataset.cell)};});
-grid.addEventListener('pointerup',ev=>{if(!pointerOrigin||pointerOrigin.id!==ev.pointerId)return;
- const p=pointerOrigin;pointerOrigin=null;const dx=ev.clientX-p.x,dy=ev.clientY-p.y;if(Math.max(Math.abs(dx),Math.abs(dy))<17)return;
- ignoreClickUntil=performance.now()+300;const delta=Math.abs(dx)>Math.abs(dy)?(dx>0?1:-1):(dy>0?puzzle.size:-puzzle.size);const to=p.from+delta;
- if(e.adjacent(p.from,to,puzzle.size)&&!slide(p.from,to)){selected=p.from;render();}
+// Press and drag a pipe (or solid blank block) onto an adjacent empty space.
+// Native pointer capture ensures the drag keeps working when a finger leaves
+// the source tile. Tap-to-select and tap-to-move remain available for access.
+function cancelDrag(){
+ if(pointerOrigin?.ghost)pointerOrigin.ghost.remove();
+ grid?.querySelectorAll('.pipeDragSource,.pipeDragTarget').forEach(t=>t.classList.remove('pipeDragSource','pipeDragTarget'));
+ pointerOrigin=null;
+}
+function dropTarget(x,y){
+ for(const cell of grid.querySelectorAll('[data-cell]')){
+  const r=cell.getBoundingClientRect();
+  if(x>=r.left&&x<r.right&&y>=r.top&&y<r.bottom)return Number(cell.dataset.cell);
+ }
+ return null;
+}
+function setDragVisual(p,ev){
+ if(!p.ghost){
+  const source=grid.querySelector(`[data-cell="${p.from}"]`);
+  if(!source)return;
+  source.classList.add('pipeDragSource');
+  const ghost=source.cloneNode(true),r=source.getBoundingClientRect();
+  ghost.removeAttribute('data-cell');ghost.classList.remove('pipeSelected','pipeValidDrop','pipeDragSource');
+  ghost.classList.add('pipeDragGhost');ghost.setAttribute('aria-hidden','true');
+  ghost.style.width=`${r.width}px`;ghost.style.height=`${r.height}px`;
+  grid.append(ghost);p.ghost=ghost;
+ }
+ const bounds=grid.getBoundingClientRect();
+ p.ghost.style.left=`${ev.clientX-bounds.left}px`;
+ p.ghost.style.top=`${ev.clientY-bounds.top}px`;
+ const target=dropTarget(ev.clientX,ev.clientY),valid=target!==null&&e.canMove(board,p.from,target);
+ if(p.lastTarget!==target||p.lastValid!==valid){
+  grid.querySelector('.pipeDragTarget')?.classList.remove('pipeDragTarget');
+  if(valid)grid.querySelector(`[data-cell="${target}"]`)?.classList.add('pipeDragTarget');
+ }
+ p.lastTarget=target;p.lastValid=valid;
+ p.ghost.classList.toggle('pipeDragInvalid',!valid);
+}
+grid.addEventListener('pointerdown',ev=>{
+ const cell=ev.target.closest('[data-cell]');
+ if(!cell||section!=='game'||won||expired||ev.isPrimary===false)return;
+ const from=Number(cell.dataset.cell),tile=board?.[from];
+ if(!tile||tile.fixed||!['pipe','block'].includes(tile.kind))return;
+ cancelDrag();
+ pointerOrigin={id:ev.pointerId,x:ev.clientX,y:ev.clientY,from,active:false,ghost:null,lastTarget:null,lastValid:false};
+ try{grid.setPointerCapture(ev.pointerId);}catch(_){}
 });
-grid.addEventListener('pointercancel',()=>{pointerOrigin=null;});grid.addEventListener('lostpointercapture',()=>{pointerOrigin=null;});
+grid.addEventListener('pointermove',ev=>{
+ const p=pointerOrigin;if(!p||p.id!==ev.pointerId||section!=='game')return;
+ if(!p.active&&Math.hypot(ev.clientX-p.x,ev.clientY-p.y)>=10)p.active=true;
+ if(!p.active)return;
+ if(ev.cancelable)ev.preventDefault();
+ setDragVisual(p,ev);
+});
+grid.addEventListener('pointerup',ev=>{
+ const p=pointerOrigin;if(!p||p.id!==ev.pointerId)return;
+ if(p.active){
+  ignoreClickUntil=performance.now()+180;
+  const target=dropTarget(ev.clientX,ev.clientY);
+  const valid=target!==null&&e.canMove(board,p.from,target);
+  cancelDrag();
+  if(valid)slide(p.from,target);
+  if(ev.cancelable)ev.preventDefault();
+ }else cancelDrag(); // Short touch: retain the original tap controls.
+ try{if(grid.hasPointerCapture(ev.pointerId))grid.releasePointerCapture(ev.pointerId);}catch(_){}
+});
+grid.addEventListener('pointercancel',cancelDrag);
+grid.addEventListener('lostpointercapture',cancelDrag);
 grid.addEventListener('contextmenu',ev=>ev.preventDefault());grid.addEventListener('selectstart',ev=>ev.preventDefault());
-let edge=null;root.addEventListener('touchstart',ev=>{edge=null;if(ev.touches.length!==1||ev.touches[0].clientX>45||ev.target.closest('#pipeBoard,button'))return;
- const t=ev.touches[0];edge={id:t.identifier,x:t.clientX,y:t.clientY};},{passive:true});
-root.addEventListener('touchend',ev=>{if(!edge)return;const p=Array.from(ev.changedTouches).find(t=>t.identifier===edge.id),start=edge;edge=null;if(p&&p.clientX-start.x>90&&Math.abs(p.clientY-start.y)<50)back();},{passive:true});
+let edge=null;
+root.addEventListener('touchstart',ev=>{
+ edge=null;if(root.hidden||ev.touches.length!==1)return;
+ // Sliding pieces owns gestures inside the board. Tapping/swiping a button
+ // must never trigger a second navigation action.
+ if(ev.target.closest('#pipeBoard,.pipeControls,button,a,input,select,textarea'))return;
+ const t=ev.touches[0];edge={id:t.identifier,x:t.clientX,y:t.clientY};
+},{passive:true});
+root.addEventListener('touchmove',ev=>{
+ if(!edge)return;
+ if(ev.touches.length!==1){edge=null;return;}
+ const t=ev.touches[0],dx=t.clientX-edge.x,dy=t.clientY-edge.y;
+ if(Math.abs(dy)>45&&Math.abs(dy)>Math.abs(dx))edge=null;
+},{passive:true});
+root.addEventListener('touchend',ev=>{
+ if(!edge)return;
+ const p=Array.from(ev.changedTouches).find(t=>t.identifier===edge.id),start=edge;edge=null;
+ if(!p)return;
+ const dx=p.clientX-start.x,dy=p.clientY-start.y;
+ const fromLeftEdge=start.x<=55&&dx>=85;
+ const swipeLeft=start.x>=105&&dx<=-105;
+ if((fromLeftEdge||swipeLeft)&&Math.abs(dy)<55&&Math.abs(dx)>Math.abs(dy)*1.7)back();
+},{passive:true});
 root.addEventListener('touchcancel',()=>edge=null,{passive:true});
 window.addEventListener('pagehide',()=>{saveCurrent();timerStop();});
-document.addEventListener('visibilitychange',()=>{if(document.hidden){saveCurrent();timerStop();pointerOrigin=null;}else if(section==='game'&&!won&&!expired)startTicker();});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){saveCurrent();timerStop();cancelDrag();}else if(section==='game'&&!won&&!expired)startTicker();});
 progress=read();save();
 globalThis.PipeShiftApp={menu,randomMenu,stages,levels:stages,start:startLevel,startLevel,startRandom,back,readProgress:()=>JSON.parse(JSON.stringify(progress))};
 })();

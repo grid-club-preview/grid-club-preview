@@ -827,13 +827,21 @@
     $('winMessage').textContent=`${label()} · ${fmtSeconds(result.elapsedMs)} · ${result.moves} moves`;
     $('rankingBox').hidden = mode !== 'daily';
     const newLevelUp=mode==='level'&&game.level.step===5&&Number(levelReward?.stageBonus||0)>0;
-    $('levelUpCelebration').hidden=!newLevelUp;
-    if(newLevelUp)$('win').classList.add('levelUp');
-    else $('win').classList.remove('levelUp');
+    const celebration=$('levelUpCelebration'),finalLevelUp=newLevelUp&&levelId===75;
+    celebration.hidden=!newLevelUp;
+    if(newLevelUp)$('win').classList.add('levelUp');else $('win').classList.remove('levelUp');
+    if(finalLevelUp)$('win').classList.add('finale');else $('win').classList.remove('finale');
     if(newLevelUp){
-      if(levelId===75)title.textContent='Dot Trails mastered!';
-      $('levelUpMessage').textContent=levelId===75?`All 75 puzzles complete · +${levelReward.stageBonus} bonus credits`:`Level ${game.level.stage} complete · +${levelReward.stageBonus} bonus credits`;
-      $('next').textContent=levelId===75?'View all levels →':'Level up →';
+      const n=game.level.stage;
+      const stageGlyphs=['◉','◆','✦','✹','✳','❖','✧','✺','✶','✵','✸','✷','✴','✱','♛'];
+      celebration.dataset.stage=String(n);
+      celebration.dataset.motion=String((n-1)%5+1);
+      if(celebration.style?.setProperty)celebration.style.setProperty('--stage-hue',`${(n-1)*23}deg`);
+      $('levelUpMedal').textContent=stageGlyphs[n-1]||'★';
+      $('levelUpHeading').textContent=finalLevelUp?'Grand finale!':'Credit boosted!';
+      if(finalLevelUp)title.textContent='Dot Trails mastered!';
+      $('levelUpMessage').textContent=finalLevelUp?`All 75 puzzles complete · +${levelReward.stageBonus} credits`:`Level ${n} complete · +${levelReward.stageBonus} bonus credits`;
+      $('next').textContent=finalLevelUp?'View all levels →':'Level up →';
     }
     $('levelReward').hidden=mode!=='level';
     $('levelRewardBalance').hidden=true;
@@ -1225,11 +1233,12 @@
   document.addEventListener('touchstart',event=>{
     edgeSwipe=null;
     if(event.touches.length!==1)return;
-    const point=event.touches[0];
-    if(point.clientX>48)return;
-    const target=event.target;
-    // The grid, puzzle buttons and any dialog must retain touch ownership.
-    if(target?.closest?.('#board,.boardWrap,.controls,.win,.pauseLayer,button,input,select,textarea'))return;
+    // Pipe Shift has its own Back hierarchy and gesture handler.
+    const pipeScreen=$('pipeShiftScreen');
+    if(pipeScreen?.isConnected&&!pipeScreen.hidden)return;
+    const point=event.touches[0],target=event.target;
+    if(target?.closest?.('#board,.controls,.pauseLayer,button,input,select,textarea'))return;
+    if(target?.closest?.('.boardWrap')&&!target?.closest?.('.win'))return;
     if(!$('pauseLayer').hidden||!$('timeUpLayer').hidden)return;
     edgeSwipe={x:point.clientX,y:point.clientY,id:point.identifier};
   },{passive:true});
@@ -1246,7 +1255,9 @@
     const point=Array.from(event.changedTouches).find(p=>p.identifier===swipe.id);
     if(!point)return;
     const dx=point.clientX-swipe.x,dy=point.clientY-swipe.y;
-    if(dx>=80 && Math.abs(dy)<50 && dx>Math.abs(dy)*1.7)gestureBack();
+    const fromLeftEdge=swipe.x<=48&&dx>=80;
+    const swipeLeft=swipe.x>=105&&dx<=-105;
+    if((fromLeftEdge||swipeLeft)&&Math.abs(dy)<50&&Math.abs(dx)>Math.abs(dy)*1.7)gestureBack();
   },{passive:true});
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) onBackground(); else onForeground();
