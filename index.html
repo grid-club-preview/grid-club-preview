@@ -12,7 +12,7 @@
   <link rel="icon" href="./icons/icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
   <title>Grid Club · Dot Trails &amp; Pipe Shift</title>
-  <link rel="stylesheet" href="pipe-shift.css?v=0.8.0">
+  <link rel="stylesheet" href="pipe-shift.css?v=0.9.0">
   <style>
     :root { color-scheme: dark; --bg:#0e1424; --surface:#1a243a; --tile:#253147; --muted:#9daabe; --mint:#7be3d4; --purple:#a178ff; }
     * { box-sizing: border-box; }
@@ -252,7 +252,7 @@
 <body>
   <main class="shell">
     <section id="home">
-      <header><div><div class="eyebrow">GRID CLUB</div><h1>A little puzzle break.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.8.0</span></div></header>
+      <header><div><div class="eyebrow">GRID CLUB</div><h1>A little puzzle break.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.0</span></div></header>
       <details class="backendCheck" aria-label="Leaderboard connection diagnostics">
         <summary class="backendCheckTitle">Connection diagnostics (beta)</summary>
         <p id="backendCheckMessage" role="status" aria-live="polite">Checking configuration…</p>
@@ -291,46 +291,84 @@
       <div id="pipe-menu">
         <div class="pipeHeader"><button class="back" id="pipeHomeBack" aria-label="Back to Grid Club">‹</button>
           <div><div class="eyebrow">GRID CLUB</div><h2>Pipe Shift</h2></div>
-          <span class="pipeHeaderMeta" id="pipeMainProgress">0/10 complete</span>
+          <span class="pipeHeaderMeta" id="pipeMainProgress">0/30</span>
         </div>
-        <div class="pipeCard" style="text-align:center;padding:25px 17px">
-          <svg width="190" height="102" viewBox="0 0 190 102" fill="none" aria-hidden="true" style="max-width:100%">
-            <path d="M16 30H65V72H112V42H174" stroke="#1c2737" stroke-width="27" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M16 30H65V72H112V42H174" stroke="#b5cfe1" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M16 30H65V72H112V42H174" stroke="#75d5fa" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="13 15"/>
-            <circle cx="16" cy="30" r="9" fill="#7ee3af"/><circle cx="174" cy="42" r="9" fill="#c4a5ff"/>
+        <div class="pipeCard pipeHero" aria-hidden="true">
+          <svg width="170" height="93" viewBox="0 0 170 93" fill="none" style="max-width:100%">
+            <path d="M10 28H60V69H110V33H160" stroke="#17263b" stroke-width="27" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M10 28H60V69H110V33H160" stroke="#b5cfe1" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M10 28H60V69H110V33H160" stroke="#75d5fa" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="13 15"/>
+            <circle cx="10" cy="28" r="8" fill="#7ee3af"/><circle cx="160" cy="33" r="8" fill="#c4a5ff"/>
           </svg>
-          <h3 style="font-size:22px;margin:5px 0">Make it flow.</h3>
         </div>
-        <button type="button" class="pipeButton" id="pipeLevelsEntry"><span class="pipeButtonIcon" aria-hidden="true"><svg width="31" height="31" viewBox="0 0 40 40" fill="none"><path d="M5 8H21V27H35" stroke="#8be1ff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-          <span><strong>Play Levels</strong><small>Ten sliding-pipe puzzles</small></span><span class="pipeChevron">›</span></button>
+        <button type="button" class="pipeButton" id="pipeRandomEntry">
+          <span class="pipeButtonIcon" aria-hidden="true">⇄</span>
+          <span><strong>Play Random</strong></span><span class="pipeChevron">›</span>
+        </button>
+        <button type="button" class="pipeButton" id="pipeLevelsEntry">
+          <span class="pipeButtonIcon" aria-hidden="true">🏆</span>
+          <span><strong>Play Levels</strong><small>30 progressive puzzles</small></span><span class="pipeChevron">›</span>
+        </button>
+      </div>
+      <div id="pipe-random" hidden>
+        <div class="pipeHeader"><button class="back" id="pipeRandomBack" aria-label="Back to Pipe Shift">‹</button>
+          <div><div class="eyebrow">PIPE SHIFT</div><h2>Play Random</h2></div>
+        </div>
+        <div id="pipeRandomChoices" class="pipeChoices">
+          <button type="button" class="pipeButton" data-pipe-size="5"><span class="pipeButtonIcon">5×5</span><span><strong>Beginner</strong></span><span class="pipeChevron">›</span></button>
+          <button type="button" class="pipeButton" data-pipe-size="6"><span class="pipeButtonIcon">6×6</span><span><strong>Advanced</strong></span><span class="pipeChevron">›</span></button>
+          <button type="button" class="pipeButton" data-pipe-size="7"><span class="pipeButtonIcon">7×7</span><span><strong>Expert</strong><small>Split and rejoin the flow</small></span><span class="pipeChevron">›</span></button>
+        </div>
+      </div>
+      <div id="pipe-stages" hidden>
+        <div class="pipeHeader"><button class="back" id="pipeStagesBack" aria-label="Back to Pipe Shift">‹</button>
+          <div><div class="eyebrow">PIPE SHIFT</div><h2>Play Levels</h2></div>
+          <span class="pipeHeaderMeta" id="pipeCompletedCount">0/30</span>
+        </div>
+        <div id="pipeStageList" class="pipeStageList"></div>
       </div>
       <div id="pipe-levels" hidden>
-        <div class="pipeHeader"><button class="back" id="pipeLevelsBack" aria-label="Back to Pipe Shift">‹</button>
-          <div><div class="eyebrow">PIPE SHIFT</div><h2>Play Levels</h2></div>
+        <div class="pipeHeader"><button class="back" id="pipeLevelsBack" aria-label="Back to stages">‹</button>
+          <div><div class="eyebrow">PIPE SHIFT · LEVELS</div><h2 id="pipeStageTitle">Stage 1</h2></div>
         </div>
-        <div class="pipeProgressRow"><span>Puzzles completed</span><strong id="pipeCompletedCount">0/10</strong></div>
-        <div id="pipeLevelList" class="pipeLevelList" aria-label="Pipe Shift levels"></div>
+        <div class="pipeProgressRow"><span id="pipeStageDescription">Beginner · 5×5</span><strong id="pipeStageCount">0/5</strong></div>
+        <div id="pipeLevelList" class="pipeLevelList" aria-label="Pipe Shift puzzles"></div>
       </div>
       <div id="pipe-game" hidden>
-        <div class="pipeHeader"><button class="back" id="pipeGameBack" aria-label="Back to Pipe Shift levels">‹</button>
+        <div class="pipeHeader"><button class="back" id="pipeGameBack" aria-label="Back to Pipe Shift menu">‹</button>
           <div><div class="eyebrow">PIPE SHIFT</div><h2 id="pipeGameName">Puzzle 1</h2></div>
-          <span class="pipeHeaderMeta" id="pipeDifficultyTag">Getting started</span>
+          <span class="pipeHeaderMeta" id="pipeDifficultyTag">Beginner</span>
         </div>
         <div class="pipeBoardShell">
-          <div class="pipeScoreline"><div><small>Moves</small><strong id="pipeMoves">0</strong></div>
-            <span style="font-size:12px;color:#a6c0d2">5 × 5</span></div>
-          <div class="pipeBoardHolder"><div id="pipeBoard" class="pipeBoard" role="group" aria-label="Pipe Shift sliding grid"></div>
+          <div class="pipeScoreline">
+            <div><small>Moves</small><strong id="pipeMoves">0</strong></div>
+            <div id="pipeClockBox" hidden><small>Time left</small><strong id="pipeClock">03:00</strong></div>
+            <span id="pipeGridSize" class="pipeGridLabel">5×5</span>
+          </div>
+          <div class="pipeBoardHolder">
+            <div id="pipeBoard" class="pipeBoard" role="group" aria-label="Pipe Shift sliding grid"></div>
             <div class="pipeResult" id="pipeResult" hidden role="dialog" aria-label="Puzzle complete">
-              <div class="pipeResultInner"><div class="pipeVictoryIcon" aria-hidden="true">✦</div><h3 id="pipeResultTitle">Flow restored!</h3><p id="pipeResultMessage"></p>
+              <div class="pipeResultInner"><div class="pipeVictoryIcon" aria-hidden="true">✦</div>
+                <h3 id="pipeResultTitle">Flow restored!</h3><p id="pipeResultMessage"></p>
                 <button type="button" id="pipeResultNext">Next puzzle →</button>
                 <button type="button" class="pipeSecondary" id="pipeResultLevels">Back to Levels</button>
               </div>
             </div>
+            <div class="pipeResult" id="pipeTimeout" hidden role="dialog" aria-label="Time's up">
+              <div class="pipeResultInner"><div class="pipeVictoryIcon" aria-hidden="true">⌛</div>
+                <h3>Time's up!</h3><p>Try this puzzle again.</p>
+                <button type="button" id="pipeRetry">Retry</button>
+                <button type="button" class="pipeSecondary" id="pipeTimeoutBack">Back to Levels</button>
+              </div>
+            </div>
           </div>
           <p id="pipeInstruction" class="pipeInstruction">Slide pipes into empty spaces.</p>
-          <div class="pipeControls"><button type="button" id="pipeUndo">↶ Undo</button><button type="button" id="pipeReset">⟳ Reset</button></div>
-          <p id="pipeSaveNotice" class="pipeSaveNotice" hidden role="alert">Progress couldn't be saved on this device.</p>
+          <div class="pipeControls">
+            <button type="button" id="pipeUndo">↶ Undo</button>
+            <button type="button" id="pipeReset">⟳ Reset</button>
+            <button type="button" id="pipeNew" hidden>Next puzzle</button>
+          </div>
+          <p id="pipeSaveNotice" class="pipeSaveNotice" hidden role="alert">Progress couldn't be saved.</p>
         </div>
       </div>
     </section>
@@ -432,7 +470,7 @@
       </div>
       
       <div class="adSlot" id="adSlot" aria-hidden="true" hidden></div>
-      <footer>Grid Club · v0.8.0 beta</footer>
+      <footer>Grid Club · v0.9.0 beta</footer>
     </section>
   </main>
   <div class="pauseLayer" id="timeUpLayer" hidden role="dialog" aria-modal="true" aria-labelledby="timeUpTitle"><div class="pauseInner"><div style="font-size:47px;color:var(--mint)">◷</div><h2 id="timeUpTitle">Time's up!</h2><p>Retrying forfeits this puzzle’s credits.</p><button id="timeUpBoost" type="button">+15 seconds · 10 ◉</button><p id="timeUpBoostNote" class="timeUpBoostNote" role="status" aria-live="polite"></p><button id="timeUpRetry" class="secondary">Retry puzzle</button><button id="timeUpBack" class="secondary">Return to Levels</button></div></div>
@@ -451,9 +489,9 @@
   <script src="stats-utils.js?v=0.7.0"></script>
   <script src="puzzle.js?v=0.7.0"></script>
   <script src="levels.js?v=0.7.0"></script>
-  <script src="game.js?v=0.8.0"></script>
-  <script src="pipe-engine.js?v=0.8.0"></script>
-  <script src="pipe-shift.js?v=0.8.0"></script>
+  <script src="game.js?v=0.9.0"></script>
+  <script src="pipe-engine.js?v=0.9.0"></script>
+  <script src="pipe-shift.js?v=0.9.0"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol === 'https:') {
       addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));

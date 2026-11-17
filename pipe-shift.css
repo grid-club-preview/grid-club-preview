@@ -62,3 +62,38 @@
 .pipeHelp{font-size:12px;line-height:1.55;color:#a8bed4;margin:13px 0 0;}
 .pipeSaveNotice{color:#ffc0a5;font-size:12px;margin-top:12px;}
 @media(prefers-reduced-motion:reduce){.pipeFlowing .pipeWater{animation:none;stroke-dasharray:none;}.pipeResultInner .pipeVictoryIcon{animation:none;}}
+/* v0.9 · two play modes, six stages and scalable 5–7 cell grids */
+.pipeHero{text-align:center;padding:19px 14px;margin-bottom:17px;}
+#pipe-menu .pipeButton{margin:11px 0;}
+.pipeChoices{display:grid;gap:11px;}
+.pipeChoices .pipeButtonIcon{font-weight:850;font-size:14px;color:#c0f0ff;}
+.pipeStageList{display:grid;gap:11px;}
+.pipeStage{display:flex;align-items:center;text-align:left;width:100%;gap:14px;padding:17px 16px;border-radius:16px;border:1px solid #476077;background:linear-gradient(115deg,#273b52,#24314a);}
+.pipeStage[data-stage="1"]{border-color:#547f79;background:linear-gradient(115deg,#244844,#26374c);}
+.pipeStage[data-stage="2"]{border-color:#8a6548;background:linear-gradient(115deg,#46382d,#273047);}
+.pipeStage[data-stage="3"]{border-color:#8290a4;background:linear-gradient(115deg,#344250,#283044);}
+.pipeStage[data-stage="4"]{border-color:#a58d53;background:linear-gradient(115deg,#4b4030,#282e48);}
+.pipeStage[data-stage="5"]{border-color:#7972ac;background:linear-gradient(115deg,#38365c,#263044);}
+.pipeStage[data-stage="6"]{border-color:#9d668b;background:linear-gradient(115deg,#50334e,#252d43);}
+.pipeStageNum{width:43px;height:43px;display:grid;place-items:center;background:#ffffff15;border:1px solid #ffffff27;border-radius:13px;font-weight:850;font-size:18px;flex:none;}
+.pipeStageContent{flex:1;min-width:0;}
+.pipeStageContent strong{display:block;font-size:16px;}
+.pipeStageContent small{display:block;color:#b6c8dc;margin-top:4px;font-size:12px;}
+.pipeStage:disabled{opacity:.42;cursor:not-allowed;}
+.pipeStage .pipeChevron{font-size:23px;color:#99cad9;}
+.pipeLevel{min-height:90px;}
+.pipeBoard{grid-template-columns:repeat(var(--pipe-size,5),minmax(0,1fr));}
+.pipeBoard[data-pipe-grid-size="7"]{gap:3px;border-width:3px;}
+.pipeBoard[data-pipe-grid-size="7"] .pipeTile{border-radius:3px;}
+.pipeBoard[data-pipe-grid-size="7"] .pipeTerminal{font-size:7px;letter-spacing:0;right:1px;bottom:1px;}
+.pipeGridLabel{font-size:12px;color:#a6c0d2;}
+.pipeScoreline{min-height:43px;}
+#pipeClockBox{text-align:center;}
+#pipeClockBox strong{color:#8ce3d4;}
+#pipeClockBox[data-low="true"] strong{color:#ff9b9b;}
+.pipeControls #pipeNew{background:#2b5360;}
+#pipeTimeout .pipeVictoryIcon{color:#eed097;}
+
+/* Keep all three controls readable on narrow iPhones. */
+.pipeControls{flex-wrap:wrap;}
+.pipeControls #pipeNew:not([hidden]){flex:1 1 100%;}
