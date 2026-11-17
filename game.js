@@ -1,4 +1,4 @@
-/* Grid Club · Dot Trails v0.7.0 level progression · random play + ranked daily prototype */
+/* Grid Club · Dot Trails v0.7.1 level progression · random play + ranked daily prototype */
 (() => {
   'use strict';
   const core = GridCore;
@@ -322,6 +322,7 @@
     $('winToLevels').textContent='Return to Levels overview';
     $('win').dataset.stage = mode==='level'?String(game.level.stage):'';
     $('winDifficultyActions').hidden = mode !== 'free';
+    $('winToRandom').hidden = mode !== 'free';
     $('winEasier').disabled = size === 5;
     $('winHarder').disabled = size === 11;
     $('rankingBox').hidden=true;
@@ -858,6 +859,7 @@
       }
     }
     $('winDifficultyActions').hidden = mode !== 'free';
+    $('winToRandom').hidden = mode !== 'free';
     $('winEasier').disabled = size === 5;
     $('winHarder').disabled = size === 11;
     const failed=!storageAvailable||result.saveFailed;
@@ -1200,6 +1202,7 @@
   $('resultStatsLink').onclick=showStatsScreen;
   // Easier/Harder choose adjacent difficulties and preserve any unfinished
   // puzzle already saved at the destination size.
+  $('winToRandom').onclick=showRandomScreen;
   $('winEasier').onclick=()=>{ if(mode==='free' && size>5) start('free',size-2); };
   $('winHarder').onclick=()=>{ if(mode==='free' && size<11) start('free',size+2); };
   $('returnWinHome').onclick=returnHome;

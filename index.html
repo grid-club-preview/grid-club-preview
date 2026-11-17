@@ -248,7 +248,7 @@
 <body>
   <main class="shell">
     <section id="home">
-      <header><div><div class="eyebrow">GRID CLUB</div><h1>A little puzzle break.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.7.0</span></div></header>
+      <header><div><div class="eyebrow">GRID CLUB</div><h1>A little puzzle break.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.7.1</span></div></header>
       <details class="backendCheck" aria-label="Leaderboard connection diagnostics">
         <summary class="backendCheckTitle">Connection diagnostics (beta)</summary>
         <p id="backendCheckMessage" role="status" aria-live="polite">Checking configuration…</p>
@@ -343,6 +343,7 @@
               <button type="button" id="winEasier" class="difficultyShift">← Easier</button>
               <button type="button" id="winHarder" class="difficultyShift">Harder →</button>
             </div>
+            <button type="button" class="secondary" id="winToRandom" hidden>Back to Random Play</button>
             <button class="secondary" id="returnWinHome" hidden>Return to Grid Club</button><button class="secondary" id="share">↗ Share result</button>
           </div></div>
         </div>
@@ -356,7 +357,7 @@
       </div>
       
       <div class="adSlot" id="adSlot" aria-hidden="true" hidden></div>
-      <footer>Grid Club · v0.7.0 beta</footer>
+      <footer>Grid Club · v0.7.1 beta</footer>
     </section>
   </main>
   <div class="pauseLayer" id="timeUpLayer" hidden role="dialog" aria-modal="true" aria-labelledby="timeUpTitle"><div class="pauseInner"><div style="font-size:47px;color:var(--mint)">◷</div><h2 id="timeUpTitle">Time's up!</h2><p>Retrying forfeits this puzzle’s credits.</p><button id="timeUpBoost" type="button">+15 seconds · 10 ◉</button><p id="timeUpBoostNote" class="timeUpBoostNote" role="status" aria-live="polite"></p><button id="timeUpRetry" class="secondary">Retry puzzle</button><button id="timeUpBack" class="secondary">Return to Levels</button></div></div>
