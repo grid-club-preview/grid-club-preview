@@ -1,24 +1,25 @@
-/* Grid Club · Pipe Shift v0.9.3 · Random Play & 30 sequential Levels */
+/* Grid Club · Pipe Shift v0.9.4 · Levels, Free Play & verified Daily Challenge */
 (function(){
 'use strict';
 const e=globalThis.PipeEngine;if(!e)return;
 const $=id=>document.getElementById(id),root=$('pipeShiftScreen'),hub=$('home');
 if(!root||!hub||!$('pipeShiftEntry'))return;
 const KEY='gridclub-pipeshift-progress-v1',BACKUP=KEY+'-v08-backup',MAX=e.MAX_LEVEL;
-const blank=()=>({version:2,completed:{},best:{},active:{},randomBest:{},randomCount:{},legacyArchived:{},moveStats:{random:{},levels:{count:0,total:0}}});
+const blank=()=>({version:2,completed:{},best:{},active:{},randomBest:{},randomCount:{},legacyArchived:{},daily:{},moveStats:{random:{},levels:{count:0,total:0},daily:{count:0,total:0}}});
 let progress=blank(),section='menu',stage=1,mode='levels',currentLevel=null,currentSize=5,puzzle=null;
 let board=null,moves=0,elapsed=0,undo=[],selected=null,won=false,expired=false,justClearedStage=false,trialPending=false;
 let timer=null,lastTick=null,flowTimer=null,pointerOrigin=null,ignoreClickUntil=0,nonce=0;
+let dailyDay='',dailyTrace=[],dailyPractice=false,dailyConnection='',dailySync=null,dailyLoading=null;
 function read(){
  try{
    const raw=localStorage.getItem(KEY),v=JSON.parse(raw||'null');if(!v||!v.completed||!v.active)return blank();
    if(v.version===2){
      const next={...blank(),...v,moveStats:{...blank().moveStats,...(v.moveStats||{})}};
-     if(next.levelCatalog!==3){
-       next.olderLevelBests={...(next.olderLevelBests||{}),v092:next.best||{}};
+     if(next.levelCatalog!==4){
+       next.olderLevelBests={...(next.olderLevelBests||{}),v093:next.best||{}};
        next.best={};
        for(const key of Object.keys(next.active||{}))if(key.startsWith('level:'))delete next.active[key];
-       next.levelCatalog=3;
+       next.levelCatalog=4;
      }
      return next;
    }
@@ -32,7 +33,7 @@ function read(){
      }
      for(let n=6;n<=10;n++)if(v.completed[n]||v.best?.[n]||v.active?.[n])next.legacyArchived[n]={completed:!!v.completed[n],best:v.best?.[n]||null};
      next.olderLevelBests={v08:{...(next.best||{})}};
-     next.best={};next.active={};next.levelCatalog=3;
+     next.best={};next.active={};next.levelCatalog=4;
      return next;
    }
  }catch(_){}
@@ -42,7 +43,7 @@ function save(){
  try{const value=JSON.stringify(progress);localStorage.setItem(KEY,value);if(localStorage.getItem(KEY)!==value)throw Error('Storage mismatch');$('pipeSaveNotice').hidden=true;}
  catch(_){$('pipeSaveNotice').hidden=false;}
 }
-function activeKey(){return mode==='random'?`random:${currentSize}`:`level:${currentLevel}`;}
+function activeKey(){return mode==='random'?`random:${currentSize}`:mode==='daily'?`daily:${dailyDay}`:mode==='practice'?`practice:${dailyDay}`:`level:${currentLevel}`;}
 function clockSync(){if(lastTick===null||won||expired)return;const now=performance.now();if(document.hidden){lastTick=null;return;}elapsed+=Math.max(0,now-lastTick);lastTick=now;}
 function timerStop(){if(timer!==null){clearInterval(timer);timer=null;}lastTick=null;}
 function startTicker(){if(trialPending)return;timerStop();lastTick=performance.now();timer=setInterval(()=>{
@@ -56,13 +57,14 @@ function updateClock(){
  $('pipeClock').textContent=`${mm}:${ss}`;$('pipeClockBox').dataset.low=String(remaining<=30);
 }
 function saveCurrent(){if(!puzzle||!board||won)return;
- clockSync();progress.active[activeKey()]={board:e.clone(board),moves,elapsed,expired,started:!trialPending,catalogVersion:mode==='levels'?3:null,seed:puzzle.seed??null,
+ clockSync();progress.active[activeKey()]={board:e.clone(board),moves,elapsed,expired,started:!trialPending,catalogVersion:mode==='levels'?4:mode==='daily'||mode==='practice'?puzzle.dailyVersion:null,seed:puzzle.seed??null,
+   trace:mode==='daily'?dailyTrace.map(x=>({...x})):null,
    undo:undo.slice(-40).map(a=>({board:e.clone(a.board),moves:a.moves}))};save();
 }
 function clearFlow(){if(flowTimer!==null){clearTimeout(flowTimer);flowTimer=null;}}
 function route(name){
  clearFlow();timerStop();section=name;
- for(const n of ['menu','random','stages','levels','game','stats'])$('pipe-'+n).hidden=n!==name;
+ for(const n of ['menu','random','stages','levels','game','stats','daily'])$('pipe-'+n).hidden=n!==name;
  $('pipeResult').hidden=true;$('pipeTimeout').hidden=true;$('pipeTimeIntro').hidden=true;selected=null;cancelDrag();
 }
 function home(){cancelDrag();saveCurrent();route('menu');root.hidden=true;hub.hidden=false;}
@@ -73,15 +75,15 @@ function statsMenu(){
  saveCurrent();hub.hidden=true;root.hidden=false;route('stats');
  const completed=Object.keys(progress.completed).filter(n=>progress.completed[n]).length;
  const random=[5,6,7].reduce((n,size)=>n+(progress.randomCount[size]||0),0);
- const s=progress.moveStats||{},records=[s.levels,...Object.values(s.random||{})].filter(Boolean);
+ const s=progress.moveStats||{},records=[s.levels,s.daily,...Object.values(s.random||{})].filter(Boolean);
  const sum=records.reduce((a,v)=>a+(Number(v.total)||0),0);
  const count=records.reduce((a,v)=>a+(Number(v.count)||0),0);
  $('pipeStatsCompleted').textContent=String(completed+random);
  $('pipeStatsAverage').textContent=count?(sum/count).toFixed(1):'—';
  const list=$('pipeStatsDetails');list.replaceChildren();
- for(const [label,size] of [['Beginner',5],['Advanced',6],['Expert',7],['Levels',0]]){
-   const record=size?(s.random||{})[size]:s.levels;
-   const played=size?(progress.randomCount[size]||0):completed;
+ for(const [label,size] of [['Beginner',5],['Advanced',6],['Expert',7],['Levels',0],['Daily Challenge',-1]]){
+   const record=size===-1?s.daily:size?(s.random||{})[size]:s.levels;
+   const played=size===-1?Object.keys(progress.daily||{}).filter(d=>progress.daily[d]?.completed).length:size?(progress.randomCount[size]||0):completed;
    const row=document.createElement('div');row.className='pipeStatRow';
    const title=document.createElement('strong');title.textContent=label;
    const detail=document.createElement('span');detail.textContent=`${played} completed · ${record?.count?(record.total/record.count).toFixed(1)+' avg. moves':'— avg. moves'}`;
@@ -90,7 +92,7 @@ function statsMenu(){
 }
 function recordCompletion(kind,size,usedMoves){
  const stats=progress.moveStats||(progress.moveStats={random:{},levels:{count:0,total:0}});
- const bucket=kind==='random'?(stats.random[size]||(stats.random[size]={count:0,total:0})):(stats.levels||(stats.levels={count:0,total:0}));
+ const bucket=kind==='random'?(stats.random[size]||(stats.random[size]={count:0,total:0})):kind==='daily'?(stats.daily||(stats.daily={count:0,total:0})):(stats.levels||(stats.levels={count:0,total:0}));
  bucket.count++;bucket.total+=usedMoves;
 }
 function randomMenu(){saveCurrent();hub.hidden=true;root.hidden=false;route('random');
@@ -105,7 +107,7 @@ function stages(){saveCurrent();hub.hidden=true;root.hidden=false;route('stages'
  for(const s of e.STAGES){const count=Array.from({length:5},(_,i)=>s.first+i).filter(n=>progress.completed[n]).length;
    const enabled=s.id===1||!!progress.completed[s.first-1];const b=document.createElement('button');b.className='pipeStage';b.dataset.stage=s.id;
    b.disabled=!enabled;const number=document.createElement('span');number.className='pipeStageNum';number.textContent=s.id;
-   const text=document.createElement('span');text.className='pipeStageContent';const strong=document.createElement('strong');strong.textContent=`Stage ${s.id} · ${s.name}`;
+   const text=document.createElement('span');text.className='pipeStageContent';const strong=document.createElement('strong');strong.textContent=`Level ${s.id} · ${s.name}`;
    const small=document.createElement('small');small.textContent=`${s.size}×${s.size} · ${count}/5 complete`;text.append(strong,small);
    const arrow=document.createElement('span');arrow.className='pipeChevron';arrow.textContent=!enabled?'🔒':count===5?'✓':'›';
    b.append(number,text,arrow);b.onclick=()=>stageMenu(s.id);list.append(b);
@@ -113,7 +115,7 @@ function stages(){saveCurrent();hub.hidden=true;root.hidden=false;route('stages'
 }
 function stageMenu(id){const s=e.STAGES.find(x=>x.id===id);if(!s||id>1&&!progress.completed[s.first-1])return;
  saveCurrent();stage=id;hub.hidden=true;root.hidden=false;route('levels');
- $('pipeStageTitle').textContent=`Stage ${id}`;$('pipeStageDescription').textContent=`${s.name} · ${s.size}×${s.size}`;
+ $('pipeStageTitle').textContent=`Level ${id}`;$('pipeStageDescription').textContent=`${s.name} · ${s.size}×${s.size}`;
  $('pipeStageCount').textContent=`${Array.from({length:5},(_,i)=>s.first+i).filter(n=>progress.completed[n]).length}/5`;
  const list=$('pipeLevelList');list.replaceChildren();
  for(let n=s.first;n<=s.last;n++){
@@ -126,27 +128,107 @@ function stageMenu(id){const s=e.STAGES.find(x=>x.id===id);if(!s||id>1&&!progres
    b.append(left,mark);b.onclick=()=>startLevel(n);list.append(b);
  }
 }
+const utcToday=()=>new Date().toISOString().slice(0,10);
+const rankedReady=()=>!!globalThis.GridRanked?.configured&&navigator.onLine;
+function dailyMenu(){
+ saveCurrent();hub.hidden=true;root.hidden=false;route('daily');
+ const day=utcToday(),p=e.daily(day),record=progress.daily?.[day];
+ $('pipeDailyDay').textContent=day;
+ $('pipeDailyDifficulty').textContent=`${p.size===5?'Beginner':p.size===6?'Advanced':'Expert'} · ${p.size}×${p.size}`;
+ $('pipeDailyPlay').textContent=record?.completed?'Practice today’s puzzle':progress.active[`daily:${day}`]?'Continue today’s puzzle':'Play today’s puzzle';
+ $('pipeDailyNote').textContent=record?.completed?`Your first result: ${record.moves} moves${record.verified?' · verified':record.sync==='review'?' · under review':' · saved locally'}`:'One ranked result per day. Fewest moves wins. No timer.';
+ $('pipeDailyRank').textContent='';
+ const list=$('pipeDailyEntries');list.replaceChildren();
+ if(!rankedReady()){list.textContent='Leaderboard unavailable offline or until the backend update is installed.';return;}
+ void refreshDailyLeaderboard();
+ if(record?.completed&&record.sync==='pending')void submitDaily();
+}
+function startDaily(){
+ const day=utcToday(),practice=!!progress.daily?.[day]?.completed;
+ const p=e.daily(day);
+ if(practice)delete progress.active[`practice:${day}`];
+ begin(p,practice?'practice':'daily',null,practice);
+}
+async function syncDailyStart(){
+ if(mode!=='daily'||!rankedReady())return null;
+ if(dailyLoading)return dailyLoading;
+ const day=dailyDay;
+ dailyLoading=(async()=>{
+  try{
+   const r=await GridRanked.call('pipe_start',{day});
+   if(day!==utcToday())return null;
+   if(r.state==='completed'){
+     dailyConnection='Today’s ranked puzzle is already completed. Additional plays are practice only.';
+     dailyPractice=true;
+     if(!progress.daily[day]){progress.daily[day]={completed:true,moves:r.moves,sync:'verified',verified:!!r.verified,day};save();}
+   }else dailyConnection='Ranked attempt ready';
+   return r;
+  }catch(err){dailyConnection='Leaderboard connection unavailable: '+err.message;return null;}
+ })().finally(()=>{dailyLoading=null;});
+ return dailyLoading;
+}
+async function submitDaily(){
+ const day=utcToday(),record=progress.daily?.[day];
+ if(!record?.completed||record.sync!=='pending'||!rankedReady())return;
+ if(dailySync)return dailySync;
+ dailySync=(async()=>{
+  try{
+   const start=await GridRanked.call('pipe_start',{day});
+   if(start.state==='completed'){
+     record.sync=start.verified?'verified':'review';record.verified=!!start.verified;
+     record.moves=start.moves;save();return;
+   }
+   const reply=await GridRanked.call('pipe_submit',{day,attemptId:start.attemptId,events:record.events});
+   if(utcToday()!==day)return;
+   record.sync=reply.verified?'verified':'review';record.verified=!!reply.verified;
+   record.serverMoves=reply.moves;save();
+   if(mode==='daily'&&won){$('pipeResultMessage').textContent=`${reply.moves} moves · ${reply.verified?'Verified result':'Result under review'}`;}
+  }catch(err){dailyConnection=err.message;console.warn('Pipe Shift daily submission pending:',err);}
+ })().finally(()=>{dailySync=null;});
+ return dailySync;
+}
+async function refreshDailyLeaderboard(){
+ const list=$('pipeDailyEntries'),rank=$('pipeDailyRank');
+ if(!rankedReady()){list.textContent='Leaderboard unavailable offline or until the backend is updated.';return;}
+ list.textContent='Loading verified results…';
+ const day=utcToday();
+ try{
+  const data=await GridRanked.call('pipe_leaderboard',{day});
+  if(section!=='daily'||utcToday()!==day)return;
+  list.replaceChildren();
+  rank.textContent=data.yourRank?`Your rank: ${data.yourRank} · ${data.yourMoves} moves`:`${data.total||0} verified finishes today`;
+  if(!data.entries?.length){list.textContent='No verified finishes yet. Your run could be the first.';return;}
+  for(const entry of data.entries){
+   const row=document.createElement('div');row.className='pipeDailyRow';
+   if(entry.isYou)row.classList.add('pipeDailyYou');
+   const left=document.createElement('span'),right=document.createElement('strong');
+   left.textContent=`${entry.rank}. ${entry.isYou?'You':entry.name}`;right.textContent=`${entry.moves} moves`;
+   row.append(left,right);list.append(row);
+  }
+ }catch(err){list.textContent='Leaderboard unavailable: '+err.message;}
+}
 function freshRandomSeed(){
  nonce++;let seed=(Date.now()^Math.imul(nonce,0x9e3779b9))>>>0;
  try{if(globalThis.crypto?.getRandomValues){const data=new Uint32Array(1);crypto.getRandomValues(data);seed^=data[0];}}catch(_){}
  return seed>>>0;
 }
 function begin(p,kind,id,skipSave=false){
- if(!skipSave)saveCurrent();mode=kind;currentLevel=kind==='levels'?id:null;if(kind==='levels')stage=e.stageOf(id).id;currentSize=p.size;puzzle=p;
+ if(!skipSave)saveCurrent();mode=kind;currentLevel=kind==='levels'?id:null;if(kind==='levels')stage=e.stageOf(id).id;dailyDay=(kind==='daily'||kind==='practice')?p.day:'';dailyPractice=kind==='practice';dailyTrace=[];currentSize=p.size;puzzle=p;
  won=false;expired=false;justClearedStage=false;selected=null;elapsed=0;moves=0;undo=[];trialPending=!!p.timerMs;
  hub.hidden=true;root.hidden=false;route('game');
  const key=activeKey(),stored=progress.active[key];
  if(stored&&e.validateBoard(stored.board)&&stored.board.length===p.size*p.size&&
-   (kind==='levels'?stored.catalogVersion===3:stored.seed===p.seed)&&Number.isInteger(stored.moves)&&stored.moves>=0&&stored.moves<100000){
+   (kind==='levels'?stored.catalogVersion===4:(kind==='daily'||kind==='practice')?stored.seed===p.seed&&stored.catalogVersion===p.dailyVersion:stored.seed===p.seed)&&Number.isInteger(stored.moves)&&stored.moves>=0&&stored.moves<100000){
    board=e.clone(stored.board);moves=stored.moves;elapsed=Math.max(0,Number(stored.elapsed)||0);expired=!!stored.expired;
    trialPending=!!p.timerMs&&!expired&&!stored.started&&moves===0&&elapsed===0;
    undo=Array.isArray(stored.undo)?stored.undo.filter(a=>e.validateBoard(a.board)&&a.board.length===board.length&&Number.isInteger(a.moves)).slice(-40):[];
+   if(kind==='daily')dailyTrace=Array.isArray(stored.trace)?stored.trace.slice(0,5000):[];
  }else board=e.clone(p.board);
- $('pipeGameName').textContent=kind==='levels'?`Puzzle ${id-e.stageOf(id).first+1}/5`:(p.size===5?'Beginner':p.size===6?'Advanced':'Expert');
- $('pipeDifficultyTag').textContent=kind==='levels'?`Stage ${p.stage}`:'Random Play';
+ $('pipeGameName').textContent=kind==='levels'?`Puzzle ${id-e.stageOf(id).first+1}/5`:kind==='daily'||kind==='practice'?'Daily Challenge':(p.size===5?'Beginner':p.size===6?'Advanced':'Expert');
+ $('pipeDifficultyTag').textContent=kind==='levels'?`Level ${p.stage}`:kind==='daily'||kind==='practice'?dailyPractice?'Practice':p.day:'Free Play';
  $('pipeGridSize').textContent=`${p.size}×${p.size}`;$('pipeInstruction').textContent='';$('pipeNew').hidden=kind!=='random';
  $('pipeBoard').style.setProperty('--pipe-size',p.size);$('pipeBoard').dataset.pipeGridSize=String(p.size);
- render();updateClock();if(expired){$('pipeTimeout').hidden=false;}else if(p.timerMs&&elapsed>=p.timerMs)timeout();else if(trialPending){$('pipeTimeIntro').hidden=false;}else startTicker();saveCurrent();
+ render();updateClock();if(kind==='daily')void syncDailyStart();if(expired){$('pipeTimeout').hidden=false;}else if(p.timerMs&&elapsed>=p.timerMs)timeout();else if(trialPending){$('pipeTimeIntro').hidden=false;}else startTicker();saveCurrent();
 }
 function startLevel(n){if(!Number.isInteger(n)||n<1||n>MAX||(n>1&&!progress.completed[n-1]))return;
  begin(e.get(n),'levels',n);
@@ -185,13 +267,15 @@ function render(flow=[]){if(!board)return;
 function slide(from,to){if(won||expired||trialPending||!e.canMove(board,from,to))return false;
  clockSync();if(puzzle.timerMs&&elapsed>=puzzle.timerMs){timeout();return false;}
  undo.push({board:e.clone(board),moves});if(undo.length>40)undo.shift();e.move(board,from,to);moves++;selected=null;
+ if(mode==='daily')dailyTrace.push({action:'slide',from,to});
  const check=e.evaluate(board);
- if(check.solved){won=true;timerStop();recordCompletion(mode,currentSize,moves);if(mode==='levels'){
+ if(check.solved){won=true;timerStop();if(mode!=='practice'&&!dailyPractice)recordCompletion(mode,currentSize,moves);if(mode==='levels'){
      justClearedStage=!progress.completed[currentLevel]&&currentLevel===e.stageOf(currentLevel).last;
      progress.completed[currentLevel]=true;if(!progress.best[currentLevel]||moves<progress.best[currentLevel].moves)progress.best[currentLevel]={moves,elapsed,when:new Date().toISOString()};
-   }else{progress.randomCount[currentSize]=(progress.randomCount[currentSize]||0)+1;
+   }else if(mode==='random'){progress.randomCount[currentSize]=(progress.randomCount[currentSize]||0)+1;
      if(!progress.randomBest[currentSize]||moves<progress.randomBest[currentSize].moves)progress.randomBest[currentSize]={moves,elapsed};}
-   delete progress.active[activeKey()];save();render(check.flow);flowTimer=setTimeout(()=>{flowTimer=null;if(won&&section==='game')victory();},950);
+   else if(mode==='daily'&&!dailyPractice){progress.daily[dailyDay]={completed:true,moves,events:dailyTrace.map(x=>({...x})),sync:'pending',verified:false,day:dailyDay};}
+   delete progress.active[activeKey()];save();if(mode==='daily'&&!dailyPractice)void submitDaily();render(check.flow);flowTimer=setTimeout(()=>{flowTimer=null;if(won&&section==='game')victory();},950);
  }else{render();saveCurrent();}
  return true;
 }
@@ -202,8 +286,8 @@ function clickCell(i){if(section!=='game'||won||expired||trialPending||i<0||i>=b
  if(options.length===1){slide(i,options[0]);return;}
  selected=selected===i?null:i;render();
 }
-function undoMove(){if(won||expired||trialPending||!undo.length)return;clockSync();const last=undo.pop();board=e.clone(last.board);moves=last.moves;selected=null;render();saveCurrent();}
-function reset(){if(won||expired||trialPending)return;clockSync();board=e.clone(puzzle.board);moves=0;undo=[];selected=null;render();saveCurrent();}
+function undoMove(){if(won||expired||trialPending||!undo.length)return;clockSync();const last=undo.pop();board=e.clone(last.board);if(mode==='daily')dailyTrace.push({action:'undo'});selected=null;render();saveCurrent();}
+function reset(){if(won||expired||trialPending)return;clockSync();board=e.clone(puzzle.board);if(mode==='daily')dailyTrace.push({action:'reset'});undo=[];selected=null;render();saveCurrent();}
 function timeout(){if(won||expired)return;clockSync();expired=true;timerStop();selected=null;updateClock();render();$('pipeTimeout').hidden=false;saveCurrent();}
 function retry(){delete progress.active[activeKey()];const fresh=mode==='levels'?e.get(currentLevel):e.random(currentSize,puzzle.seed);begin(fresh,mode,currentLevel,true);}
 function victory(){const phrases=globalThis.GridClubWinMessages?.pipeShift||{};const names=phrases.general?.length?phrases.general:['Flow restored!','Nicely connected.','Let it flow!','Pipes in perfect order.'];
@@ -211,32 +295,34 @@ function victory(){const phrases=globalThis.GridClubWinMessages?.pipeShift||{};c
  result.classList.remove('pipeStageWin','pipeGrandFinale');
  celebration.hidden=true;
  $('pipeResultTitle').textContent=names[(moves+(currentLevel||0))%names.length];
- if(mode==='random'){$('pipeResultMessage').textContent=`${moves} moves`;$('pipeResultNext').hidden=false;$('pipeResultNext').textContent='Next puzzle →';$('pipeResultLevels').textContent='Back to Random Play';}
+ if(mode==='random'){$('pipeResultMessage').textContent=`${moves} moves`;$('pipeResultNext').hidden=false;$('pipeResultNext').textContent='Next puzzle →';$('pipeResultLevels').textContent='Back to Free Play';}
+ else if(mode==='daily'||mode==='practice'){$('pipeResultMessage').textContent=`${moves} moves · ${dailyDay}${dailyPractice?' · practice':''}`;$('pipeResultNext').hidden=true;$('pipeResultLevels').textContent='Daily leaderboard';}
  else{
    const s=e.stageOf(currentLevel),last=currentLevel===MAX;
-   $('pipeResultMessage').textContent=`Stage ${s.id} · Puzzle ${currentLevel-s.first+1}/5 · ${moves} moves`;
-   $('pipeResultNext').hidden=last;$('pipeResultNext').textContent=currentLevel===s.last?'Next stage →':'Continue stage →';$('pipeResultLevels').textContent='Levels overview';
+   $('pipeResultMessage').textContent=`Level ${s.id} · Puzzle ${currentLevel-s.first+1}/5 · ${moves} moves`;
+   $('pipeResultNext').hidden=last;$('pipeResultNext').textContent=currentLevel===s.last?'Next Level →':'Continue Level →';$('pipeResultLevels').textContent='Levels overview';
    if(justClearedStage){
      const badges=['◉','◆','✦','⌁','✺','♛'];
      result.classList.add('pipeStageWin');if(last)result.classList.add('pipeGrandFinale');
      celebration.dataset.stage=String(s.id);
      $('pipeStageBadge').textContent=badges[s.id-1]||'✦';
-     $('pipeStageHeading').textContent=last?(phrases.grandHeading||'Pipe Shift mastered!'):(phrases.stageHeading||'Stage {stage} complete!').replace('{stage}',String(s.id));
+     $('pipeStageHeading').textContent=last?(phrases.grandHeading||'Pipe Shift mastered!'):(phrases.stageHeading||'Level {stage} complete!').replace('Stage','Level').replace('{stage}',String(s.id));
      $('pipeResultTitle').textContent=last?(phrases.grandVictory||'Every pipe connected!'):(phrases.stageVictory||'Flow upgraded!');
-     $('pipeResultNext').textContent=last?'All stages complete':'Level up →';
+     $('pipeResultNext').textContent=last?'All Levels complete':'Level up →';
      celebration.hidden=false;
    }
  }
  result.hidden=false;
 }
-function back(){if(section==='game')mode==='random'?randomMenu():stageMenu(stage);
- else if(section==='levels')stages();else if(section==='random'||section==='stages'||section==='stats')menu();else home();}
+function back(){if(section==='game'){if(mode==='daily'||mode==='practice')dailyMenu();else mode==='random'?randomMenu():stageMenu(stage);}
+ else if(section==='levels')stages();else if(['random','stages','stats','daily'].includes(section))menu();else home();}
 $('pipeShiftEntry').onclick=menu;$('pipeHomeBack').onclick=home;$('pipeRandomEntry').onclick=randomMenu;
-$('pipeLevelsEntry').onclick=stages;$('pipeStatsEntry').onclick=statsMenu;$('pipeStatsBack').onclick=menu;$('pipeRandomBack').onclick=menu;$('pipeStagesBack').onclick=menu;
-$('pipeLevelsBack').onclick=stages;$('pipeGameBack').onclick=back;
+$('pipeLevelsEntry').onclick=stages;$('pipeDailyEntry').onclick=dailyMenu;$('pipeStatsEntry').onclick=statsMenu;$('pipeStatsBack').onclick=menu;$('pipeRandomBack').onclick=menu;$('pipeStagesBack').onclick=menu;
+$('pipeLevelsBack').onclick=stages;$('pipeGameBack').onclick=back;$('pipeDailyBack').onclick=menu;
+$('pipeDailyPlay').onclick=()=>startDaily();$('pipeDailyRefresh').onclick=()=>void refreshDailyLeaderboard();
 $('pipeRandomChoices').addEventListener('click',ev=>{const b=ev.target.closest('[data-pipe-size]');if(b)startRandom(Number(b.dataset.pipeSize));});
 $('pipeResultNext').onclick=()=>mode==='random'?startRandom(currentSize,true):startLevel(currentLevel+1);
-$('pipeResultLevels').onclick=()=>mode==='random'?randomMenu():stages();
+$('pipeResultLevels').onclick=()=>mode==='random'?randomMenu():mode==='daily'||mode==='practice'?dailyMenu():stages();
 $('pipeTrialStart').onclick=()=>{if(!trialPending||section!=='game')return;trialPending=false;$('pipeTimeIntro').hidden=true;startTicker();saveCurrent();};
 $('pipeRetry').onclick=retry;$('pipeTimeoutBack').onclick=()=>mode==='random'?randomMenu():stageMenu(stage);
 $('pipeUndo').onclick=undoMove;$('pipeReset').onclick=reset;$('pipeNew').onclick=()=>startRandom(currentSize,true);
@@ -319,32 +405,35 @@ grid.addEventListener('pointerup',ev=>{
 grid.addEventListener('pointercancel',cancelDrag);
 grid.addEventListener('lostpointercapture',cancelDrag);
 grid.addEventListener('contextmenu',ev=>ev.preventDefault());grid.addEventListener('selectstart',ev=>ev.preventDefault());
+// Consistent hierarchy navigation on iOS PWA: left-edge rightward swipe.
+// Register in document capture so nested buttons and overlays cannot swallow
+// the touch sequence. Never steal touch from the sliding board or controls.
 let edge=null;
-root.addEventListener('touchstart',ev=>{
- edge=null;if(root.hidden||ev.touches.length!==1)return;
- // Sliding pieces owns gestures inside the board. Tapping/swiping a button
- // must never trigger a second navigation action.
- if(ev.target.closest('#pipeBoard,.pipeControls,button,a,input,select,textarea'))return;
- const t=ev.touches[0];edge={id:t.identifier,x:t.clientX,y:t.clientY};
-},{passive:true});
-root.addEventListener('touchmove',ev=>{
+document.addEventListener('touchstart',ev=>{
+ edge=null;if(root.hidden||ev.touches.length!==1||!root.contains(ev.target))return;
+ if(ev.target.closest('#pipeBoard,.pipeControls,input,select,textarea'))return;
+ const t=ev.touches[0];if(t.clientX>92&&t.clientX<115)return;
+ edge={id:t.identifier,x:t.clientX,y:t.clientY,fromLeft:t.clientX<=92,ready:false};
+},{capture:true,passive:true});
+document.addEventListener('touchmove',ev=>{
  if(!edge)return;
  if(ev.touches.length!==1){edge=null;return;}
  const t=ev.touches[0],dx=t.clientX-edge.x,dy=t.clientY-edge.y;
- if(Math.abs(dy)>45&&Math.abs(dy)>Math.abs(dx))edge=null;
-},{passive:true});
-root.addEventListener('touchend',ev=>{
- if(!edge)return;
- const p=Array.from(ev.changedTouches).find(t=>t.identifier===edge.id),start=edge;edge=null;
- if(!p)return;
- const dx=p.clientX-start.x,dy=p.clientY-start.y;
- const fromLeftEdge=start.x<=55&&dx>=85;
- const swipeLeft=start.x>=105&&dx<=-105;
- if((fromLeftEdge||swipeLeft)&&Math.abs(dy)<55&&Math.abs(dx)>Math.abs(dy)*1.7)back();
-},{passive:true});
-root.addEventListener('touchcancel',()=>edge=null,{passive:true});
+ if(Math.abs(dy)>45&&Math.abs(dy)>Math.abs(dx)){edge=null;return;}
+ if((edge.fromLeft?dx>18:dx< -18)&&Math.abs(dx)>Math.abs(dy)*1.6){edge.ready=true;if(ev.cancelable)ev.preventDefault();}
+},{capture:true,passive:false});
+document.addEventListener('touchend',ev=>{
+ if(!edge)return;const start=edge;edge=null;
+ const t=Array.from(ev.changedTouches).find(p=>p.identifier===start.id);if(!t)return;
+ const dx=t.clientX-start.x,dy=t.clientY-start.y;
+ if((start.fromLeft?dx>=68:dx<=-95)&&Math.abs(dy)<65&&Math.abs(dx)>Math.abs(dy)*1.5){
+   back();if(ev.cancelable)ev.preventDefault();
+ }
+},{capture:true,passive:false});
+document.addEventListener('touchcancel',()=>edge=null,{capture:true,passive:true});
+window.addEventListener('online',()=>{void submitDaily();if(section==='daily')void refreshDailyLeaderboard();});
 window.addEventListener('pagehide',()=>{cancelDrag();saveCurrent();timerStop();});
 document.addEventListener('visibilitychange',()=>{if(document.hidden){saveCurrent();timerStop();cancelDrag();}else if(section==='game'&&!won&&!expired&&!trialPending)startTicker();});
-progress=read();save();
-globalThis.PipeShiftApp={menu,randomMenu,stages,levels:stages,start:startLevel,startLevel,startRandom,back,readProgress:()=>JSON.parse(JSON.stringify(progress))};
+progress=read();save();if(progress.daily?.[utcToday()]?.sync==='pending')void submitDaily();
+globalThis.PipeShiftApp={menu,dailyMenu,randomMenu,stages,levels:stages,start:startLevel,startLevel,startRandom,startDaily,back,readProgress:()=>JSON.parse(JSON.stringify(progress))};
 })();

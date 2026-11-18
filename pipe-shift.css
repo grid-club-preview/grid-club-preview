@@ -163,3 +163,18 @@
 .pipeStatRow strong{font-size:14px;}
 .pipeStatRow span{color:#b7cce0;font-size:12px;text-align:right;}
 .pipeStatsNote{font-size:12px;color:#a5b7cc;margin:14px 2px;line-height:1.4;}
+
+/* v0.9.4 daily challenge: compact, move-based leaderboard. */
+.pipeDailyHero{text-align:center;padding:21px 17px 18px;}
+.pipeDailyHero>strong{display:block;color:#91e2da;font-size:22px;margin-bottom:9px;}
+.pipeDailyHero p{margin:7px 0;color:#b5c8d9;font-size:13px;line-height:1.55;}
+.pipeDailyHero .pipeDailyAction{margin:18px 0 0;text-align:center;justify-content:center;font-weight:850;color:#193448;background:#91e2da;}
+.pipeDailyBoard{margin-top:15px;background:#1a2840;border:1px solid #394c67;border-radius:17px;padding:15px;}
+.pipeDailyBoardHeader{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.pipeDailyBoardHeader>strong{font-size:15px;}
+.pipeDailyBoardHeader button{background:#2c4a58;color:#9ce9db;border-radius:10px;padding:8px 12px;font-size:12px;font-weight:800;}
+.pipeDailyRank{font-size:13px;font-weight:750;color:#a3d9d7;padding:11px 0;}
+.pipeDailyEntries{font-size:13px;color:#b4c7d8;line-height:1.55;}
+.pipeDailyRow{padding:11px 0;border-top:1px solid #3b4961;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.pipeDailyRow>strong{color:#c0f8ed;white-space:nowrap;font-variant-numeric:tabular-nums;}
+.pipeDailyYou{color:#9ae8d5;font-weight:850;}
