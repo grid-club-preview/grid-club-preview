@@ -433,6 +433,13 @@ function freePlay(size,seed,objective='all'){
      if(objective==='all')tile.requireAllFlow=true;
      else delete tile.requireAllFlow;
    }
+   // "Use all pipes" means ALL visible pipes, not just some invisible
+   // subset. Repurpose optional decoy pipes as movable blank blocks in
+   // both the generated and solved boards. Movement remains reversible.
+   if(objective==='all'&&tile.kind==='pipe'&&tile.decoy){
+     tile.kind='block';tile.mask=0;tile.fixed=false;
+     delete tile.decoy;
+   }
    // In "Use any pipes", connecting IN to OUT without leaking is the entire
    // objective: no secretly compulsory marked piece or target location.
    if(objective==='any'){
