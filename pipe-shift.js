@@ -1,11 +1,13 @@
-/* Grid Club · Pipe Shift v0.9.4 · Levels, Free Play & verified Daily Challenge */
+/* Grid Club · Pipe Shift v0.9.5 · Levels, Free Play & verified Daily Challenge */
 (function(){
 'use strict';
 const e=globalThis.PipeEngine;if(!e)return;
 const $=id=>document.getElementById(id),root=$('pipeShiftScreen'),hub=$('home');
 if(!root||!hub||!$('pipeShiftEntry'))return;
 const KEY='gridclub-pipeshift-progress-v1',BACKUP=KEY+'-v08-backup',MAX=e.MAX_LEVEL;
-const blank=()=>({version:2,completed:{},best:{},active:{},randomBest:{},randomCount:{},legacyArchived:{},daily:{},moveStats:{random:{},levels:{count:0,total:0},daily:{count:0,total:0}}});
+const blank=()=>({version:2,levelCatalog:5,completed:{},best:{},active:{},randomBest:{},randomCount:{},legacyArchived:{},legacyUnlockedStages:{},daily:{},moveStats:{random:{},levels:{count:0,total:0},daily:{count:0,total:0}}});
+const oldToNew=id=>{const n=Number(id);return Number.isInteger(n)&&n>=1&&n<=30?Math.floor((n-1)/5)*7+(n-1)%5+1:null;};
+function remapLevels(items){const mapped={};for(const [id,value] of Object.entries(items||{})){const next=oldToNew(id);if(next!==null)mapped[next]=value;}return mapped;}
 let progress=blank(),section='menu',stage=1,mode='levels',currentLevel=null,currentSize=5,puzzle=null;
 let board=null,moves=0,elapsed=0,undo=[],selected=null,won=false,expired=false,justClearedStage=false,trialPending=false;
 let timer=null,lastTick=null,flowTimer=null,pointerOrigin=null,ignoreClickUntil=0,nonce=0;
@@ -15,11 +17,22 @@ function read(){
    const raw=localStorage.getItem(KEY),v=JSON.parse(raw||'null');if(!v||!v.completed||!v.active)return blank();
    if(v.version===2){
      const next={...blank(),...v,moveStats:{...blank().moveStats,...(v.moveStats||{})}};
-     if(next.levelCatalog!==4){
+     if(v.levelCatalog===4){
+       const oldCompleted=next.completed||{},unlocked={...(next.legacyUnlockedStages||{})};
+       for(let id=2;id<=e.STAGES.length;id++)if(oldCompleted[(id-1)*5])unlocked[id]=true;
+       next.completed=remapLevels(oldCompleted);next.best=remapLevels(next.best);
+       const active={};
+       for(const [key,value] of Object.entries(next.active||{})){
+         const match=/^level:(\d+)$/.exec(key);
+         if(!match){active[key]=value;continue;}
+         const mapped=oldToNew(match[1]);if(mapped!==null)active[`level:${mapped}`]={...value,catalogVersion:5};
+       }
+       next.active=active;next.legacyUnlockedStages=unlocked;next.levelCatalog=5;
+     }else if(v.levelCatalog!==5){
        next.olderLevelBests={...(next.olderLevelBests||{}),v093:next.best||{}};
        next.best={};
        for(const key of Object.keys(next.active||{}))if(key.startsWith('level:'))delete next.active[key];
-       next.levelCatalog=4;
+       next.levelCatalog=5;
      }
      return next;
    }
@@ -33,7 +46,7 @@ function read(){
      }
      for(let n=6;n<=10;n++)if(v.completed[n]||v.best?.[n]||v.active?.[n])next.legacyArchived[n]={completed:!!v.completed[n],best:v.best?.[n]||null};
      next.olderLevelBests={v08:{...(next.best||{})}};
-     next.best={};next.active={};next.levelCatalog=4;
+     next.best={};next.active={};next.levelCatalog=5;
      return next;
    }
  }catch(_){}
@@ -57,7 +70,7 @@ function updateClock(){
  $('pipeClock').textContent=`${mm}:${ss}`;$('pipeClockBox').dataset.low=String(remaining<=30);
 }
 function saveCurrent(){if(!puzzle||!board||won)return;
- clockSync();progress.active[activeKey()]={board:e.clone(board),moves,elapsed,expired,started:!trialPending,catalogVersion:mode==='levels'?4:mode==='daily'||mode==='practice'?puzzle.dailyVersion:null,seed:puzzle.seed??null,
+ clockSync();progress.active[activeKey()]={board:e.clone(board),moves,elapsed,expired,started:!trialPending,catalogVersion:mode==='levels'?5:mode==='daily'||mode==='practice'?puzzle.dailyVersion:null,seed:puzzle.seed??null,
    trace:mode==='daily'?dailyTrace.map(x=>({...x})):null,
    undo:undo.slice(-40).map(a=>({board:e.clone(a.board),moves:a.moves}))};save();
 }
@@ -69,7 +82,8 @@ function route(name){
 }
 function home(){cancelDrag();saveCurrent();route('menu');root.hidden=true;hub.hidden=false;}
 function menu(){saveCurrent();hub.hidden=true;root.hidden=false;route('menu');
- $('pipeMainProgress').textContent=`${Object.keys(progress.completed).filter(n=>progress.completed[n]).length}/30`;
+ $('pipeDailyStatus').textContent=globalThis.GridClubDailyJourney?.summary()||'';
+ $('pipeMainProgress').textContent=`${Object.keys(progress.completed).filter(n=>progress.completed[n]).length}/${MAX}`;
 }
 function statsMenu(){
  saveCurrent();hub.hidden=true;root.hidden=false;route('stats');
@@ -101,25 +115,27 @@ function randomMenu(){saveCurrent();hub.hidden=true;root.hidden=false;route('ran
    if(sub&&size===7)sub.textContent=progress.active[`random:${size}`]?'Continue or play new':'Split and rejoin the flow';
  }
 }
+function stageUnlocked(id){if(id===1)return true;const previous=e.STAGES[id-2];return !!progress.completed[previous.last]||!!progress.legacyUnlockedStages?.[id];}
+function canStartLevel(n){const group=e.stageOf(n);return !!group&&(n===1||!!progress.completed[n-1]||(n===group.first&&stageUnlocked(group.id)));}
 function stages(){saveCurrent();hub.hidden=true;root.hidden=false;route('stages');
- $('pipeCompletedCount').textContent=`${Object.keys(progress.completed).filter(n=>progress.completed[n]).length}/30`;
+ $('pipeCompletedCount').textContent=`${Object.keys(progress.completed).filter(n=>progress.completed[n]).length}/${MAX}`;
  const list=$('pipeStageList');list.replaceChildren();
- for(const s of e.STAGES){const count=Array.from({length:5},(_,i)=>s.first+i).filter(n=>progress.completed[n]).length;
-   const enabled=s.id===1||!!progress.completed[s.first-1];const b=document.createElement('button');b.className='pipeStage';b.dataset.stage=s.id;
+ for(const s of e.STAGES){const count=Array.from({length:e.PUZZLES_PER_STAGE},(_,i)=>s.first+i).filter(n=>progress.completed[n]).length;
+   const enabled=stageUnlocked(s.id);const b=document.createElement('button');b.className='pipeStage';b.dataset.stage=s.id;
    b.disabled=!enabled;const number=document.createElement('span');number.className='pipeStageNum';number.textContent=s.id;
    const text=document.createElement('span');text.className='pipeStageContent';const strong=document.createElement('strong');strong.textContent=`Level ${s.id} · ${s.name}`;
-   const small=document.createElement('small');small.textContent=`${s.size}×${s.size} · ${count}/5 complete`;text.append(strong,small);
-   const arrow=document.createElement('span');arrow.className='pipeChevron';arrow.textContent=!enabled?'🔒':count===5?'✓':'›';
+   const small=document.createElement('small');small.textContent=`${s.size}×${s.size} · ${count}/${e.PUZZLES_PER_STAGE} complete`;text.append(strong,small);
+   const arrow=document.createElement('span');arrow.className='pipeChevron';arrow.textContent=!enabled?'🔒':count===e.PUZZLES_PER_STAGE?'✓':'›';
    b.append(number,text,arrow);b.onclick=()=>stageMenu(s.id);list.append(b);
  }
 }
-function stageMenu(id){const s=e.STAGES.find(x=>x.id===id);if(!s||id>1&&!progress.completed[s.first-1])return;
+function stageMenu(id){const s=e.STAGES.find(x=>x.id===id);if(!s||!stageUnlocked(id))return;
  saveCurrent();stage=id;hub.hidden=true;root.hidden=false;route('levels');
  $('pipeStageTitle').textContent=`Level ${id}`;$('pipeStageDescription').textContent=`${s.name} · ${s.size}×${s.size}`;
- $('pipeStageCount').textContent=`${Array.from({length:5},(_,i)=>s.first+i).filter(n=>progress.completed[n]).length}/5`;
+ $('pipeStageCount').textContent=`${Array.from({length:e.PUZZLES_PER_STAGE},(_,i)=>s.first+i).filter(n=>progress.completed[n]).length}/${e.PUZZLES_PER_STAGE}`;
  const list=$('pipeLevelList');list.replaceChildren();
  for(let n=s.first;n<=s.last;n++){
-   const enabled=n===1||!!progress.completed[n-1],completed=!!progress.completed[n],active=!!progress.active[`level:${n}`];
+   const enabled=canStartLevel(n),completed=!!progress.completed[n],active=!!progress.active[`level:${n}`];
    const b=document.createElement('button');b.className='pipeLevel';b.disabled=!enabled;b.dataset.complete=String(completed);
    const left=document.createElement('span'),label=document.createElement('strong'),detail=document.createElement('small');
    label.textContent=`Puzzle ${n-s.first+1}`;
@@ -137,6 +153,10 @@ function dailyMenu(){
  $('pipeDailyDifficulty').textContent=`${p.size===5?'Beginner':p.size===6?'Advanced':'Expert'} · ${p.size}×${p.size}`;
  $('pipeDailyPlay').textContent=record?.completed?'Practice today’s puzzle':progress.active[`daily:${day}`]?'Continue today’s puzzle':'Play today’s puzzle';
  $('pipeDailyNote').textContent=record?.completed?`Your first result: ${record.moves} moves${record.verified?' · verified':record.sync==='review'?' · under review':' · saved locally'}`:'One ranked result per day. Fewest moves wins. No timer.';
+ const next=globalThis.GridClubDailyJourney?.nextGame('pipeShift');
+ $('pipeDailyLandingStatus').textContent=globalThis.GridClubDailyJourney?.summary()||'';
+ $('pipeDailyLandingNext').hidden=!record?.completed||!next;
+ $('pipeDailyLandingDone').hidden=!record?.completed||!!next;
  $('pipeDailyRank').textContent='';
  const list=$('pipeDailyEntries');list.replaceChildren();
  if(!rankedReady()){list.textContent='Leaderboard unavailable offline or until the backend update is installed.';return;}
@@ -218,19 +238,19 @@ function begin(p,kind,id,skipSave=false){
  hub.hidden=true;root.hidden=false;route('game');
  const key=activeKey(),stored=progress.active[key];
  if(stored&&e.validateBoard(stored.board)&&stored.board.length===p.size*p.size&&
-   (kind==='levels'?stored.catalogVersion===4:(kind==='daily'||kind==='practice')?stored.seed===p.seed&&stored.catalogVersion===p.dailyVersion:stored.seed===p.seed)&&Number.isInteger(stored.moves)&&stored.moves>=0&&stored.moves<100000){
+   (kind==='levels'?stored.catalogVersion===5:(kind==='daily'||kind==='practice')?stored.seed===p.seed&&stored.catalogVersion===p.dailyVersion:stored.seed===p.seed)&&Number.isInteger(stored.moves)&&stored.moves>=0&&stored.moves<100000){
    board=e.clone(stored.board);moves=stored.moves;elapsed=Math.max(0,Number(stored.elapsed)||0);expired=!!stored.expired;
    trialPending=!!p.timerMs&&!expired&&!stored.started&&moves===0&&elapsed===0;
    undo=Array.isArray(stored.undo)?stored.undo.filter(a=>e.validateBoard(a.board)&&a.board.length===board.length&&Number.isInteger(a.moves)).slice(-40):[];
    if(kind==='daily')dailyTrace=Array.isArray(stored.trace)?stored.trace.slice(0,5000):[];
  }else board=e.clone(p.board);
- $('pipeGameName').textContent=kind==='levels'?`Puzzle ${id-e.stageOf(id).first+1}/5`:kind==='daily'||kind==='practice'?'Daily Challenge':(p.size===5?'Beginner':p.size===6?'Advanced':'Expert');
+ $('pipeGameName').textContent=kind==='levels'?`Puzzle ${id-e.stageOf(id).first+1}/${e.PUZZLES_PER_STAGE}`:kind==='daily'||kind==='practice'?'Daily Challenge':(p.size===5?'Beginner':p.size===6?'Advanced':'Expert');
  $('pipeDifficultyTag').textContent=kind==='levels'?`Level ${p.stage}`:kind==='daily'||kind==='practice'?dailyPractice?'Practice':p.day:'Free Play';
  $('pipeGridSize').textContent=`${p.size}×${p.size}`;$('pipeInstruction').textContent='';$('pipeNew').hidden=kind!=='random';
  $('pipeBoard').style.setProperty('--pipe-size',p.size);$('pipeBoard').dataset.pipeGridSize=String(p.size);
  render();updateClock();if(kind==='daily')void syncDailyStart();if(expired){$('pipeTimeout').hidden=false;}else if(p.timerMs&&elapsed>=p.timerMs)timeout();else if(trialPending){$('pipeTimeIntro').hidden=false;}else startTicker();saveCurrent();
 }
-function startLevel(n){if(!Number.isInteger(n)||n<1||n>MAX||(n>1&&!progress.completed[n-1]))return;
+function startLevel(n){if(!Number.isInteger(n)||n<1||n>MAX||!canStartLevel(n))return;
  begin(e.get(n),'levels',n);
 }
 function startRandom(size,newPuzzle=false){if(![5,6,7].includes(size))return;
@@ -299,7 +319,7 @@ function victory(){const phrases=globalThis.GridClubWinMessages?.pipeShift||{};c
  else if(mode==='daily'||mode==='practice'){$('pipeResultMessage').textContent=`${moves} moves · ${dailyDay}${dailyPractice?' · practice':''}`;$('pipeResultNext').hidden=true;$('pipeResultLevels').textContent='Daily leaderboard';}
  else{
    const s=e.stageOf(currentLevel),last=currentLevel===MAX;
-   $('pipeResultMessage').textContent=`Level ${s.id} · Puzzle ${currentLevel-s.first+1}/5 · ${moves} moves`;
+   $('pipeResultMessage').textContent=`Level ${s.id} · Puzzle ${currentLevel-s.first+1}/${e.PUZZLES_PER_STAGE} · ${moves} moves`;
    $('pipeResultNext').hidden=last;$('pipeResultNext').textContent=currentLevel===s.last?'Next Level →':'Continue Level →';$('pipeResultLevels').textContent='Levels overview';
    if(justClearedStage){
      const badges=['◉','◆','✦','⌁','✺','♛'];
@@ -312,6 +332,10 @@ function victory(){const phrases=globalThis.GridClubWinMessages?.pipeShift||{};c
      celebration.hidden=false;
    }
  }
+ const todayCompleted=(mode==='daily'||mode==='practice')&&dailyDay===utcToday()&&!!progress.daily[dailyDay]?.completed;
+ const nextDaily=todayCompleted?globalThis.GridClubDailyJourney?.nextGame('pipeShift'):null;
+ $('pipeDailyNextWin').hidden=!nextDaily;
+ $('pipeDailyTomorrowWin').hidden=!todayCompleted||!!nextDaily;
  result.hidden=false;
 }
 function back(){if(section==='game'){if(mode==='daily'||mode==='practice')dailyMenu();else mode==='random'?randomMenu():stageMenu(stage);}
@@ -320,6 +344,8 @@ $('pipeShiftEntry').onclick=menu;$('pipeHomeBack').onclick=home;$('pipeRandomEnt
 $('pipeLevelsEntry').onclick=stages;$('pipeDailyEntry').onclick=dailyMenu;$('pipeStatsEntry').onclick=statsMenu;$('pipeStatsBack').onclick=menu;$('pipeRandomBack').onclick=menu;$('pipeStagesBack').onclick=menu;
 $('pipeLevelsBack').onclick=stages;$('pipeGameBack').onclick=back;$('pipeDailyBack').onclick=menu;
 $('pipeDailyPlay').onclick=()=>startDaily();$('pipeDailyRefresh').onclick=()=>void refreshDailyLeaderboard();
+$('pipeDailyLandingNext').onclick=()=>globalThis.GridClubDailyJourney?.visitNext('pipeShift');
+$('pipeDailyNextWin').onclick=()=>globalThis.GridClubDailyJourney?.visitNext('pipeShift');
 $('pipeRandomChoices').addEventListener('click',ev=>{const b=ev.target.closest('[data-pipe-size]');if(b)startRandom(Number(b.dataset.pipeSize));});
 $('pipeResultNext').onclick=()=>mode==='random'?startRandom(currentSize,true):startLevel(currentLevel+1);
 $('pipeResultLevels').onclick=()=>mode==='random'?randomMenu():mode==='daily'||mode==='practice'?dailyMenu():stages();
@@ -435,5 +461,5 @@ window.addEventListener('online',()=>{void submitDaily();if(section==='daily')vo
 window.addEventListener('pagehide',()=>{cancelDrag();saveCurrent();timerStop();});
 document.addEventListener('visibilitychange',()=>{if(document.hidden){saveCurrent();timerStop();cancelDrag();}else if(section==='game'&&!won&&!expired&&!trialPending)startTicker();});
 progress=read();save();if(progress.daily?.[utcToday()]?.sync==='pending')void submitDaily();
-globalThis.PipeShiftApp={menu,dailyMenu,randomMenu,stages,levels:stages,start:startLevel,startLevel,startRandom,startDaily,back,readProgress:()=>JSON.parse(JSON.stringify(progress))};
+globalThis.PipeShiftApp={home,menu,dailyMenu,randomMenu,stages,levels:stages,start:startLevel,startLevel,startRandom,startDaily,back,readProgress:()=>JSON.parse(JSON.stringify(progress))};
 })();
