@@ -729,14 +729,25 @@ function slide(from,to){
  const path=e.straightSlidePath(board,from,to);
  if(!path.length||(moveLimit!==null&&moves+path.length>moveLimit))return false;
  clockSync();if(timeBudget()&&elapsed>=timeBudget()){timeout();return false;}
- undo.push({board:e.clone(board),moves,steps:path.length});if(undo.length>40)undo.shift();
+ const saved={board:e.clone(board),moves,steps:0};
+ undo.push(saved);
+ let check=null;
  for(const move of path){
    if(!e.move(board,move.from,move.to))throw Error('Unreachable straight slide');
-   moves++;
+   moves++;saved.steps++;
    if(mode==='daily')dailyTrace.push({action:'slide',from:move.from,to:move.to});
+   // Server replay checks for completion after EVERY individual slide and
+   // rejects any further actions. Stop even in the middle of a drag.
+   check=e.evaluate(board);
+   if(check.solved)break;
  }
+ // The backend holds at most 40 adjacent slide snapshots for ranked undo.
+ // Keep the same 40-step budget even when one drag contains several moves.
+ if(mode==='daily'){
+   let steps=undo.reduce((n,x)=>n+(x.steps||1),0);
+   while(steps>40&&undo.length>1)steps-=undo.shift().steps||1;
+ }else if(undo.length>40)undo.shift();
  selected=null;
- const check=e.evaluate(board);
  if(check.solved){
    won=true;timerStop();
    creditReward={puzzle:0,stage:0,daily:0,saveFailed:false};
