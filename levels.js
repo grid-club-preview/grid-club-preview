@@ -271,7 +271,8 @@ const ITEMS=[
     "seed": 1085578332,
     "quality": 139,
     "pairs": 8,
-    "limitSec": 270
+    "limitSec": 270,
+    "extraPairs": 1
   },
   {
     "id": 28,
@@ -291,7 +292,8 @@ const ITEMS=[
     "seed": 1022997438,
     "quality": 141,
     "pairs": 7,
-    "limitSec": 216
+    "limitSec": 216,
+    "extraPairs": 2
   },
   {
     "id": 30,
@@ -321,7 +323,8 @@ const ITEMS=[
     "seed": 3614824048,
     "quality": 148,
     "pairs": 8,
-    "limitSec": 255
+    "limitSec": 255,
+    "extraPairs": 2
   },
   {
     "id": 33,
@@ -341,7 +344,8 @@ const ITEMS=[
     "seed": 2604271977,
     "quality": 145,
     "pairs": 7,
-    "limitSec": 201
+    "limitSec": 201,
+    "extraPairs": 2
   },
   {
     "id": 35,
@@ -426,6 +430,7 @@ const ITEMS=[
     "quality": 148,
     "pairs": 8,
     "limitSec": 240,
+    "extraPairs": 1,
     "blocked": [
       [
         5,
@@ -610,6 +615,7 @@ const ITEMS=[
     "quality": 150,
     "pairs": 7,
     "limitSec": 159,
+    "extraPairs": 2,
     "blocked": [
       [
         5,
@@ -718,6 +724,7 @@ const ITEMS=[
     "quality": 152,
     "pairs": 7,
     "limitSec": 225,
+    "extraPairs": 1,
     "blocked": [
       [
         6,
@@ -842,6 +849,7 @@ const ITEMS=[
     "quality": 154,
     "pairs": 9,
     "limitSec": 171,
+    "extraPairs": 2,
     "blocked": [
       [
         1,
@@ -1002,6 +1010,7 @@ const ITEMS=[
     "quality": 216,
     "pairs": 9,
     "limitSec": 330,
+    "extraPairs": 2,
     "blocked": [
       [
         2,
@@ -1078,6 +1087,7 @@ const ITEMS=[
     "quality": 217,
     "pairs": 12,
     "limitSec": 300,
+    "extraPairs": 1,
     "blocked": [
       [
         4,
@@ -1150,6 +1160,7 @@ const ITEMS=[
     "quality": 223,
     "pairs": 9,
     "limitSec": 270,
+    "extraPairs": 3,
     "blocked": [
       [
         8,
@@ -1354,6 +1365,7 @@ const ITEMS=[
     "quality": 220,
     "pairs": 10,
     "limitSec": 320,
+    "extraPairs": 2,
     "blocked": [
       [
         4,
@@ -1686,6 +1698,7 @@ const ITEMS=[
     "quality": 222,
     "pairs": 9,
     "limitSec": 310,
+    "extraPairs": 3,
     "blocked": [
       [
         5,
@@ -2038,6 +2051,7 @@ const ITEMS=[
     "quality": 225,
     "pairs": 9,
     "limitSec": 300,
+    "extraPairs": 2,
     "blocked": [
       [
         8,
@@ -2474,6 +2488,7 @@ const ITEMS=[
     "quality": 228,
     "pairs": 9,
     "limitSec": 320,
+    "extraPairs": 3,
     "blocked": [
       [
         0,
@@ -2934,6 +2949,7 @@ const ITEMS=[
     "quality": 231,
     "pairs": 9,
     "limitSec": 200,
+    "extraPairs": 3,
     "blocked": [
       [
         0,
@@ -3394,6 +3410,7 @@ const ITEMS=[
     "quality": 234,
     "pairs": 9,
     "limitSec": 220,
+    "extraPairs": 3,
     "blocked": [
       [
         5,
