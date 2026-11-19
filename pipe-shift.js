@@ -283,8 +283,9 @@ async function submitDaily(){
 const rankedTime=ms=>{
  const n=Number(ms);
  if(!Number.isFinite(n)||n<=0)return '';
- const seconds=Math.max(0,Math.round(n/1000));
- return String(Math.floor(seconds/60)).padStart(2,'0')+':'+String(seconds%60).padStart(2,'0');
+ const tenths=Math.max(0,Math.round(n/100)),seconds=Math.floor(tenths/10);
+ return String(Math.floor(seconds/60)).padStart(2,'0')+':'+
+   String(seconds%60).padStart(2,'0')+'.'+String(tenths%10);
 };
 function appendRankedRow(parent,rank,name,moves,ms,isYou){
  const row=document.createElement('div');row.className='pipeDailyRow';
