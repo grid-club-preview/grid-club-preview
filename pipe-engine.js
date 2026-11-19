@@ -120,18 +120,41 @@ function timerFor(n){const s=stageOf(n);if(!s)return null;const at=n-s.first;if(
 // A move budget applies only to timed numbered Levels, never Free Play or Daily.
  // It is calibrated from the catalogue's known legal solution route, with room
  // for exploration. The last legal move is allowed to solve the board.
-function moveLimitFor(n){
+function moveLimitFor(n,legacy=false){
  const stage=stageOf(n);
  if(!stage||timerFor(n)===null)return null;
- const baseline=get(n).solutionMoves.length;
+ const baseline=get(n,undefined,legacy).solutionMoves.length;
  const multiplier=[2.0,1.85,1.7,1.6,1.5,1.45][stage.id-1];
  return Math.ceil(baseline*multiplier/5)*5;
 }
+// Rotate an already audited board and its entire solution route together.
+// This changes orientation without changing scramble difficulty or validity.
+function rotatedIndex(index,size,turns){
+ let {x,y}=at(index,size);
+ for(let j=0;j<turns;j++)[x,y]=[size-1-y,x];
+ return id(x,y,size);
+}
+function rotatedMask(mask,turns){
+ for(let j=0;j<turns;j++)mask=((mask<<1)&15)|((mask&8)>>3);
+ return mask;
+}
+function rotatePuzzle(p,turns){
+ if(!turns)return p;
+ const size=p.size,rotate=board=>{
+   const result=new Array(board.length);
+   board.forEach((tile,index)=>result[rotatedIndex(index,size,turns)]={...tile,mask:rotatedMask(tile.mask,turns)});
+   return result;
+ };
+ return {...p,board:rotate(p.board),solvedBoard:rotate(p.solvedBoard),
+   solutionMoves:p.solutionMoves.map(m=>({from:rotatedIndex(m.from,size,turns),to:rotatedIndex(m.to,size,turns)}))};
+}
+const orientationForLevel=n=>[1,3,1,0,3,2][n%6];
+const orientationForRandom=seed=>[0,1,3,1,3,2][(seed>>>12)%6];
 const cache=new Map();
 const FIXED_SEEDS=Object.freeze({1:3074878952,2:4088790921,3:3074894406,4:3074902133,5:4088814102,6:1434386060,7:1434393787,8:420497272,9:420504999,10:3074948495,11:3074956222,12:420528180,13:3074971676,14:420543634,15:3074987130,16:3074994857,17:420566815,18:4088914553,19:1434486511,20:3462302722,21:3075033492,22:3075041219,23:420613177,24:420620904,25:420628631,26:3075072127,27:3075079854,28:420651812,29:420659539,30:420667266}); // Audited 2026-11-18; freeze for this catalogue.
 const EXTRA_SEEDS=Object.freeze({6:3074917587,7:4088829556,13:420535907,14:2835629075,20:4088930007,21:3075033492,27:1434548327,28:1434556054,34:1434602416,35:1434610143,41:4089092274,42:4089100001}); // Additional audited puzzle seeds.
-function get(n,seedOverride){if(!Number.isInteger(n)||n<1||n>MAX_LEVEL)return null;
- const override=Number.isInteger(seedOverride),key=override?`trial:${n}:${seedOverride}`:n;
+function get(n,seedOverride,legacy=false){if(!Number.isInteger(n)||n<1||n>MAX_LEVEL)return null;
+ const override=Number.isInteger(seedOverride),key=override?`trial:${n}:${seedOverride}:${legacy}`:legacy?`legacy:${n}`:n;
  if(!cache.has(key)){
    const s=stageOf(n),k=n-s.first,originalId=k<5?(s.id-1)*5+k+1:null;
    const seed=(override?seedOverride:(FIXED_SEEDS[originalId]??EXTRA_SEEDS[n]))>>>0;
@@ -145,8 +168,11 @@ function get(n,seedOverride){if(!Number.isInteger(n)||n<1||n>MAX_LEVEL)return nu
      decoys:s.id===1?7+k:s.id===2?9+2*k:18+2*k+Math.max(0,s.id-3),
      blocks:s.id<=2?0:s.id===3?(k>=2?1+Math.floor((k-2)/2):0):2+(s.id-4)+Math.floor(k/2)};
    const solvedBoard=network(options),scrambled=scramble(solvedBoard,seed^0x123acdca,20+s.id*6+k*7);
-   cache.set(key,{level:n,stage:s.id,size:s.size,mode:'levels',networkType:s.mode,timerMs:timerFor(n),...scrambled,solvedBoard,initialMoves:scrambled.solutionMoves.length,
-     fixedPipes:solvedBoard.filter(t=>t.kind==='pipe'&&t.fixed).length,walls:solvedBoard.filter(t=>t.kind==='wall').length});
+   let candidate={level:n,stage:s.id,size:s.size,mode:'levels',networkType:s.mode,timerMs:timerFor(n),...scrambled,solvedBoard,initialMoves:scrambled.solutionMoves.length,
+     fixedPipes:solvedBoard.filter(t=>t.kind==='pipe'&&t.fixed).length,walls:solvedBoard.filter(t=>t.kind==='wall').length,
+     catalogVersion:legacy?5:6};
+   if(!legacy)candidate=rotatePuzzle(candidate,orientationForLevel(n));
+   cache.set(key,candidate);
  }
  const p=cache.get(key);return {...p,board:clone(p.board),solvedBoard:clone(p.solvedBoard),solutionMoves:p.solutionMoves.map(m=>({...m}))};
 }
@@ -185,13 +211,13 @@ function daily(day){
  // many moves were used to scramble the authored solved board.
  for(let attempt=0;attempt<10;attempt++){
    const seed=(base+Math.imul(attempt,2654435761))>>>0;
-   p=random(size,seed);
+   p=random(size,seed,true);
    if(!hasShortWin(p.board,4))break;
  }
  const result={...p,mode:'daily',day,dailyVersion:1,timerMs:null};dailyCache.set(day,result);
  return {...result,board:clone(result.board),solvedBoard:clone(result.solvedBoard),solutionMoves:result.solutionMoves.map(m=>({...m}))};
 }
-function random(size,seed){if(![5,6,7].includes(size))throw Error('Unknown Random difficulty');
+function random(size,seed,legacy=false){if(![5,6,7].includes(size))throw Error('Unknown Random difficulty');
  seed=Number.isFinite(seed)?seed>>>0:((Date.now()^Math.floor(Math.random()*0xffffffff))>>>0);
  const variety=seed%6,mode=size===7?'loop':'path';
  const options={size,mode,seed,complexity:1+variety%3,fixedCount:size===5?0:size===6?1+variety%3:2+variety%4,
@@ -199,7 +225,8 @@ function random(size,seed){if(![5,6,7].includes(size))throw Error('Unknown Rando
    decoys:size===5?variety%3:size===6?2+variety%4:13+2*variety,
    blocks:size===7?1+variety%4:0};
  const solvedBoard=network(options),scrambled=scramble(solvedBoard,seed^0x4f4b1133,14+size*6+variety*6);
- return {mode:'random',size,seed,timerMs:null,level:null,stage:null,...scrambled,solvedBoard,initialMoves:scrambled.solutionMoves.length,networkType:mode};
+ const candidate={mode:'random',size,seed,timerMs:null,level:null,stage:null,...scrambled,solvedBoard,initialMoves:scrambled.solutionMoves.length,networkType:mode,randomLayoutVersion:legacy?1:2};
+ return legacy?candidate:rotatePuzzle(candidate,orientationForRandom(seed));
 }
 function validateBoard(b){const size=sizeOf(b);return !!size&&b.every(t=>t&&['empty','wall','block','pipe','source','sink'].includes(t.kind)&&Number.isInteger(t.mask)&&t.mask>=0&&t.mask<=15&&typeof t.fixed==='boolean'&&(t.kind==='pipe'||t.kind==='source'||t.kind==='sink'||t.mask===0))&&[1,2].includes(b.filter(t=>t.kind==='source').length)&&[1,2].includes(b.filter(t=>t.kind==='sink').length);}
 return Object.freeze({SIZE,MAX_LEVEL,PUZZLES_PER_STAGE,N,E,S,W,DIRECTIONS,STAGES,sizeOf,at,id,adjacent,direction,clone,rng,get,random,daily,hashSeed,stageOf,timerFor,moveLimitFor,move,canMove,legalMoves,evaluate,validateBoard,signature});
