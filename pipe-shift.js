@@ -108,6 +108,9 @@ function refreshCreditControls(){
 }
 function buyPipeTime(){
  if(mode!=='levels'||!puzzle?.timerMs||won||trialPending||extraTimeCount>=2)return false;
+ // Treat a genuinely expired timer as a rescue even if the 100 ms tick
+ // hasn't updated the overlay yet. Never sell a late boost at in-play prices.
+ if(!expired){clockSync();if(elapsed>=timeBudget())timeout('time');}
  if(expired&&failureReason!=='time')return false;
  const rescue=expired,seconds=rescue?(2-extraTimeCount)*15:15;
  const cost=rescue?(extraTimeCount===0?30:20):10;
