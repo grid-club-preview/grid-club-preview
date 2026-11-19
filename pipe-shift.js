@@ -210,8 +210,10 @@ function statsMenu(){
    ['Advanced','advanced',null],['Expert','expert',7],
    ['Levels',null,null],['Daily Challenge','daily',null]
  ]){
+   const fresh=tier&&tier!=='daily'?(s.random||{})[tier]:null;
+   const old=previousSize?(s.random||{})[previousSize]:null;
    const record=tier==='daily'?s.daily:tier===null?s.levels:
-     (s.random||{})[tier]||(previousSize?(s.random||{})[previousSize]:null);
+     {count:(fresh?.count||0)+(old?.count||0),total:(fresh?.total||0)+(old?.total||0)};
    const played=tier==='daily'?Object.keys(progress.daily||{}).filter(d=>progress.daily[d]?.completed).length:
      tier===null?completed:(progress.randomCount[tier]||0)+(previousSize?(progress.randomCount[previousSize]||0):0);
    const row=document.createElement('div');row.className='pipeStatRow';
@@ -431,7 +433,7 @@ function puzzleInstruction(p){
  if(p.freeObjective==='any')
    return 'Connect IN to OUT without leaks. Unused pipes can stay dry.';
  if(p.freeObjective==='all'&&!p.solvedBoard?.some(t=>t.transportPiece))
-   return 'Connect every working pipe to the flow. Decorative pipes need not be used.';
+   return 'Connect every pipe to the water flow. No pipe can remain dry.';
  if(p.requireAllFlow)
    return 'Connect every working pipe. Move the gold-marked pipe to its outlined square.';
  return p.solvedBoard?.some(t=>t.transportPiece)?
