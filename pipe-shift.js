@@ -530,7 +530,7 @@ function svgPath(mask){const arms=e.DIRECTIONS.filter(d=>mask&d.bit),end=d=>({1:
 }
 function render(flow=[],leak=null){if(!board)return;
  const size=puzzle.size,container=$('pipeBoard');container.replaceChildren();
- const valid=selected===null?[]:board.map((_,i)=>e.canMove(board,selected,i)?i:-1).filter(i=>i>=0),flowMap=new Map(flow.map((n,i)=>[n,i]));
+ const valid=selected===null?[]:availableDestinations(selected),flowMap=new Map(flow.map((n,i)=>[n,i]));
  const leakTarget=leak?.leak?.to>=0?leak.leak.to:leak?.leak?.from;
  const feedback=!won&&!expired?expertFlowFeedback(puzzle,board):null;
  const dryTiles=new Set(feedback?.dry||[]);
@@ -565,10 +565,24 @@ function render(flow=[],leak=null){if(!board)return;
  refreshMoveInfo();refreshCreditControls();
  $('pipeUndo').disabled=won||expired||undo.length===0;$('pipeReset').disabled=won||expired||moves===0;
 }
-function slide(from,to){if(won||expired||trialPending||dailyStartPending||!e.canMove(board,from,to))return false;
+function availableDestinations(from){
+ return board.map((_,to)=>{
+   const path=e.straightSlidePath(board,from,to);
+   return path.length&&(moveLimit===null||moves+path.length<=moveLimit)?to:-1;
+ }).filter(to=>to>=0);
+}
+function slide(from,to){
+ if(won||expired||trialPending||dailyStartPending||hintPreviewActive||hintSelection)return false;
+ const path=e.straightSlidePath(board,from,to);
+ if(!path.length||(moveLimit!==null&&moves+path.length>moveLimit))return false;
  clockSync();if(timeBudget()&&elapsed>=timeBudget()){timeout();return false;}
- undo.push({board:e.clone(board),moves});if(undo.length>40)undo.shift();e.move(board,from,to);moves++;selected=null;
- if(mode==='daily')dailyTrace.push({action:'slide',from,to});
+ undo.push({board:e.clone(board),moves,steps:path.length});if(undo.length>40)undo.shift();
+ for(const move of path){
+   if(!e.move(board,move.from,move.to))throw Error('Unreachable straight slide');
+   moves++;
+   if(mode==='daily')dailyTrace.push({action:'slide',from:move.from,to:move.to});
+ }
+ selected=null;
  const check=e.evaluate(board);
  if(check.solved){
    won=true;timerStop();
@@ -614,13 +628,15 @@ function slide(from,to){if(won||expired||trialPending||dailyStartPending||!e.can
  return true;
 }
 function clickCell(i){if(section!=='game'||won||expired||trialPending||dailyStartPending||i<0||i>=board.length)return;
+ if(hintSelection){applySelectedHint(i);return;}
+ if(hintPreviewActive)return;
  if(selected!==null&&board[i].kind==='empty'&&slide(selected,i))return;
  const t=board[i];if(!['pipe','block'].includes(t.kind)||t.fixed){selected=null;render();return;}
- const options=board.map((_,k)=>e.canMove(board,i,k)?k:-1).filter(n=>n>=0);
+ const options=availableDestinations(i);
  if(options.length===1){slide(i,options[0]);return;}
  selected=selected===i?null:i;render();
 }
-function undoMove(){if(won||expired||trialPending||dailyStartPending||!undo.length)return;clockSync();const last=undo.pop();board=e.clone(last.board);if(mode==='daily')dailyTrace.push({action:'undo'});selected=null;render();saveCurrent();}
+function undoMove(){if(won||expired||trialPending||dailyStartPending||!undo.length)return;clockSync();const last=undo.pop();board=e.clone(last.board);if(mode==='daily')for(let step=0;step<(last.steps||1);step++)dailyTrace.push({action:'undo'});selected=null;render();saveCurrent();}
 function reset(){if(won||expired||trialPending||dailyStartPending)return;clockSync();board=e.clone(puzzle.board);if(mode==='daily')dailyTrace.push({action:'reset'});undo=[];selected=null;render();saveCurrent();}
 function showFailure(){
  const byMoves=failureReason==='moves';
@@ -717,7 +733,7 @@ $('pipeTimeoutBack').onclick=()=>mode==='random'?randomMenu():stageMenu(stage);
 $('pipeUndo').onclick=undoMove;$('pipeReset').onclick=reset;$('pipeNew').onclick=()=>startRandom(currentTier,true);
 const grid=$('pipeBoard');
 grid.addEventListener('click',ev=>{if(performance.now()<ignoreClickUntil)return;const b=ev.target.closest('[data-cell]');if(b)clickCell(Number(b.dataset.cell));});
-// Press and drag a pipe (or solid blank block) onto an adjacent empty space.
+// Press and drag a pipe (or solid blank block) along a clear straight run.
 // Native pointer capture ensures the drag keeps working when a finger leaves
 // the source tile. Tap-to-select and tap-to-move remain available for access.
 function cancelDrag(){
@@ -725,7 +741,7 @@ function cancelDrag(){
  grid?.querySelectorAll('.pipeDragSource,.pipeDragTarget').forEach(t=>t.classList.remove('pipeDragSource','pipeDragTarget'));
  pointerOrigin=null;
 }
-// Cache the two/four legal adjacent destinations on touch-down rather than
+// Cache all reachable straight-line destinations on touch-down rather than
 // repeatedly measuring every square during each pointermove. A drop is also
 // accepted near a square's centre so the user needn't hit a tiny target.
 function dropTarget(p,x,y){
@@ -763,12 +779,13 @@ grid.addEventListener('pointerdown',ev=>{
  const cell=ev.target.closest('[data-cell]');
  if(!cell||section!=='game'||won||expired||trialPending||ev.isPrimary===false)return;
  const from=Number(cell.dataset.cell),tile=board?.[from];
+ if(hintPreviewActive||hintSelection||won||expired||trialPending||dailyStartPending)return;
  if(!tile||tile.fixed||!['pipe','block'].includes(tile.kind))return;
  cancelDrag();
  const validCells=[];
- for(const move of e.legalMoves(board))if(move.from===from){
-  const dest=grid.querySelector(`[data-cell="${move.to}"]`),r=dest?.getBoundingClientRect();
-  if(r)validCells.push({index:move.to,x:r.left+r.width/2,y:r.top+r.height/2,width:r.width});
+ for(const to of availableDestinations(from)){
+  const dest=grid.querySelector(`[data-cell="${to}"]`),r=dest?.getBoundingClientRect();
+  if(r)validCells.push({index:to,x:r.left+r.width/2,y:r.top+r.height/2,width:r.width});
  }
  pointerOrigin={id:ev.pointerId,x:ev.clientX,y:ev.clientY,from,active:false,ghost:null,lastTarget:null,validCells};
  try{grid.setPointerCapture(ev.pointerId);}catch(_){}
@@ -785,7 +802,7 @@ grid.addEventListener('pointerup',ev=>{
  if(p.active){
   ignoreClickUntil=performance.now()+250;
   const target=dropTarget(p,ev.clientX,ev.clientY);
-  const valid=target!==null&&e.canMove(board,p.from,target);
+  const valid=target!==null&&e.straightSlidePath(board,p.from,target).length>0;
   cancelDrag();
   if(valid)slide(p.from,target);
   if(ev.cancelable)ev.preventDefault();
