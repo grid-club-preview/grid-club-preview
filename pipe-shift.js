@@ -268,8 +268,14 @@ async function submitDaily(){
    const reply=await GridRanked.call('pipe_submit',{day,attemptId:start.attemptId,events:record.events});
    if(utcToday()!==day)return;
    record.sync=reply.verified?'verified':'review';record.verified=!!reply.verified;
-   record.serverMoves=reply.moves;save();
-   if(mode==='daily'&&won){$('pipeResultMessage').textContent=`${reply.moves} moves · ${reply.verified?'Verified result':'Result under review'}`;}
+   record.serverMoves=reply.moves;
+   if(Number.isFinite(Number(reply.elapsedMs))&&Number(reply.elapsedMs)>0)
+     record.serverElapsedMs=Number(reply.elapsedMs);
+   save();
+   if(mode==='daily'&&won){
+     const serverTime=rankedTime(reply.elapsedMs);
+     $('pipeResultMessage').textContent=`${reply.moves} moves${serverTime?' · '+serverTime:''} · ${reply.verified?'Verified result':'Result under review'}`;
+   }
   }catch(err){dailyConnection=err.message;console.warn('Pipe Shift daily submission pending:',err);}
  })().finally(()=>{dailySync=null;});
  return dailySync;
