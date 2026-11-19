@@ -66,7 +66,7 @@ function weaveDesignB(){
  sources:[[6,0]],sinks:[[0,6]]};
 }
 const DECORS=[N|S,E|W,N|E,E|S,S|W,W|N];
-function network({size,mode,seed,complexity=1,fixedCount=0,walls=0,decoys=0,blocks=0}){
+function network({size,mode,seed,complexity=1,fixedCount=0,walls=0,decoys=0,blocks=0,requireAllFlow=false}){
  const graph=mode==='corner'?cornerTraverseDesign():mode==='weaveA'?weaveDesignA():mode==='weaveB'?weaveDesignB():mode==='loop'?loopDesign(seed):mode==='multiple'?multipleDesign(seed):mode==='double'?doubleDesign(seed):pathDesign(size,seed,complexity);
  const rand=rng(seed^0x87661ab5),board=Array.from({length:size*size},()=>({kind:'empty',mask:0,fixed:false})),ports=new Map();
  for(const path of graph.paths)for(let i=1;i<path.length;i++){
@@ -80,6 +80,9 @@ function network({size,mode,seed,complexity=1,fixedCount=0,walls=0,decoys=0,bloc
    if(kind!=='pipe'&&degrees!==1)throw Error('Terminal is not an endpoint');
    board[index]={kind,mask,fixed:kind!=='pipe'};
  }
+ // New Expert Free Play explicitly requires all working pipes to carry
+ // water, preventing a short inlet-to-outlet shortcut from winning.
+ if(requireAllFlow)for(const source of sources)board[source].requireAllFlow=true;
  if(['corner','weaveA','weaveB'].includes(mode)){
    const target=mode==='weaveA'?id(5,5,size):mode==='weaveB'?id(0,5,size):id(6,6,size);
    if(board[target].kind!=='pipe')throw Error('Missing target elbow');
@@ -123,7 +126,12 @@ function evaluate(board){const size=sizeOf(board);if(!size)return {solved:false,
  const special=board.findIndex(tile=>tile.transportPiece===true);
  const target=special<0?-1:(board[special].transportTarget??board.length-1);
  const transportReady=special<0||(special===target&&visited.has(special));
- return {solved:leaks===0&&reachedOutlet&&sourcesReached&&transportReady,leaks,reachedOutlet,sourcesReached,flow:[...visited],branches,cycles:degreeSum/2-visited.size+1,sources:sources.length,sinks:sinks.length};
+ const allPipesRequired=board.some(tile=>tile.requireAllFlow===true);
+ const everyPipeConnected=!allPipesRequired||board.every((tile,i)=>
+   tile.kind!=='pipe'||tile.decoy===true||visited.has(i));
+ return {solved:leaks===0&&reachedOutlet&&sourcesReached&&transportReady&&everyPipeConnected,
+   leaks,reachedOutlet,sourcesReached,flow:[...visited],branches,cycles:degreeSum/2-visited.size+1,
+   sources:sources.length,sinks:sinks.length};
 }
 // Starting at an inlet, find the FIRST broken connection and the actual
 // connected path water can reach before it leaks. The failure animation uses
@@ -364,7 +372,7 @@ function expertRandom(seed){
      // Six movable blank blocks compete for the few true gaps. Almost all
      // remaining pipes belong to a 29-31-cell working network.
      const solvedBoard=network({size,mode,seed:designSeed,complexity:3,
-       fixedCount:2,walls:2,decoys:2,blocks:6});
+       fixedCount:2,walls:2,decoys:0,blocks:6,requireAllFlow:true});
      const raw=scramble(solvedBoard,designSeed^0x4f4b1133,170);
      // The marked essential elbow is deliberately transported from far
      // across the grid. Reverse slides supply a valid complete solution.
@@ -380,7 +388,7 @@ function expertRandom(seed){
      const score=3*displaced.length+separation;
      const candidate={mode:'random',size,seed,timerMs:null,level:null,stage:null,
        ...scrambled,solvedBoard,initialMoves:scrambled.solutionMoves.length,
-       networkType:mode,randomLayoutVersion:3,
+       networkType:mode,randomLayoutVersion:3,requireAllFlow:true,
        difficultyMetrics:{flowCells:solutionFlow.length,requiredPipes:needed.length,
          displacedPipes:displaced.length,transportDistance:separation,attempt}};
      if(!best||score>best.score)best={puzzle:candidate,score};
