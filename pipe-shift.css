@@ -230,3 +230,15 @@
 .pipeBestLine{display:flex;align-items:baseline;justify-content:flex-end;gap:8px;margin:-7px 2px 10px;font-size:12px;color:#adbfda;}
 .pipeBestLine strong{color:#f5d68f;font-size:13px;font-weight:850;font-variant-numeric:tabular-nums;}
 .dailyJourneyRemaining{margin:12px 0 5px;color:#c5e3e2;font-size:13px;font-weight:750;text-align:center;}
+
+/* v0.9.10 · shared credits and distinctly-priced time rescues. */
+.pipeWalletStatus{margin:7px 3px 12px;color:#e3cf96;font-size:12px;font-weight:750;line-height:1.5;}
+#pipe-menu .pipeWalletStatus{text-align:center;margin:-1px 3px 8px;}
+.pipeBoostButton{width:100%;min-height:43px;margin-top:10px;padding:11px 14px;border-radius:12px;background:#3c4860;border:1px solid #9e8eb7;color:#f4e7fe;font-size:13px;font-weight:800;}
+.pipeBoostButton:disabled{opacity:.45;cursor:not-allowed;}
+.pipeRescueNote{font-size:12px;color:#b9cddd;line-height:1.45;margin:5px 4px;}
+#pipeTimeout .pipeRescueNote{margin:8px 2px 10px;}
+#pipeRescue{background:#d9b879;color:#243145;}
+#pipeRescue:disabled{opacity:.4;}
+.pipeCreditReward,.dotDailyCreditReward{margin:9px 0 13px;padding:9px 12px;border-radius:10px;background:#314a40;color:#daffd9;font-size:13px;line-height:1.4;font-weight:800;}
+#pipeResult .pipeCreditReward{margin-bottom:10px;}
