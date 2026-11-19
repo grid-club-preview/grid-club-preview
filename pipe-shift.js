@@ -65,12 +65,23 @@ function read(){
      next.randomGoal=next.randomGoal==='any'?'any':'all';
      next.randomBestByGoal={all:{...(next.randomBestByGoal?.all||{})},
        any:{...(next.randomBestByGoal?.any||{})}};
-     for(const size of [5,6,7]){
-       const prior=`random:${size}`,value=next.active[prior];
-       if(!value)continue;
-       const goal=size===7&&value.randomLayoutVersion===3?'all':'any';
-       const key=`random:${size}:${goal}`;
-       if(!next.active[key])next.active[key]={...value,freeObjective:goal};
+     // Previous versions used numeric grid sizes as Free Play categories.
+     // The new Advanced and Expert tiers are BOTH 7x7, so preserve the
+     // old Expert records under Expert rather than merging unrelated bests.
+     for(const goal of ['all','any']){
+       const category=next.randomBestByGoal[goal];
+       for(const [size,tier] of [[5,'beginner'],[6,'apprentice'],[7,'expert']]){
+         if(category[size]&&!category[tier])category[tier]=category[size];
+         delete category[size];
+       }
+     }
+     for(const [prior,value] of Object.entries(next.active||{})){
+       const match=/^random:(5|6|7)(?::(all|any))?$/.exec(prior);
+       if(!match||!value)continue;
+       const size=Number(match[1]),tier=size===5?'beginner':size===6?'apprentice':'expert';
+       const goal=match[2]||(size===7&&value.randomLayoutVersion===3?'all':'any');
+       const key=`random:${tier}:${goal}`;
+       if(!next.active[key])next.active[key]={...value,freeObjective:goal,freeTier:tier};
        delete next.active[prior];
      }
      return next;
@@ -213,15 +224,23 @@ function randomMenu(){saveCurrent();hub.hidden=true;root.hidden=false;route('ran
  for(const objective of ['all','any'])$(objective==='all'?'pipeGoalAll':'pipeGoalAny')
    .setAttribute('aria-pressed',String(goal===objective));
  $('pipeGoalExplanation').textContent=goal==='all'?
-   'Connect every working pipe. On Expert boards, the gold-marked pipe must also reach its outlined destination.':
-   'Create a leak-free connection from IN to OUT. Other pipes may remain dry.';
- for(const btn of $('pipeRandomChoices').querySelectorAll('[data-pipe-size]')){
-   const size=Number(btn.dataset.pipeSize);
+   'Connect every working pipe. Expert also has a gold-marked pipe to place.':
+   'Create a leak-free route from IN to OUT. Other pipes may remain dry.';
+ for(const btn of $('pipeRandomChoices').querySelectorAll('[data-pipe-tier]')){
+   const tier=btn.dataset.pipeTier;
+   if(!Object.hasOwn(freeTiers,tier))continue;
    const text=btn.querySelector('.pipeChoiceCopy')||btn.querySelector('span:not(.pipeButtonIcon):not(.pipeChevron)');
-   let sub=text?.querySelector('small');
-   if(text&&!sub){sub=document.createElement('small');text.append(sub);}
-   const active=progress.active[`random:${size}:${goal}`],best=goalBest(size,goal);
-   sub.textContent=(Number.isInteger(best)?`Personal best: ${best} moves`:'No completed puzzles yet')+
+   let subtitle=text?.querySelector('small');
+   if(text&&!subtitle){subtitle=document.createElement('small');text.append(subtitle);}
+   const active=progress.active[`random:${tier}:${goal}`],best=goalBest(tier,goal);
+   // Preserve the short difficulty description while showing the goal's
+   // saved best and whether there is an unfinished board.
+   const description={
+     beginner:'Short connections',apprentice:'Longer connections',
+     advanced:'Multi-row networks',expert:'Full-grid challenge'
+   }[tier];
+   subtitle.textContent=description+
+     (Number.isInteger(best)?` · Best ${best} moves`:'')+
      (active?' · Continue available':'');
  }
 }
@@ -476,16 +495,19 @@ function startLevel(n){if(!Number.isInteger(n)||n<1||n>MAX||!canStartLevel(n))re
  const variant=savedVersion===5?true:savedVersion===6&&[27,28].includes(n)?6:false;
  begin(e.get(n,undefined,variant),'levels',n);
 }
-function startRandom(size,newPuzzle=false){if(![5,6,7].includes(size))return;
- const goal=progress.randomGoal==='any'?'any':'all';
- const key=`random:${size}:${goal}`,saved=progress.active[key];
+function startRandom(tier,newPuzzle=false){
+ if(typeof tier==='number')tier=fallbackTier(tier); // legacy JS caller
+ if(!Object.hasOwn(freeTiers,tier))return;
+ const size=freeTiers[tier],goal=progress.randomGoal==='any'?'any':'all';
+ const key=`random:${tier}:${goal}`,saved=progress.active[key];
  const seed=!newPuzzle&&saved&&Number.isInteger(saved.seed)?saved.seed:freshRandomSeed();
  const version=!newPuzzle&&saved?.randomLayoutVersion;
  let p;
- if(saved&&version!==5&&!newPuzzle){
-   const variant=version===2?2:version===3?false:true;
-   p={...e.random(size,seed,variant),freeObjective:goal};
- }else p=e.freePlay(size,seed,goal);
+ if(saved&&![5,6].includes(version)&&!newPuzzle){
+   // Preserve the original v1, v2 and Expert v3 layouts for active saves.
+   const variant=version===1?true:version===2?2:false;
+   p={...e.random(size,seed,variant),freeObjective:goal,freeTier:tier};
+ }else p=e.freePlay(size,seed,goal,tier);
  if(newPuzzle)delete progress.active[key];
  begin(p,'random',null,newPuzzle);
 }
@@ -539,7 +561,7 @@ function slide(from,to){if(won||expired||trialPending||dailyStartPending||!e.can
  if(check.solved){
    won=true;timerStop();
    creditReward={puzzle:0,stage:0,daily:0,saveFailed:false};
-   if(mode!=='practice'&&!dailyPractice)recordCompletion(mode,currentSize,moves);
+   if(mode!=='practice'&&!dailyPractice)recordCompletion(mode,mode==='random'?currentTier:currentSize,moves);
    if(mode==='levels'){
      const first=!progress.completed[currentLevel],group=e.stageOf(currentLevel);
      progress.completed[currentLevel]=true;
@@ -558,11 +580,11 @@ function slide(from,to){if(won||expired||trialPending||dailyStartPending||!e.can
        creditReward.saveFailed ||= !!award?.saveFailed;
      }
    }else if(mode==='random'){
-     progress.randomCount[currentSize]=(progress.randomCount[currentSize]||0)+1;
+     progress.randomCount[currentTier]=(progress.randomCount[currentTier]||0)+1;
      const objective=puzzle.freeObjective==='all'?'all':'any';
      const bests=(progress.randomBestByGoal ||= {all:{},any:{}})[objective] ||= {};
-     if(!bests[currentSize]||moves<bests[currentSize].moves)
-       bests[currentSize]={moves,elapsed};
+     if(!bests[currentTier]||moves<bests[currentTier].moves)
+       bests[currentTier]={moves,elapsed};
    }else if(mode==='daily'&&!dailyPractice){
      progress.daily[dailyDay]={completed:true,moves,events:dailyTrace.map(x=>({...x})),
       sync:dailyServerAttemptId?'pending':'local',serverAttemptId:dailyServerAttemptId,
