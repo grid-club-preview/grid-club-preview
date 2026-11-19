@@ -322,10 +322,9 @@
     $('winToLevels').hidden = mode!=='level';
     $('winToLevels').textContent='Return to Levels overview';
     $('win').dataset.stage = mode==='level'?String(game.level.stage):'';
-    const dailyComplete=mode==='daily'&&result.date===today()&&dailySolved();
-    const nextDaily=dailyComplete?globalThis.GridClubDailyJourney?.nextGame('dotTrails'):null;
-    $('dotDailyNextWin').hidden=!nextDaily;
-    $('dotDailyTomorrowWin').hidden=!dailyComplete||!!nextDaily;
+    // A new game must not retain the prior result screen's daily navigation.
+    $('dotDailyNextWin').hidden=true;
+    $('dotDailyTomorrowWin').hidden=true;
     $('winDifficultyActions').hidden = mode !== 'free';
     $('winToRandom').hidden = mode !== 'free';
     $('winEasier').disabled = size === 5;
@@ -888,6 +887,12 @@
       status.textContent='';
       status.hidden=true;
     }
+    // The daily CTA belongs to the result screen, after the completion has
+    // actually been saved. Never reference a result while setting up a board.
+    const dailyComplete=mode==='daily'&&result.date===today()&&dailySolved();
+    const nextDaily=dailyComplete?globalThis.GridClubDailyJourney?.nextGame('dotTrails'):null;
+    $('dotDailyNextWin').hidden=!nextDaily;
+    $('dotDailyTomorrowWin').hidden=!dailyComplete||!!nextDaily;
     $('win').classList.add('show');
     if(mode==='daily')submitRankedResult(result);
   }
@@ -920,6 +925,9 @@
     $('progress').style.width=`${occupied/total*100}%`;
     const remaining=remainingLevelMs();
     $('time').textContent=remaining===null?fmtSeconds(core.elapsed(game)):fmtSeconds(Math.max(0,remaining));
+    // Only timed Levels flash, from 00:14 down to 00:01. No flashing for
+    // elapsed-time play, completed boards, or the pause/timeout overlay.
+    $('time').dataset.critical=String(remaining!==null&&remaining>0&&Math.floor(remaining/1000)<15&&!timedOut&&!game.finishedAt);
     if(mode==='level'){
       $('levelStepInfo').textContent=`Level ${game.level.stage} · Puzzle ${game.level.step}/5`;
       $('gameWallet').textContent=`◉ ${walletBalance()}`;
