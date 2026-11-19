@@ -210,3 +210,23 @@
     text-shadow:none;
   }
 }
+
+/* v0.9.9 · distinct game-mode colours and quieter secondary navigation. */
+#pipeRandomEntry{background:linear-gradient(125deg,#1d4262,#27354f);border-color:#578bb7;}
+#pipeRandomEntry .pipeButtonIcon{background:#255579;border-color:#4b9bd4;color:#b4edff;}
+#pipeLevelsEntry{background:linear-gradient(125deg,#403052,#31324d);border-color:#8970b0;}
+#pipeLevelsEntry .pipeButtonIcon{background:#554164;border-color:#af89bf;color:#ffe4a3;}
+#pipe-menu .pipeStatsTextLink{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;min-height:35px;padding:7px 9px;margin:3px 0;color:#b7cae0;background:transparent;border:0;border-radius:10px;text-decoration:underline;text-underline-offset:3px;font-size:13px;font-weight:650;}
+#pipe-menu .pipeStatsTextLink:focus-visible{outline:2px solid #b1e6e8;outline-offset:2px;}
+#pipeRandomChoices [data-pipe-size="5"]{background:linear-gradient(115deg,#20494b,#263b51);border-color:#488c86;}
+#pipeRandomChoices [data-pipe-size="6"]{background:linear-gradient(115deg,#4a3a32,#30314a);border-color:#9e7259;}
+#pipeRandomChoices [data-pipe-size="7"]{background:linear-gradient(115deg,#393158,#28364d);border-color:#806fb6;}
+#pipeRandomChoices [data-pipe-size="5"] .pipeButtonIcon{background:#2d6461;color:#adffe4;}
+#pipeRandomChoices [data-pipe-size="6"] .pipeButtonIcon{background:#61483c;color:#ffe0ab;}
+#pipeRandomChoices [data-pipe-size="7"] .pipeButtonIcon{background:#493f74;color:#d5c8ff;}
+.pipeLevelList .pipeLevel:nth-child(4n+2){background:#293349;border-color:#5d6386;}
+.pipeLevelList .pipeLevel:nth-child(4n+3){background:#243946;border-color:#48787a;}
+.pipeLevelList .pipeLevel:nth-child(4n+4){background:#393547;border-color:#786077;}
+.pipeBestLine{display:flex;align-items:baseline;justify-content:flex-end;gap:8px;margin:-7px 2px 10px;font-size:12px;color:#adbfda;}
+.pipeBestLine strong{color:#f5d68f;font-size:13px;font-weight:850;font-variant-numeric:tabular-nums;}
+.dailyJourneyRemaining{margin:12px 0 5px;color:#c5e3e2;font-size:13px;font-weight:750;text-align:center;}
