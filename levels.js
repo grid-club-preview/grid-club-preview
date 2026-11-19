@@ -31,7 +31,7 @@ const ITEMS=[
     "seed": 3336858684,
     "quality": 43,
     "pairs": 4,
-    "limitSec": 31
+    "limitSec": 22
   },
   {
     "id": 4,
@@ -41,7 +41,7 @@ const ITEMS=[
     "seed": 1065111147,
     "quality": 45,
     "pairs": 4,
-    "limitSec": 27
+    "limitSec": 18
   },
   {
     "id": 5,
@@ -51,7 +51,7 @@ const ITEMS=[
     "seed": 3792664600,
     "quality": 45,
     "pairs": 4,
-    "limitSec": 23
+    "limitSec": 15
   },
   {
     "id": 6,
