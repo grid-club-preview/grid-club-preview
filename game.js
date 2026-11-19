@@ -927,7 +927,7 @@
     $('time').textContent=remaining===null?fmtSeconds(core.elapsed(game)):fmtSeconds(Math.max(0,remaining));
     // Only timed Levels flash, from 00:14 down to 00:01. No flashing for
     // elapsed-time play, completed boards, or the pause/timeout overlay.
-    $('time').dataset.critical=String(remaining!==null&&remaining>0&&Math.ceil(remaining/1000)<15&&!timedOut&&!game.finishedAt);
+    $('time').dataset.critical=String(remaining!==null&&remaining>0&&Math.floor(remaining/1000)<15&&!timedOut&&!game.finishedAt);
     if(mode==='level'){
       $('levelStepInfo').textContent=`Level ${game.level.stage} · Puzzle ${game.level.step}/5`;
       $('gameWallet').textContent=`◉ ${walletBalance()}`;
