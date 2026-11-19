@@ -3686,10 +3686,22 @@ function record(progress,id,timeMs,moves,hints){
 }
 function spend(progress,amount,kind,attemptId){
  const p=normalize(progress),cost=Number(amount);
- if(cost!==COST||p.credits<cost||!['hint','extra-time'].includes(kind)||!attemptId)return false;
+ if(!attemptId||p.credits<cost)return false;
  const history=p.spend[attemptId] ||= {hint:0,'extra-time':0};
- if(kind==='extra-time'&&history['extra-time']>=2)return false;
- history[kind]++;
+ // In-play: at most two +15s boosts, each at 10 credits.
+ // At timeout: buy only the unspent portion of a 30s allowance,
+ // at a premium (30 credits for +30s, or 20 for the last +15s).
+ // No further extension may be bought once a rescue has been used.
+ if(kind==='hint'){
+   if(cost!==COST)return false;
+ }else if(kind==='extra-time'){
+   if(cost!==COST||history['extra-time']>=2||history['extra-time-rescue'])return false;
+ }else if(kind==='extra-time-rescue'){
+   if(history['extra-time-rescue']||history['extra-time']>=2)return false;
+   if(cost!==(history['extra-time']===0?30:20))return false;
+ }else return false;
+ history[kind]=(history[kind]||0)+1;
+ if(kind==='extra-time-rescue')history['extra-time']=2;
  p.ledger.push({id:'spend:'+attemptId+':'+kind+':'+history[kind],amount:-cost,type:kind,attemptId});
  p.credits-=cost;
  return true;
