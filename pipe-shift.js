@@ -5,10 +5,12 @@ const e=globalThis.PipeEngine;if(!e)return;
 const $=id=>document.getElementById(id),root=$('pipeShiftScreen'),hub=$('home');
 if(!root||!hub||!$('pipeShiftEntry'))return;
 const KEY='gridclub-pipeshift-progress-v1',BACKUP=KEY+'-v08-backup',MAX=e.MAX_LEVEL;
-const blank=()=>({version:2,levelCatalog:5,completed:{},best:{},active:{},randomBest:{},randomBestV3:{},randomBestV4:{},randomCount:{},legacyArchived:{},legacyUnlockedStages:{},firstAttemptFailed:{},daily:{},moveStats:{random:{},levels:{count:0,total:0},daily:{count:0,total:0}}});
+const blank=()=>({version:2,levelCatalog:5,completed:{},best:{},active:{},randomBest:{},randomBestV3:{},randomBestV4:{},randomBestByGoal:{all:{},any:{}},randomGoal:'all',randomCount:{},legacyArchived:{},legacyUnlockedStages:{},firstAttemptFailed:{},daily:{},moveStats:{random:{},levels:{count:0,total:0},daily:{count:0,total:0}}});
 const oldToNew=id=>{const n=Number(id);return Number.isInteger(n)&&n>=1&&n<=30?Math.floor((n-1)/5)*7+(n-1)%5+1:null;};
 function remapLevels(items){const mapped={};for(const [id,value] of Object.entries(items||{})){const next=oldToNew(id);if(next!==null)mapped[next]=value;}return mapped;}
-let progress=blank(),section='menu',stage=1,mode='levels',currentLevel=null,currentSize=5,puzzle=null;
+let progress=blank(),section='menu',stage=1,mode='levels',currentLevel=null,currentSize=5,currentTier='beginner',puzzle=null;
+const freeTiers={beginner:5,apprentice:6,advanced:7,expert:7};
+const fallbackTier=size=>size===5?'beginner':size===6?'apprentice':'expert';
 let board=null,moves=0,elapsed=0,undo=[],selected=null,won=false,expired=false,justClearedStage=false,trialPending=false;
 let timer=null,lastTick=null,flowTimer=null,pointerOrigin=null,ignoreClickUntil=0,nonce=0;
 let dailyDay='',dailyTrace=[],dailyPractice=false,dailyConnection='',dailySync=null,dailyLoading=null;
@@ -19,13 +21,25 @@ const credits=globalThis.GridClubCredits;
 const timeBudget=()=>puzzle?.timerMs?puzzle.timerMs+extraTimeMs:null;
 const creditBalance=()=>credits?.balance()||0;
 const makeAttempt=()=>`pipe:${Date.now()}:${Math.random().toString(36).slice(2,12)}`;
+function goalBest(tier,goal){
+ const recent=progress.randomBestByGoal?.[goal]?.[tier]?.moves;
+ const previous=tier==='expert'&&goal==='all'?progress.randomBestV4?.[7]?.moves:
+   // Old 7x7 Expert boards were far easier, even with an "any pipes"
+   // objective. Do not present a historical 7-move best as competitive
+   // with the new 29–31-pipe Expert generation.
+   tier==='apprentice'&&goal==='any'?progress.randomBest?.[6]?.moves:
+   tier==='beginner'&&goal==='any'?progress.randomBest?.[5]?.moves:null;
+ const values=[recent,previous].filter(Number.isInteger);
+ return values.length?Math.min(...values):null;
+}
 function bestMoves(){
- const source=mode==='random'&&currentSize===7?
-   puzzle?.randomLayoutVersion===4?progress.randomBestV4:
-   puzzle?.randomLayoutVersion===3?progress.randomBestV3:progress.randomBest:
-   progress.randomBest;
- return mode==='random'?source?.[currentSize]?.moves:
-   mode==='levels'?progress.best[currentLevel]?.moves:null;
+ if(mode==='levels')return progress.best[currentLevel]?.moves??null;
+ if(mode!=='random')return null;
+ if(currentTier==='expert'&&[1,2].includes(puzzle?.randomLayoutVersion))
+   return progress.randomBest?.[7]?.moves??null;
+ if(currentTier==='expert'&&puzzle?.randomLayoutVersion===3)
+   return progress.randomBestV3?.[7]?.moves??null;
+ return goalBest(currentTier,puzzle?.freeObjective||'all');
 }
 function refreshMoveInfo(){
  const best=bestMoves(),show=mode==='random'||mode==='levels';
@@ -54,6 +68,28 @@ function read(){
        for(const key of Object.keys(next.active||{}))if(key.startsWith('level:'))delete next.active[key];
        next.levelCatalog=5;
      }
+     next.randomGoal=next.randomGoal==='any'?'any':'all';
+     next.randomBestByGoal={all:{...(next.randomBestByGoal?.all||{})},
+       any:{...(next.randomBestByGoal?.any||{})}};
+     // Previous versions used numeric grid sizes as Free Play categories.
+     // The new Advanced and Expert tiers are BOTH 7x7, so preserve the
+     // old Expert records under Expert rather than merging unrelated bests.
+     for(const goal of ['all','any']){
+       const category=next.randomBestByGoal[goal];
+       for(const [size,tier] of [[5,'beginner'],[6,'apprentice'],[7,'expert']]){
+         if(category[size]&&!category[tier])category[tier]=category[size];
+         delete category[size];
+       }
+     }
+     for(const [prior,value] of Object.entries(next.active||{})){
+       const match=/^random:(5|6|7)(?::(all|any))?$/.exec(prior);
+       if(!match||!value)continue;
+       const size=Number(match[1]),tier=size===5?'beginner':size===6?'apprentice':'expert';
+       const goal=match[2]||(size===7&&value.randomLayoutVersion===3?'all':'any');
+       const key=`random:${tier}:${goal}`;
+       if(!next.active[key])next.active[key]={...value,freeObjective:goal,freeTier:tier};
+       delete next.active[prior];
+     }
      return next;
    }
    if(v.version===1){
@@ -76,7 +112,7 @@ function save(){
  try{const value=JSON.stringify(progress);localStorage.setItem(KEY,value);if(localStorage.getItem(KEY)!==value)throw Error('Storage mismatch');$('pipeSaveNotice').hidden=true;}
  catch(_){$('pipeSaveNotice').hidden=false;}
 }
-function activeKey(){return mode==='random'?`random:${currentSize}`:mode==='daily'?`daily:${dailyDay}`:mode==='practice'?`practice:${dailyDay}`:`level:${currentLevel}`;}
+function activeKey(){return mode==='random'?`random:${currentTier}:${puzzle?.freeObjective||'any'}`:mode==='daily'?`daily:${dailyDay}`:mode==='practice'?`practice:${dailyDay}`:`level:${currentLevel}`;}
 function clockSync(){if(lastTick===null||won||expired)return;const now=performance.now();if(document.hidden){lastTick=null;return;}elapsed+=Math.max(0,now-lastTick);lastTick=now;}
 function timerStop(){if(timer!==null){clearInterval(timer);timer=null;}lastTick=null;}
 function startTicker(){if(trialPending)return;timerStop();lastTick=performance.now();timer=setInterval(()=>{
@@ -142,6 +178,8 @@ function saveCurrent(){if(!puzzle||!board||won)return;
    extraTimeMs,extraTimeCount,attemptId,
    moveCapVersion:mode==='levels'?1:null,moveCapExempt:mode==='levels'&&legacyMoveCapExempt,failureReason,
    randomLayoutVersion:mode==='random'?(puzzle.randomLayoutVersion||1):null,
+   freeObjective:mode==='random'?puzzle.freeObjective:null,
+   freeTier:mode==='random'?currentTier:null,
    undo:undo.slice(-40).map(a=>({board:e.clone(a.board),moves:a.moves}))};save();
 }
 function clearFlow(){if(flowTimer!==null){clearTimeout(flowTimer);flowTimer=null;}}
@@ -166,16 +204,24 @@ function menu(){saveCurrent();hub.hidden=true;root.hidden=false;route('menu');
 function statsMenu(){
  saveCurrent();hub.hidden=true;root.hidden=false;route('stats');
  const completed=Object.keys(progress.completed).filter(n=>progress.completed[n]).length;
- const random=[5,6,7].reduce((n,size)=>n+(progress.randomCount[size]||0),0);
+ const random=Object.values(progress.randomCount||{}).reduce((n,value)=>n+(Number(value)||0),0);
  const s=progress.moveStats||{},records=[s.levels,s.daily,...Object.values(s.random||{})].filter(Boolean);
  const sum=records.reduce((a,v)=>a+(Number(v.total)||0),0);
  const count=records.reduce((a,v)=>a+(Number(v.count)||0),0);
  $('pipeStatsCompleted').textContent=String(completed+random);
  $('pipeStatsAverage').textContent=count?(sum/count).toFixed(1):'—';
  const list=$('pipeStatsDetails');list.replaceChildren();
- for(const [label,size] of [['Beginner',5],['Advanced',6],['Expert',7],['Levels',0],['Daily Challenge',-1]]){
-   const record=size===-1?s.daily:size?(s.random||{})[size]:s.levels;
-   const played=size===-1?Object.keys(progress.daily||{}).filter(d=>progress.daily[d]?.completed).length:size?(progress.randomCount[size]||0):completed;
+ for(const [label,tier,previousSize] of [
+   ['Beginner','beginner',5],['Apprentice','apprentice',6],
+   ['Advanced','advanced',null],['Expert','expert',7],
+   ['Levels',null,null],['Daily Challenge','daily',null]
+ ]){
+   const fresh=tier&&tier!=='daily'?(s.random||{})[tier]:null;
+   const old=previousSize?(s.random||{})[previousSize]:null;
+   const record=tier==='daily'?s.daily:tier===null?s.levels:
+     {count:(fresh?.count||0)+(old?.count||0),total:(fresh?.total||0)+(old?.total||0)};
+   const played=tier==='daily'?Object.keys(progress.daily||{}).filter(d=>progress.daily[d]?.completed).length:
+     tier===null?completed:(progress.randomCount[tier]||0)+(previousSize?(progress.randomCount[previousSize]||0):0);
    const row=document.createElement('div');row.className='pipeStatRow';
    const title=document.createElement('strong');title.textContent=label;
    const detail=document.createElement('span');detail.textContent=`${played} completed · ${record?.count?(record.total/record.count).toFixed(1)+' avg. moves':'— avg. moves'}`;
@@ -188,20 +234,33 @@ function recordCompletion(kind,size,usedMoves){
  bucket.count++;bucket.total+=usedMoves;
 }
 function randomMenu(){saveCurrent();hub.hidden=true;root.hidden=false;route('random');
- for(const btn of $('pipeRandomChoices').querySelectorAll('[data-pipe-size]')){
-   const size=Number(btn.dataset.pipeSize);
+ const goal=progress.randomGoal==='any'?'any':'all';
+ for(const objective of ['all','any'])$(objective==='all'?'pipeGoalAll':'pipeGoalAny')
+   .setAttribute('aria-pressed',String(goal===objective));
+ $('pipeGoalExplanation').textContent=goal==='all'?
+   'Connect every working pipe. Expert also has a gold-marked pipe to place.':
+   'Create a leak-free route from IN to OUT. Other pipes may remain dry.';
+ for(const btn of $('pipeRandomChoices').querySelectorAll('[data-pipe-tier]')){
+   const tier=btn.dataset.pipeTier;
+   if(!Object.hasOwn(freeTiers,tier))continue;
    const text=btn.querySelector('.pipeChoiceCopy')||btn.querySelector('span:not(.pipeButtonIcon):not(.pipeChevron)');
-   let sub=text?.querySelector('small');
-   if(text&&!sub){sub=document.createElement('small');text.append(sub);}
-   const active=progress.active[`random:${size}`];
-   const bestStore=size===7?
-     active?.randomLayoutVersion===3?progress.randomBestV3:
-     (!active||active.randomLayoutVersion===4)?progress.randomBestV4:
-     progress.randomBest:progress.randomBest;
-   const best=bestStore?.[size]?.moves;
-   sub.textContent=(Number.isInteger(best)?`Personal best: ${best} moves`:'No completed puzzles yet')+
+   let subtitle=text?.querySelector('small');
+   if(text&&!subtitle){subtitle=document.createElement('small');text.append(subtitle);}
+   const active=progress.active[`random:${tier}:${goal}`],best=goalBest(tier,goal);
+   // Preserve the short difficulty description while showing the goal's
+   // saved best and whether there is an unfinished board.
+   const description={
+     beginner:'Short connections',apprentice:'Longer connections',
+     advanced:'Multi-row networks',expert:'Full-grid challenge'
+   }[tier];
+   subtitle.textContent=description+
+     (Number.isInteger(best)?` · Best ${best} moves`:'')+
      (active?' · Continue available':'');
  }
+}
+function chooseRandomGoal(goal){
+ if(!['all','any'].includes(goal))return;
+ progress.randomGoal=goal;save();randomMenu();
 }
 function stageUnlocked(id){if(id===1)return true;const previous=e.STAGES[id-2];return !!progress.completed[previous.last]||!!progress.legacyUnlockedStages?.[id];}
 function canStartLevel(n){const group=e.stageOf(n);return !!group&&(n===1||!!progress.completed[n-1]||(n===group.first&&stageUnlocked(group.id)));}
@@ -377,42 +436,17 @@ function freshRandomSeed(){
 }
 function puzzleInstruction(p){
  if(!p)return '';
+ if(p.freeObjective==='any')
+   return 'Connect IN to OUT without leaks. Unused pipes can stay dry.';
+ if(p.freeObjective==='all'&&!p.solvedBoard?.some(t=>t.transportPiece))
+   return 'Connect every pipe to the water flow. No pipe can remain dry.';
  if(p.requireAllFlow)
-   return 'Connect every pipe to the flow. Move the gold-marked pipe to its outlined square.';
+   return 'Connect every working pipe. Move the gold-marked pipe to its outlined square.';
  return p.solvedBoard?.some(t=>t.transportPiece)?
    'Move the gold-marked pipe to the outlined square, then complete the flow.':'';
 }
-// Explain Expert Free Play's stricter victory requirement as the player
-// makes progress. The authored solution is never consulted for dry pipes:
-// only connections reachable from the live IN tile count as carrying water.
-function expertFlowFeedback(p,current){
- if(!p?.requireAllFlow||!Array.isArray(current))return null;
- const result=e.evaluate(current),wet=new Set(result.flow);
- const dry=current.flatMap((tile,i)=>
-   tile.kind==='pipe'&&!tile.decoy&&!wet.has(i)?[i]:[]);
- const total=current.filter(tile=>tile.kind==='pipe'&&!tile.decoy).length;
- const connected=total-dry.length;
- const marker=current.findIndex(tile=>tile.transportPiece);
- const destination=marker<0?-1:(current[marker].transportTarget??current.length-1);
- const markerReady=marker<0||marker===destination;
- let message;
- if(result.reachedOutlet&&dry.length){
-   message=`IN to OUT connected · ${dry.length} pipe${dry.length===1?'':'s'} still dry. Connect the highlighted pipes.`;
- }else if(result.reachedOutlet&&result.leaks){
-   message=`IN to OUT connected · ${result.leaks} open pipe connection${result.leaks===1?'':'s'} still leaking.`;
- }else if(result.reachedOutlet&&!markerReady){
-   message='Every pipe carries water, but the gold-marked pipe is not on its outlined target.';
- }else if(result.reachedOutlet){
-   message='All connections complete.';
- }else{
-   message=`Water reaches ${connected}/${total} pipes. Connect IN to OUT, then check every pipe.`;
- }
- return {message,dry:result.reachedOutlet?dry:[],dryCount:dry.length,
-   connected,total,outletReached:result.reachedOutlet,leaks:result.leaks,
-   markerReady,solved:result.solved};
-}
 function begin(p,kind,id,skipSave=false){
- if(!skipSave)saveCurrent();mode=kind;currentLevel=kind==='levels'?id:null;if(kind==='levels')stage=e.stageOf(id).id;dailyDay=(kind==='daily'||kind==='practice')?p.day:'';dailyPractice=kind==='practice';dailyTrace=[];currentSize=p.size;puzzle=p;
+ if(!skipSave)saveCurrent();mode=kind;currentLevel=kind==='levels'?id:null;if(kind==='levels')stage=e.stageOf(id).id;dailyDay=(kind==='daily'||kind==='practice')?p.day:'';dailyPractice=kind==='practice';dailyTrace=[];currentSize=p.size;currentTier=p.freeTier||fallbackTier(p.size);puzzle=p;
  won=false;expired=false;justClearedStage=false;selected=null;elapsed=0;moves=0;undo=[];trialPending=!!p.timerMs;
  dailyServerAttemptId=null;dailyStartPending=false;
  extraTimeMs=0;extraTimeCount=0;attemptId=makeAttempt();creditReward=null;
@@ -442,8 +476,13 @@ function begin(p,kind,id,skipSave=false){
       stored.serverAttemptId:null;
    }
  }else board=e.clone(p.board);
- $('pipeGameName').textContent=kind==='levels'?`Puzzle ${id-e.stageOf(id).first+1}/${e.PUZZLES_PER_STAGE}`:kind==='daily'||kind==='practice'?'Daily Challenge':(p.size===5?'Beginner':p.size===6?'Advanced':'Expert');
- $('pipeDifficultyTag').textContent=kind==='levels'?`Level ${p.stage}`:kind==='daily'||kind==='practice'?dailyPractice?'Practice':p.day:'Free Play';
+ $('pipeGameName').textContent=kind==='levels'?`Puzzle ${id-e.stageOf(id).first+1}/${e.PUZZLES_PER_STAGE}`:
+   kind==='daily'||kind==='practice'?'Daily Challenge':currentTier.charAt(0).toUpperCase()+currentTier.slice(1);
+ $('pipeDifficultyTag').textContent=kind==='levels'? `Level ${p.stage}`:
+   kind==='daily'||kind==='practice'?(dailyPractice?'Practice':p.day):'Free Play';
+ $('pipeObjectiveTag').hidden=kind!=='random';
+ if(kind==='random')$('pipeObjectiveLabel').textContent=
+   p.freeObjective==='all'?'Use all pipes':'Use any pipes';
  $('pipeGridSize').textContent=`${p.size}×${p.size}`;
  $('pipeInstruction').textContent=puzzleInstruction(p);
  $('pipeNew').hidden=kind!=='random';
@@ -470,14 +509,21 @@ function startLevel(n){if(!Number.isInteger(n)||n<1||n>MAX||!canStartLevel(n))re
  const variant=savedVersion===5?true:savedVersion===6&&[27,28].includes(n)?6:false;
  begin(e.get(n,undefined,variant),'levels',n);
 }
-function startRandom(size,newPuzzle=false){if(![5,6,7].includes(size))return;
- const key=`random:${size}`,saved=progress.active[key],seed=!newPuzzle&&saved&&Number.isInteger(saved.seed)?saved.seed:freshRandomSeed();
- // Resume older Free Play variants without changing an unfinished board.
- const savedVersion=!newPuzzle&&saved?.randomLayoutVersion;
- const variant=!newPuzzle&&saved?
-   (savedVersion===2?2:savedVersion===3?3:savedVersion===4?false:true):false;
+function startRandom(tier,newPuzzle=false){
+ if(typeof tier==='number')tier=fallbackTier(tier); // legacy JS caller
+ if(!Object.hasOwn(freeTiers,tier))return;
+ const size=freeTiers[tier],goal=progress.randomGoal==='any'?'any':'all';
+ const key=`random:${tier}:${goal}`,saved=progress.active[key];
+ const seed=!newPuzzle&&saved&&Number.isInteger(saved.seed)?saved.seed:freshRandomSeed();
+ const version=!newPuzzle&&saved?.randomLayoutVersion;
+ let p;
+ if(saved&&![5,6].includes(version)&&!newPuzzle){
+   // Preserve the original v1, v2 and Expert v3 layouts for active saves.
+   const variant=version===1?true:version===2?2:version===3?3:false;
+   p={...e.random(size,seed,variant),freeObjective:goal,freeTier:tier};
+ }else p=e.freePlay(size,seed,goal,tier);
  if(newPuzzle)delete progress.active[key];
- begin(e.random(size,seed,variant),'random',null,newPuzzle);
+ begin(p,'random',null,newPuzzle);
 }
 function svgPath(mask){const arms=e.DIRECTIONS.filter(d=>mask&d.bit),end=d=>({1:[50,0],2:[100,50],4:[50,100],8:[0,50]})[d.bit];
  if(arms.length===2){const [a,b]=arms.map(end);if(mask===(e.N|e.S)||mask===(e.E|e.W))return `M${a[0]} ${a[1]} L${b[0]} ${b[1]}`;
@@ -504,7 +550,7 @@ function render(flow=[],leak=null){if(!board)return;
      (puzzle.solvedBoard?.[i]?.transportPiece?' pipeTransportGoal':'')+(i===selected?' pipeSelected':'')+
      (valid.includes(i)?' pipeValidDrop':'')+(flowMap.has(i)?(leak?' pipeLeakTrace':' pipeFlowing'):'')+
      (dryTiles.has(i)?' pipeDry':'')+(leakTarget===i?' pipeLeakTarget':'');
-   b.setAttribute('aria-label',`Row ${Math.floor(i/size)+1}, column ${i%size+1}: ${t.transportPiece?'Gold-marked movable pipe':t.kind==='empty'?'Empty space':t.kind==='wall'?'Fixed obstacle':t.kind==='block'?'Movable blank block':t.kind==='source'?'Inlet':t.kind==='sink'?'Outlet':t.fixed?'Fixed pipe':'Movable pipe'}`);
+   b.setAttribute('aria-label',`Row ${Math.floor(i/size)+1}, column ${i%size+1}: ${t.transportPiece?'Gold-collared movable elbow':t.kind==='empty'?'Empty space':t.kind==='wall'?'Fixed obstacle':t.kind==='block'?'Movable blank block':t.kind==='source'?'Inlet':t.kind==='sink'?'Outlet':t.fixed?'Fixed pipe':'Movable pipe'}`);
    if(flowMap.has(i))b.style.setProperty('--flow-delay',`${flowMap.get(i)*(leak?.segmentMs||140)/1000}s`);
    if(leakTarget===i)b.style.setProperty('--splash-delay',`${Math.max(.35,flow.length*(leak?.segmentMs||140)/1000)}s`);
    if(t.mask){const ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg');svg.setAttribute('viewBox','0 0 100 100');svg.setAttribute('aria-hidden','true');
@@ -529,7 +575,7 @@ function slide(from,to){if(won||expired||trialPending||dailyStartPending||!e.can
  if(check.solved){
    won=true;timerStop();
    creditReward={puzzle:0,stage:0,daily:0,saveFailed:false};
-   if(mode!=='practice'&&!dailyPractice)recordCompletion(mode,currentSize,moves);
+   if(mode!=='practice'&&!dailyPractice)recordCompletion(mode,mode==='random'?currentTier:currentSize,moves);
    if(mode==='levels'){
      const first=!progress.completed[currentLevel],group=e.stageOf(currentLevel);
      progress.completed[currentLevel]=true;
@@ -548,13 +594,11 @@ function slide(from,to){if(won||expired||trialPending||dailyStartPending||!e.can
        creditReward.saveFailed ||= !!award?.saveFailed;
      }
    }else if(mode==='random'){
-     progress.randomCount[currentSize]=(progress.randomCount[currentSize]||0)+1;
-     const bests=currentSize===7&&puzzle.randomLayoutVersion===4?
-       (progress.randomBestV4 ||= {}):
-       currentSize===7&&puzzle.randomLayoutVersion===3?
-       (progress.randomBestV3 ||= {}):progress.randomBest;
-     if(!bests[currentSize]||moves<bests[currentSize].moves)
-       bests[currentSize]={moves,elapsed};
+     progress.randomCount[currentTier]=(progress.randomCount[currentTier]||0)+1;
+     const objective=puzzle.freeObjective==='all'?'all':'any';
+     const bests=(progress.randomBestByGoal ||= {all:{},any:{}})[objective] ||= {};
+     if(!bests[currentTier]||moves<bests[currentTier].moves)
+       bests[currentTier]={moves,elapsed};
    }else if(mode==='daily'&&!dailyPractice){
      progress.daily[dailyDay]={completed:true,moves,events:dailyTrace.map(x=>({...x})),
       sync:dailyServerAttemptId?'pending':'local',serverAttemptId:dailyServerAttemptId,
@@ -662,15 +706,17 @@ $('pipeLevelsEntry').onclick=stages;$('pipeDailyEntry').onclick=dailyMenu;$('pip
 $('pipeLevelsBack').onclick=stages;$('pipeGameBack').onclick=back;$('pipeDailyBack').onclick=menu;
 $('pipeDailyPlay').onclick=()=>startDaily();$('pipeDailyRefresh').onclick=()=>void refreshDailyLeaderboard();
 $('pipeDailyNextWin').onclick=()=>globalThis.GridClubDailyJourney?.visitNext('pipeShift');
-$('pipeRandomChoices').addEventListener('click',ev=>{const b=ev.target.closest('[data-pipe-size]');if(b)startRandom(Number(b.dataset.pipeSize));});
-$('pipeResultNext').onclick=()=>mode==='random'?startRandom(currentSize,true):startLevel(currentLevel+1);
+$('pipeGoalAll').onclick=()=>chooseRandomGoal('all');
+$('pipeGoalAny').onclick=()=>chooseRandomGoal('any');
+$('pipeRandomChoices').addEventListener('click',ev=>{const b=ev.target.closest('[data-pipe-tier]');if(b)startRandom(b.dataset.pipeTier);});
+$('pipeResultNext').onclick=()=>mode==='random'?startRandom(currentTier,true):startLevel(currentLevel+1);
 $('pipeResultLevels').onclick=()=>mode==='random'?randomMenu():mode==='daily'||mode==='practice'?dailyMenu():stages();
 $('pipeTrialStart').onclick=()=>{if(!trialPending||section!=='game')return;trialPending=false;$('pipeTimeIntro').hidden=true;startTicker();saveCurrent();};
 $('pipeRetry').onclick=retry;
 $('pipeRescue').onclick=buyPipeTime;
 $('pipeExtraTime').onclick=buyPipeTime;
 $('pipeTimeoutBack').onclick=()=>mode==='random'?randomMenu():stageMenu(stage);
-$('pipeUndo').onclick=undoMove;$('pipeReset').onclick=reset;$('pipeNew').onclick=()=>startRandom(currentSize,true);
+$('pipeUndo').onclick=undoMove;$('pipeReset').onclick=reset;$('pipeNew').onclick=()=>startRandom(currentTier,true);
 const grid=$('pipeBoard');
 grid.addEventListener('click',ev=>{if(performance.now()<ignoreClickUntil)return;const b=ev.target.closest('[data-cell]');if(b)clickCell(Number(b.dataset.cell));});
 // Press and drag a pipe (or solid blank block) onto an adjacent empty space.

@@ -12,7 +12,7 @@
   <link rel="icon" href="./icons/icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
   <title>Grid Club · Dot Trails &amp; Pipe Shift</title>
-  <link rel="stylesheet" href="pipe-shift.css?v=0.9.17">
+  <link rel="stylesheet" href="pipe-shift.css?v=0.9.19">
   <style>
     :root { color-scheme: dark; --bg:#0e1424; --surface:#1a243a; --tile:#253147; --muted:#9daabe; --mint:#7be3d4; --purple:#a178ff; }
     * { box-sizing: border-box; }
@@ -330,7 +330,7 @@
 <body>
   <main class="shell">
     <section id="home">
-      <header><div><div class="eyebrow">GRID CLUB</div><h1>A little puzzle break.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.18</span></div></header>
+      <header><div><div class="eyebrow">GRID CLUB</div><h1>A little puzzle break.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.19</span></div></header>
       <details class="backendCheck" aria-label="Leaderboard connection diagnostics">
         <summary class="backendCheckTitle">Connection diagnostics (beta)</summary>
         <p id="backendCheckMessage" role="status" aria-live="polite">Checking configuration…</p>
@@ -426,10 +426,23 @@
         <div class="pipeHeader"><button class="back" id="pipeRandomBack" aria-label="Back to Pipe Shift">‹</button>
           <div><div class="eyebrow">PIPE SHIFT</div><h2>Free Play</h2></div>
         </div>
+        <div class="pipeGoalPicker" role="group" aria-label="Free Play goal">
+          <div class="pipeGoalHeading">Choose your objective</div>
+          <div class="pipeGoalOptions">
+            <button type="button" id="pipeGoalAll" aria-pressed="true">
+              <strong>Use all pipes</strong><small>Every working pipe carries water</small>
+            </button>
+            <button type="button" id="pipeGoalAny" aria-pressed="false">
+              <strong>Use any pipes</strong><small>Connect IN to OUT, leaving others unused</small>
+            </button>
+          </div>
+          <p id="pipeGoalExplanation" class="pipeGoalExplanation" role="status">All working pipes must join the flow.</p>
+        </div>
         <div id="pipeRandomChoices" class="pipeChoices">
-          <button type="button" class="pipeButton" data-pipe-size="5"><span class="pipeButtonIcon">5×5</span><span><strong>Beginner</strong></span><span class="pipeChevron">›</span></button>
-          <button type="button" class="pipeButton" data-pipe-size="6"><span class="pipeButtonIcon">6×6</span><span><strong>Advanced</strong></span><span class="pipeChevron">›</span></button>
-          <button type="button" class="pipeButton" data-pipe-size="7"><span class="pipeButtonIcon">7×7</span><span><strong>Expert</strong><small>Split and rejoin the flow</small></span><span class="pipeChevron">›</span></button>
+          <button type="button" class="pipeButton" data-pipe-tier="beginner"><span class="pipeButtonIcon">5×5</span><span><strong>Beginner</strong><small>Short connections</small></span><span class="pipeChevron">›</span></button>
+          <button type="button" class="pipeButton" data-pipe-tier="apprentice"><span class="pipeButtonIcon">6×6</span><span><strong>Apprentice</strong><small>Longer connections</small></span><span class="pipeChevron">›</span></button>
+          <button type="button" class="pipeButton" data-pipe-tier="advanced"><span class="pipeButtonIcon">7×7</span><span><strong>Advanced</strong><small>Multi-row networks</small></span><span class="pipeChevron">›</span></button>
+          <button type="button" class="pipeButton" data-pipe-tier="expert"><span class="pipeButtonIcon">7×7</span><span><strong>Expert</strong><small>Full-grid challenge</small></span><span class="pipeChevron">›</span></button>
         </div>
       </div>
       <div id="pipe-stages" hidden>
@@ -451,6 +464,7 @@
           <div><div class="eyebrow">PIPE SHIFT</div><h2 id="pipeGameName">Puzzle 1</h2></div>
           <span class="pipeHeaderMeta" id="pipeDifficultyTag">Beginner</span>
         </div>
+        <p id="pipeObjectiveTag" class="pipeObjectiveTag" hidden>Objective: <strong id="pipeObjectiveLabel">Use all pipes</strong></p>
         <div class="pipeBoardShell">
           <div class="pipeScoreline">
             <div><small>Moves</small><strong id="pipeMoves">0</strong></div>
@@ -625,7 +639,7 @@
       </div>
       
       <div class="adSlot" id="adSlot" aria-hidden="true" hidden></div>
-      <footer>Grid Club · v0.9.18 beta</footer>
+      <footer>Grid Club · v0.9.19 beta</footer>
     </section>
   </main>
   <div class="pauseLayer" id="dotDailyCompleteLayer" hidden role="dialog" aria-modal="true" aria-labelledby="dotDailyCompleteTitle">
@@ -661,8 +675,8 @@
   <script src="daily-journey.js?v=0.9.9"></script>
   <script src="club-credits.js?v=0.9.11"></script>
   <script src="game.js?v=0.9.15"></script>
-  <script src="pipe-engine.js?v=0.9.18"></script>
-  <script src="pipe-shift.js?v=0.9.18"></script>
+  <script src="pipe-engine.js?v=0.9.19"></script>
+  <script src="pipe-shift.js?v=0.9.19"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol === 'https:') {
       addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
