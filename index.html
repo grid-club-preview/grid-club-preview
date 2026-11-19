@@ -90,7 +90,7 @@
     .levelsFeature strong{display:block;font-size:18px;color:#edfff9;}
     .levelsFeature small{display:block;font-size:12px;color:#b7d6d2;margin-top:5px;}
     #levelsScreen{padding-top:22px;}
-    .walletCard{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:#243d46;border-radius:14px;margin-bottom:17px;color:var(--mint);}
+    .walletCard{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:#243d46;border-radius:14px;margin-bottom:17px;color:#ffdd91;}
     .walletCard strong{font-size:24px;font-variant-numeric:tabular-nums;}
     .levelSaveStatus{color:var(--muted);font-size:12px;margin:-7px 0 10px;line-height:1.45;}
     .levelSaveStatus[data-error="true"]{color:#ffc09c;}
@@ -128,10 +128,10 @@
     .stageCard:disabled,.stagePuzzle:disabled{opacity:.45;cursor:not-allowed;}
     .stageCard .tag,.stagePuzzle .tag{font-size:11px;color:var(--mint);white-space:nowrap;}
     .levelProgressLine{display:flex;align-items:center;justify-content:space-between;color:#badddc;font-size:12px;margin:-6px 0 13px;}
-    .levelProgressLine strong{color:var(--mint);font-size:15px;}
-    .levelReward{background:#2a4149;color:#d8fff5;padding:12px;border-radius:12px;font-weight:750;font-size:13px;line-height:1.5;margin:6px 0 14px;}
+    .levelProgressLine strong{color:#ffdd91;font-size:15px;}
+    .levelReward{background:#2a4149;color:#ffe2a8;padding:12px;border-radius:12px;font-weight:750;font-size:13px;line-height:1.5;margin:6px 0 14px;}
     .levelRewardMessage{font-size:13px;line-height:1.45;font-weight:800;}
-    .levelRewardBalance{font-size:12px;font-weight:650;color:#c7e4df;border-top:1px solid #ffffff29;padding-top:8px;margin-top:8px;white-space:nowrap;}
+    .levelRewardBalance{font-size:12px;font-weight:650;color:#ffdd91;border-top:1px solid #ffffff29;padding-top:8px;margin-top:8px;white-space:nowrap;}
     /* iOS long-press selection on the result dialogue should not reveal browser text actions. */
     #win,#win *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}
     /* Nothing on the live game screen is editable or intended for text selection.
@@ -141,7 +141,7 @@
     }
 
     .boostButton{position:relative;}
-    .controls button .boostCost{position:absolute;top:3px;right:5px;font-size:10px;line-height:1.2;color:var(--mint);font-weight:850;margin:0;}
+    .controls button .boostCost{position:absolute;top:3px;right:5px;font-size:10px;line-height:1.2;color:#ffdd91;font-weight:850;margin:0;}
     .controls button:disabled{opacity:.4;cursor:not-allowed;}
     .levelList {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}
     .levelChoice {display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;min-height:145px;text-align:left;background:var(--surface);padding:18px 16px;border:1px solid #3c4862;border-radius:18px;}
@@ -220,6 +220,9 @@
 
     /* Dot Trails owns its daily challenge and its statistics. Home remains a game hub. */
     /* Shared game-header credit badge and compact Dot Trails hero. */
+    /* Gold is reserved for spendable Club Credits and their rewards. */
+    #levelUpMessage,.dotDailyCreditReward,#levelRewardMessage{color:#ffe2a8;}
+    .levelRewardBalance,#gameWallet{color:#ffdd91;}
     .clubWalletBadge{margin-left:auto;flex:none;border:1px solid #9b8152;border-radius:999px;padding:8px 12px;background:#433a2b;color:#ffdd91;font-size:14px;font-weight:850;white-space:nowrap;font-variant-numeric:tabular-nums;}
     #difficultyScreen .dotDailyFeature{background:linear-gradient(115deg,#20544e,#244860);border:1px solid #76cbb8;padding:18px 16px;margin:5px 0 13px;box-shadow:0 5px 20px #07101d43;}
     #difficultyScreen .dotDailyFeature .modeIcon{background:#36746c;border:1px solid #89dcc8;color:#e0fff6;}
@@ -431,7 +434,7 @@
       </div>
       <div id="pipe-stages" hidden>
         <div class="pipeHeader"><button class="back" id="pipeStagesBack" aria-label="Back to Pipe Shift">‹</button>
-          <div><div class="eyebrow">PIPE SHIFT</div><h2>Play Levels</h2></div>
+          <div><div class="eyebrow">PIPE SHIFT</div><h2>Levels</h2></div>
           <span class="pipeHeaderMeta" id="pipeCompletedCount">0/42</span>
         </div>
         <div id="pipeStageList" class="pipeStageList"></div>
@@ -559,7 +562,7 @@
     </section>
     <section id="levelsScreen" hidden>
       <div class="chooseHeader"><button class="back" id="levelsBack" aria-label="Back to Dot Trails">‹</button><div><div class="eyebrow">GRID CLUB · DOT TRAILS</div><h2>Levels</h2></div></div>
-      <div class="walletCard"><span>◉ Club Credits</span><strong id="levelsWallet">0</strong></div>
+      <div class="walletCard"><span>Club Credits</span><strong id="levelsWallet">◉ 0</strong></div>
       <p id="levelSaveStatus" class="levelSaveStatus" role="status" aria-live="polite">Checking this device’s saved progress…</p>
       <div class="levelBackupActions"><button type="button" id="exportLevels">Backup progress</button><button type="button" id="importLevels">Restore backup</button></div>
       <input id="importLevelsFile" type="file" accept="application/json,.json" hidden>
