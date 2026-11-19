@@ -223,7 +223,7 @@ function dailyMenu(){
  $('pipeDailyDay').textContent=day;
  $('pipeDailyDifficulty').textContent=`${p.size===5?'Beginner':p.size===6?'Advanced':'Expert'} · ${p.size}×${p.size}`;
  $('pipeDailyPlay').textContent=record?.completed?'Practice today’s puzzle':progress.active[`daily:${day}`]?'Continue today’s puzzle':'Play today’s puzzle';
- $('pipeDailyNote').textContent=record?.completed?`Your first result: ${record.moves} moves${record.verified?' · verified':record.sync==='review'?' · under review':' · saved locally'}`:'One ranked result per day. Fewest moves wins. No timer.';
+ $('pipeDailyNote').textContent=record?.completed?`Your first result: ${record.moves} moves${record.verified?' · verified':record.sync==='review'?' · under review':' · saved locally'}`:'One ranked result per day · Fewest moves wins · Fastest verified time breaks ties.';
  $('pipeDailyRank').textContent='';
  const list=$('pipeDailyEntries');list.replaceChildren();
  if(!rankedReady()){list.textContent='Leaderboard unavailable offline or until the backend update is installed.';return;}
@@ -274,6 +274,20 @@ async function submitDaily(){
  })().finally(()=>{dailySync=null;});
  return dailySync;
 }
+const rankedTime=ms=>{
+ const n=Number(ms);
+ if(!Number.isFinite(n)||n<=0)return '';
+ const seconds=Math.max(0,Math.round(n/1000));
+ return String(Math.floor(seconds/60)).padStart(2,'0')+':'+String(seconds%60).padStart(2,'0');
+};
+function appendRankedRow(parent,rank,name,moves,ms,isYou){
+ const row=document.createElement('div');row.className='pipeDailyRow';
+ if(isYou)row.classList.add('pipeDailyYou');
+ const left=document.createElement('span'),right=document.createElement('strong');
+ left.textContent=`${rank}. ${isYou?'You':name}`;
+ right.textContent=`${moves} moves${rankedTime(ms)?' · '+rankedTime(ms):''}`;
+ row.append(left,right);parent.append(row);
+}
 async function refreshDailyLeaderboard(){
  const list=$('pipeDailyEntries'),rank=$('pipeDailyRank');
  if(!rankedReady()){list.textContent='Leaderboard unavailable offline or until the backend is updated.';return;}
@@ -283,14 +297,19 @@ async function refreshDailyLeaderboard(){
   const data=await GridRanked.call('pipe_leaderboard',{day});
   if(section!=='daily'||utcToday()!==day)return;
   list.replaceChildren();
-  rank.textContent=data.yourRank?`Your rank: ${data.yourRank} · ${data.yourMoves} moves`:`${data.total||0} verified finishes today`;
-  if(!data.entries?.length){list.textContent='No verified finishes yet. Your run could be the first.';return;}
-  for(const entry of data.entries){
-   const row=document.createElement('div');row.className='pipeDailyRow';
-   if(entry.isYou)row.classList.add('pipeDailyYou');
-   const left=document.createElement('span'),right=document.createElement('strong');
-   left.textContent=`${entry.rank}. ${entry.isYou?'You':entry.name}`;right.textContent=`${entry.moves} moves`;
-   row.append(left,right);list.append(row);
+  const total=Number(data.total||0),myRank=Number(data.yourRank||0);
+  rank.textContent=myRank?`${total} verified finishes · Your rank: ${myRank}`:`${total} verified finishes today`;
+  const shown=(data.entries||[]).slice(0,10);
+  if(!shown.length&&!myRank){list.textContent='No verified finishes yet. Your run could be the first.';return;}
+  for(const entry of shown){
+   appendRankedRow(list,entry.rank,entry.name,entry.moves,entry.elapsedMs,!!entry.isYou);
+  }
+  if(myRank>10&&!shown.some(entry=>entry.isYou)){
+   const separator=document.createElement('div');
+   separator.className='pipeDailyGap';separator.textContent='•••';
+   separator.setAttribute('aria-label','Other leaderboard positions omitted');
+   list.append(separator);
+   appendRankedRow(list,myRank,'You',data.yourMoves,data.yourElapsedMs,true);
   }
  }catch(err){list.textContent='Leaderboard unavailable: '+err.message;}
 }
