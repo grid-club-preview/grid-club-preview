@@ -527,6 +527,9 @@
   }
   function buyExtraTime(){
     if(mode!=='level'||!game||game.finishedAt||game.level.limitMs===null)return false;
+    // If time has actually expired between animation frames, charge the
+    // rescue price, not the cheaper in-play extension price.
+    if(!timedOut&&remainingLevelMs()<=0)triggerTimeout();
     const used=game.extraTimeCount||0;
     const rescue=timedOut;
     const seconds=rescue?(2-used)*15:15;
