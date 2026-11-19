@@ -8,7 +8,9 @@ const KEY='gridclub-pipeshift-progress-v1',BACKUP=KEY+'-v08-backup',MAX=e.MAX_LE
 const blank=()=>({version:2,levelCatalog:5,completed:{},best:{},active:{},randomBest:{},randomBestV3:{},randomBestByGoal:{all:{},any:{}},randomGoal:'all',randomCount:{},legacyArchived:{},legacyUnlockedStages:{},firstAttemptFailed:{},daily:{},moveStats:{random:{},levels:{count:0,total:0},daily:{count:0,total:0}}});
 const oldToNew=id=>{const n=Number(id);return Number.isInteger(n)&&n>=1&&n<=30?Math.floor((n-1)/5)*7+(n-1)%5+1:null;};
 function remapLevels(items){const mapped={};for(const [id,value] of Object.entries(items||{})){const next=oldToNew(id);if(next!==null)mapped[next]=value;}return mapped;}
-let progress=blank(),section='menu',stage=1,mode='levels',currentLevel=null,currentSize=5,puzzle=null;
+let progress=blank(),section='menu',stage=1,mode='levels',currentLevel=null,currentSize=5,currentTier='beginner',puzzle=null;
+const freeTiers={beginner:5,apprentice:6,advanced:7,expert:7};
+const fallbackTier=size=>size===5?'beginner':size===6?'apprentice':'expert';
 let board=null,moves=0,elapsed=0,undo=[],selected=null,won=false,expired=false,justClearedStage=false,trialPending=false;
 let timer=null,lastTick=null,flowTimer=null,pointerOrigin=null,ignoreClickUntil=0,nonce=0;
 let dailyDay='',dailyTrace=[],dailyPractice=false,dailyConnection='',dailySync=null,dailyLoading=null;
@@ -19,20 +21,19 @@ const credits=globalThis.GridClubCredits;
 const timeBudget=()=>puzzle?.timerMs?puzzle.timerMs+extraTimeMs:null;
 const creditBalance=()=>credits?.balance()||0;
 const makeAttempt=()=>`pipe:${Date.now()}:${Math.random().toString(36).slice(2,12)}`;
-function goalBest(size,goal){
- const recent=progress.randomBestByGoal?.[goal]?.[size]?.moves;
- // Comparable historical boards remain eligible for this objective.
- const old=goal==='all'&&size===7?progress.randomBestV3?.[7]?.moves:
-   goal==='any'&&size!==7?progress.randomBest?.[size]?.moves:null;
- const values=[recent,old].filter(Number.isInteger);
+function goalBest(tier,goal){
+ const recent=progress.randomBestByGoal?.[goal]?.[tier]?.moves;
+ const previous=tier==='expert'&&goal==='all'?progress.randomBestV3?.[7]?.moves:
+   tier==='expert'&&goal==='any'?progress.randomBest?.[7]?.moves:
+   tier==='apprentice'&&goal==='any'?progress.randomBest?.[6]?.moves:
+   tier==='beginner'&&goal==='any'?progress.randomBest?.[5]?.moves:null;
+ const values=[recent,previous].filter(Number.isInteger);
  return values.length?Math.min(...values):null;
 }
 function bestMoves(){
  if(mode==='levels')return progress.best[currentLevel]?.moves??null;
  if(mode!=='random')return null;
- if(puzzle?.randomLayoutVersion!==5&&puzzle?.randomLayoutVersion!==3)
-   return progress.randomBest[currentSize]?.moves??null;
- return goalBest(currentSize,puzzle.freeObjective||'all');
+ return goalBest(currentTier,puzzle?.freeObjective||'all');
 }
 function refreshMoveInfo(){
  const best=bestMoves(),show=mode==='random'||mode==='levels';
@@ -94,7 +95,7 @@ function save(){
  try{const value=JSON.stringify(progress);localStorage.setItem(KEY,value);if(localStorage.getItem(KEY)!==value)throw Error('Storage mismatch');$('pipeSaveNotice').hidden=true;}
  catch(_){$('pipeSaveNotice').hidden=false;}
 }
-function activeKey(){return mode==='random'?`random:${currentSize}:${puzzle?.freeObjective||'any'}`:mode==='daily'?`daily:${dailyDay}`:mode==='practice'?`practice:${dailyDay}`:`level:${currentLevel}`;}
+function activeKey(){return mode==='random'?`random:${currentTier}:${puzzle?.freeObjective||'any'}`:mode==='daily'?`daily:${dailyDay}`:mode==='practice'?`practice:${dailyDay}`:`level:${currentLevel}`;}
 function clockSync(){if(lastTick===null||won||expired)return;const now=performance.now();if(document.hidden){lastTick=null;return;}elapsed+=Math.max(0,now-lastTick);lastTick=now;}
 function timerStop(){if(timer!==null){clearInterval(timer);timer=null;}lastTick=null;}
 function startTicker(){if(trialPending)return;timerStop();lastTick=performance.now();timer=setInterval(()=>{
@@ -161,6 +162,7 @@ function saveCurrent(){if(!puzzle||!board||won)return;
    moveCapVersion:mode==='levels'?1:null,moveCapExempt:mode==='levels'&&legacyMoveCapExempt,failureReason,
    randomLayoutVersion:mode==='random'?(puzzle.randomLayoutVersion||1):null,
    freeObjective:mode==='random'?puzzle.freeObjective:null,
+   freeTier:mode==='random'?currentTier:null,
    undo:undo.slice(-40).map(a=>({board:e.clone(a.board),moves:a.moves}))};save();
 }
 function clearFlow(){if(flowTimer!==null){clearTimeout(flowTimer);flowTimer=null;}}
@@ -411,7 +413,7 @@ function puzzleInstruction(p){
    'Move the gold-marked pipe to the outlined square, then complete the flow.':'';
 }
 function begin(p,kind,id,skipSave=false){
- if(!skipSave)saveCurrent();mode=kind;currentLevel=kind==='levels'?id:null;if(kind==='levels')stage=e.stageOf(id).id;dailyDay=(kind==='daily'||kind==='practice')?p.day:'';dailyPractice=kind==='practice';dailyTrace=[];currentSize=p.size;puzzle=p;
+ if(!skipSave)saveCurrent();mode=kind;currentLevel=kind==='levels'?id:null;if(kind==='levels')stage=e.stageOf(id).id;dailyDay=(kind==='daily'||kind==='practice')?p.day:'';dailyPractice=kind==='practice';dailyTrace=[];currentSize=p.size;currentTier=p.freeTier||fallbackTier(p.size);puzzle=p;
  won=false;expired=false;justClearedStage=false;selected=null;elapsed=0;moves=0;undo=[];trialPending=!!p.timerMs;
  dailyServerAttemptId=null;dailyStartPending=false;
  extraTimeMs=0;extraTimeCount=0;attemptId=makeAttempt();creditReward=null;
@@ -441,7 +443,8 @@ function begin(p,kind,id,skipSave=false){
       stored.serverAttemptId:null;
    }
  }else board=e.clone(p.board);
- $('pipeGameName').textContent=kind==='levels'?`Puzzle ${id-e.stageOf(id).first+1}/${e.PUZZLES_PER_STAGE}`:kind==='daily'||kind==='practice'?'Daily Challenge':(p.size===5?'Beginner':p.size===6?'Advanced':'Expert');
+ $('pipeGameName').textContent=kind==='levels'?`Puzzle ${id-e.stageOf(id).first+1}/${e.PUZZLES_PER_STAGE}`:
+   kind==='daily'||kind==='practice'?'Daily Challenge':currentTier.charAt(0).toUpperCase()+currentTier.slice(1);
  $('pipeDifficultyTag').textContent=kind==='levels'? `Level ${p.stage}`:
    kind==='daily'||kind==='practice'?(dailyPractice?'Practice':p.day):'Free Play';
  $('pipeObjectiveTag').hidden=kind!=='random';
@@ -669,15 +672,15 @@ $('pipeDailyPlay').onclick=()=>startDaily();$('pipeDailyRefresh').onclick=()=>vo
 $('pipeDailyNextWin').onclick=()=>globalThis.GridClubDailyJourney?.visitNext('pipeShift');
 $('pipeGoalAll').onclick=()=>chooseRandomGoal('all');
 $('pipeGoalAny').onclick=()=>chooseRandomGoal('any');
-$('pipeRandomChoices').addEventListener('click',ev=>{const b=ev.target.closest('[data-pipe-size]');if(b)startRandom(Number(b.dataset.pipeSize));});
-$('pipeResultNext').onclick=()=>mode==='random'?startRandom(currentSize,true):startLevel(currentLevel+1);
+$('pipeRandomChoices').addEventListener('click',ev=>{const b=ev.target.closest('[data-pipe-tier]');if(b)startRandom(b.dataset.pipeTier);});
+$('pipeResultNext').onclick=()=>mode==='random'?startRandom(currentTier,true):startLevel(currentLevel+1);
 $('pipeResultLevels').onclick=()=>mode==='random'?randomMenu():mode==='daily'||mode==='practice'?dailyMenu():stages();
 $('pipeTrialStart').onclick=()=>{if(!trialPending||section!=='game')return;trialPending=false;$('pipeTimeIntro').hidden=true;startTicker();saveCurrent();};
 $('pipeRetry').onclick=retry;
 $('pipeRescue').onclick=buyPipeTime;
 $('pipeExtraTime').onclick=buyPipeTime;
 $('pipeTimeoutBack').onclick=()=>mode==='random'?randomMenu():stageMenu(stage);
-$('pipeUndo').onclick=undoMove;$('pipeReset').onclick=reset;$('pipeNew').onclick=()=>startRandom(currentSize,true);
+$('pipeUndo').onclick=undoMove;$('pipeReset').onclick=reset;$('pipeNew').onclick=()=>startRandom(currentTier,true);
 const grid=$('pipeBoard');
 grid.addEventListener('click',ev=>{if(performance.now()<ignoreClickUntil)return;const b=ev.target.closest('[data-cell]');if(b)clickCell(Number(b.dataset.cell));});
 // Press and drag a pipe (or solid blank block) onto an adjacent empty space.
