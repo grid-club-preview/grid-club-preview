@@ -140,8 +140,16 @@ function route(name){
 }
 function home(){cancelDrag();saveCurrent();route('menu');root.hidden=true;hub.hidden=false;}
 function menu(){saveCurrent();hub.hidden=true;root.hidden=false;route('menu');
- $('pipeMenuWallet').textContent=`◉ ${creditBalance()} Club Credits`;
- $('pipeMainProgress').textContent=`${Object.keys(progress.completed).filter(n=>progress.completed[n]).length}/${MAX}`;
+ $('pipeMenuWallet').textContent=`◉ ${creditBalance()}`;
+ const completed=Array.from({length:MAX},(_,i)=>i+1).filter(n=>!!progress.completed[n]).length;
+ const remaining=MAX-completed;
+ // Display the furthest unlocked, unfinished Level. This respects migrated
+ // progress where a later level was unlocked before two new puzzles were added.
+ const current=[...e.STAGES].reverse().find(s=>stageUnlocked(s.id)&&
+   Array.from({length:e.PUZZLES_PER_STAGE},(_,i)=>s.first+i).some(n=>!progress.completed[n]));
+ $('pipeLevelsSummary').textContent=remaining?
+   `Level ${current?.id||1} · ${remaining} puzzle${remaining===1?'':'s'} remaining`:
+   'All 42 puzzles complete';
 }
 function statsMenu(){
  saveCurrent();hub.hidden=true;root.hidden=false;route('stats');
