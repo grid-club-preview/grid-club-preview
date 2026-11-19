@@ -239,21 +239,56 @@ function startDaily(){
  begin(p,practice?'practice':'daily',null,practice);
 }
 async function syncDailyStart(){
- if(mode!=='daily'||!rankedReady())return null;
+ if(mode!=='daily')return null;
  if(dailyLoading)return dailyLoading;
- const day=dailyDay;
+ // Never create a ranked clock after an offline attempt has already begun.
+ if((moves>0||dailyTrace.length>0)&&!dailyServerAttemptId){
+   dailyConnection='This attempt began offline. Your result will be saved locally.';
+   $('pipeInstruction').textContent=dailyConnection;
+   return null;
+ }
+ if(!rankedReady()){
+   dailyConnection='No ranked connection. You can still play and save locally.';
+   $('pipeInstruction').textContent=dailyConnection;
+   return null;
+ }
+ const day=dailyDay,localAttemptId=attemptId;
+ dailyStartPending=true;
+ $('pipeInstruction').textContent='Connecting you to today’s challenge…';
+ render();
  dailyLoading=(async()=>{
-  try{
-   const r=await GridRanked.call('pipe_start',{day});
-   if(day!==utcToday())return null;
-   if(r.state==='completed'){
-     dailyConnection='Today’s ranked puzzle is already completed. Additional plays are practice only.';
-     dailyPractice=true;
-     if(!progress.daily[day]){progress.daily[day]={completed:true,moves:r.moves,sync:'verified',verified:!!r.verified,day};save();}
-   }else dailyConnection='Ranked attempt ready';
-   return r;
-  }catch(err){dailyConnection='Leaderboard connection unavailable: '+err.message;return null;}
- })().finally(()=>{dailyLoading=null;});
+   try{
+     const r=await GridRanked.call('pipe_start',{day});
+     if(day!==utcToday()||mode!=='daily'||attemptId!==localAttemptId)return null;
+     if(r.state==='completed'){
+       dailyConnection='Today’s ranked puzzle is already completed. Additional plays are practice only.';
+       dailyPractice=true;dailyServerAttemptId=null;
+       if(!progress.daily[day]){
+         progress.daily[day]={completed:true,moves:r.moves,sync:'verified',verified:!!r.verified,day};
+         save();
+       }
+     }else if(r.attemptId&&(!dailyServerAttemptId||dailyServerAttemptId===r.attemptId)){
+       dailyServerAttemptId=r.attemptId;
+       dailyConnection='Ranked attempt ready';
+     }else{
+       dailyServerAttemptId=null;
+       dailyConnection='Ranked session mismatch. This attempt will save locally.';
+     }
+     return r;
+   }catch(err){
+     dailyServerAttemptId=null;
+     dailyConnection='Ranked connection unavailable. You can still play locally.';
+     console.warn('Pipe Shift ranked start unavailable:',err);
+     return null;
+   }
+ })().finally(()=>{
+   dailyLoading=null;
+   if(mode==='daily'&&day===dailyDay&&attemptId===localAttemptId){
+     dailyStartPending=false;
+     $('pipeInstruction').textContent=dailyServerAttemptId?'':dailyConnection;
+     render();saveCurrent();
+   }
+ });
  return dailyLoading;
 }
 async function submitDaily(){
