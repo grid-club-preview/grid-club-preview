@@ -126,6 +126,9 @@ function buyPipeTime(){
  extraTimeMs+=seconds*1000;
  extraTimeCount=rescue?2:extraTimeCount+1;
  if(rescue){
+   // A last-frame purchase may arrive while the visual leak is still
+   // unfolding. Cancel it and restore the normal puzzle instruction.
+   clearFlow();$('pipeInstruction').textContent=puzzleInstruction(puzzle);
    expired=false;$('pipeTimeout').hidden=true;startTicker();
  }
  updateClock();render();saveCurrent();return true;
@@ -367,6 +370,13 @@ function freshRandomSeed(){
  try{if(globalThis.crypto?.getRandomValues){const data=new Uint32Array(1);crypto.getRandomValues(data);seed^=data[0];}}catch(_){}
  return seed>>>0;
 }
+function puzzleInstruction(p){
+ if(!p)return '';
+ if(p.requireAllFlow)
+   return 'Connect every pipe to the flow. Move the gold-collared elbow to its outlined square.';
+ return p.solvedBoard?.some(t=>t.transportPiece)?
+   'Move the gold-collared elbow to the outlined square, then complete the flow.':'';
+}
 function begin(p,kind,id,skipSave=false){
  if(!skipSave)saveCurrent();mode=kind;currentLevel=kind==='levels'?id:null;if(kind==='levels')stage=e.stageOf(id).id;dailyDay=(kind==='daily'||kind==='practice')?p.day:'';dailyPractice=kind==='practice';dailyTrace=[];currentSize=p.size;puzzle=p;
  won=false;expired=false;justClearedStage=false;selected=null;elapsed=0;moves=0;undo=[];trialPending=!!p.timerMs;
@@ -401,10 +411,7 @@ function begin(p,kind,id,skipSave=false){
  $('pipeGameName').textContent=kind==='levels'?`Puzzle ${id-e.stageOf(id).first+1}/${e.PUZZLES_PER_STAGE}`:kind==='daily'||kind==='practice'?'Daily Challenge':(p.size===5?'Beginner':p.size===6?'Advanced':'Expert');
  $('pipeDifficultyTag').textContent=kind==='levels'?`Level ${p.stage}`:kind==='daily'||kind==='practice'?dailyPractice?'Practice':p.day:'Free Play';
  $('pipeGridSize').textContent=`${p.size}×${p.size}`;
- const transportTarget=p.solvedBoard.findIndex(t=>t.transportPiece);
- $('pipeInstruction').textContent=p.requireAllFlow?
-   'Connect every pipe to the flow. Move the gold-collared elbow to its outlined square.':
-   transportTarget>=0?'Move the gold-collared elbow to the outlined square, then complete the flow.':'';
+ $('pipeInstruction').textContent=puzzleInstruction(p);
  $('pipeNew').hidden=kind!=='random';
  $('pipeBoard').style.setProperty('--pipe-size',p.size);$('pipeBoard').dataset.pipeGridSize=String(p.size);
  $('pipeTrialDescription').textContent=moveLimit!==null?`Finish within ${moveLimit} moves and ${Math.ceil(p.timerMs/1000)} seconds.`:'Beat the clock to restore the flow.';
