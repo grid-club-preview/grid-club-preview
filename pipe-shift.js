@@ -354,7 +354,8 @@ function render(flow=[]){if(!board)return;
  for(let i=0;i<board.length;i++){
    const t=board[i],b=document.createElement('button');b.type='button';b.dataset.cell=String(i);
    b.className='pipeTile '+(t.kind==='empty'?'pipeEmpty':t.kind==='wall'?'pipeWall':t.kind==='block'?'pipeBlankBlock':t.kind==='source'?'pipeSource':t.kind==='sink'?'pipeSink':'pipePiece')+
-     (t.fixed?' pipeFixed':'')+(t.transportPiece?' pipeTransport':'')+(i===selected?' pipeSelected':'')+(valid.includes(i)?' pipeValidDrop':'')+(flowMap.has(i)?' pipeFlowing':'');
+     (t.fixed?' pipeFixed':'')+(t.transportPiece?' pipeTransport':'')+
+     (puzzle.solvedBoard?.[i]?.transportPiece?' pipeTransportGoal':'')+(i===selected?' pipeSelected':'')+(valid.includes(i)?' pipeValidDrop':'')+(flowMap.has(i)?' pipeFlowing':'');
    b.setAttribute('aria-label',`Row ${Math.floor(i/size)+1}, column ${i%size+1}: ${t.transportPiece?'Gold-collared movable elbow':t.kind==='empty'?'Empty space':t.kind==='wall'?'Fixed obstacle':t.kind==='block'?'Movable blank block':t.kind==='source'?'Inlet':t.kind==='sink'?'Outlet':t.fixed?'Fixed pipe':'Movable pipe'}`);
    if(flowMap.has(i))b.style.setProperty('--flow-delay',`${flowMap.get(i)*.065}s`);
    if(t.mask){const ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg');svg.setAttribute('viewBox','0 0 100 100');svg.setAttribute('aria-hidden','true');
