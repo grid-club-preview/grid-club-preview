@@ -12,7 +12,7 @@
   <link rel="icon" href="./icons/icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
   <title>Grid Club · Dot Trails &amp; Pipe Shift</title>
-  <link rel="stylesheet" href="pipe-shift.css?v=0.9.9">
+  <link rel="stylesheet" href="pipe-shift.css?v=0.9.10">
   <style>
     :root { color-scheme: dark; --bg:#0e1424; --surface:#1a243a; --tile:#253147; --muted:#9daabe; --mint:#7be3d4; --purple:#a178ff; }
     * { box-sizing: border-box; }
@@ -294,7 +294,7 @@
 <body>
   <main class="shell">
     <section id="home">
-      <header><div><div class="eyebrow">GRID CLUB</div><h1>A little puzzle break.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.9</span></div></header>
+      <header><div><div class="eyebrow">GRID CLUB</div><h1>A little puzzle break.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.10</span></div></header>
       <details class="backendCheck" aria-label="Leaderboard connection diagnostics">
         <summary class="backendCheckTitle">Connection diagnostics (beta)</summary>
         <p id="backendCheckMessage" role="status" aria-live="polite">Checking configuration…</p>
@@ -339,6 +339,7 @@
           <span class="pipeButtonIcon" aria-hidden="true">◷</span>
           <span><strong>Today's Daily Challenge</strong><small>One puzzle worldwide · fewest moves wins</small></span><span class="pipeChevron">›</span>
         </button>
+        <p id="pipeMenuWallet" class="pipeWalletStatus">◉ 0 Club Credits</p>
         <div class="pipeCard pipeHero" aria-hidden="true">
           <svg width="133" height="73" viewBox="0 0 170 93" fill="none" style="max-width:100%">
             <path d="M10 28H60V69H110V33H160" stroke="#17263b" stroke-width="27" stroke-linecap="round" stroke-linejoin="round"/>
@@ -422,11 +423,13 @@
             <span id="pipeGridSize" class="pipeGridLabel">5×5</span>
           </div>
           <div id="pipeBestBox" class="pipeBestLine" hidden>Personal best <strong id="pipeBestMoves">—</strong></div>
+          <p id="pipeWallet" class="pipeWalletStatus" hidden>◉ 0 Club Credits</p>
           <div class="pipeBoardHolder">
             <div id="pipeBoard" class="pipeBoard" role="group" aria-label="Pipe Shift sliding grid"></div>
             <div class="pipeResult" id="pipeResult" hidden role="dialog" aria-label="Puzzle complete">
               <div class="pipeResultInner"><div class="pipeVictoryIcon" aria-hidden="true">✦</div>
                 <h3 id="pipeResultTitle">Flow restored!</h3><p id="pipeResultMessage"></p>
+                <p id="pipeCreditReward" class="pipeCreditReward" hidden></p>
                 <div id="pipeStageCelebration" class="pipeStageCelebration" hidden role="status" aria-live="polite">
                   <div class="pipeStageParticles" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
                   <div class="pipeStageBadge" id="pipeStageBadge" aria-hidden="true">◉</div>
@@ -449,7 +452,9 @@
             <div class="pipeResult" id="pipeTimeout" hidden role="dialog" aria-label="Time's up">
               <div class="pipeResultInner"><div class="pipeVictoryIcon" aria-hidden="true">⌛</div>
                 <h3 id="pipeTimeoutTitle">Time's up!</h3><p id="pipeTimeoutMessage">Try this puzzle again.</p>
-                <button type="button" id="pipeRetry">Retry</button>
+                <button type="button" id="pipeRescue" hidden>Continue +30 seconds · 30 ◉</button>
+                <p id="pipeRescueNote" class="pipeRescueNote" role="status"></p>
+                <button type="button" id="pipeRetry">Retry for free</button>
                 <button type="button" class="pipeSecondary" id="pipeTimeoutBack">Back to Levels</button>
               </div>
             </div>
@@ -460,6 +465,8 @@
             <button type="button" id="pipeReset">⟳ Reset</button>
             <button type="button" id="pipeNew" hidden>Next puzzle</button>
           </div>
+          <button type="button" id="pipeExtraTime" class="pipeBoostButton" hidden>+15 seconds · 10 ◉</button>
+          <p id="pipeBoostNote" class="pipeRescueNote" role="status" aria-live="polite"></p>
           <p id="pipeSaveNotice" class="pipeSaveNotice" hidden role="alert">Progress couldn't be saved.</p>
         </div>
       </div>
@@ -539,6 +546,7 @@
               <span id="levelUpMessage">Level complete · +5 bonus credits</span>
             </div>
             <div id="rankingBox" class="rankingBox" hidden></div>
+            <p id="dotDailyCreditReward" class="dotDailyCreditReward" hidden></p>
             <div id="levelReward" class="levelReward" hidden><div id="levelRewardMessage" class="levelRewardMessage"></div><div id="levelRewardBalance" class="levelRewardBalance" hidden></div></div>
             <div class="resultStatus" id="resultStatus" hidden aria-live="polite"></div>
             <button type="button" id="resultStatsLink" class="winStatsLink">Result added to your stats <span aria-hidden="true">→</span></button>
@@ -565,10 +573,10 @@
       </div>
       
       <div class="adSlot" id="adSlot" aria-hidden="true" hidden></div>
-      <footer>Grid Club · v0.9.9 beta</footer>
+      <footer>Grid Club · v0.9.10 beta</footer>
     </section>
   </main>
-  <div class="pauseLayer" id="timeUpLayer" hidden role="dialog" aria-modal="true" aria-labelledby="timeUpTitle"><div class="pauseInner"><div style="font-size:47px;color:var(--mint)">◷</div><h2 id="timeUpTitle">Time's up!</h2><p>Retrying forfeits this puzzle’s credits.</p><button id="timeUpBoost" type="button">+15 seconds · 10 ◉</button><p id="timeUpBoostNote" class="timeUpBoostNote" role="status" aria-live="polite"></p><button id="timeUpRetry" class="secondary">Retry puzzle</button><button id="timeUpBack" class="secondary">Return to Levels</button></div></div>
+  <div class="pauseLayer" id="timeUpLayer" hidden role="dialog" aria-modal="true" aria-labelledby="timeUpTitle"><div class="pauseInner"><div style="font-size:47px;color:var(--mint)">◷</div><h2 id="timeUpTitle">Time's up!</h2><p>Retry for free (first-attempt puzzle credits forfeited), or continue this attempt for credits.</p><button id="timeUpBoost" type="button">Continue +30 seconds · 30 ◉</button><p id="timeUpBoostNote" class="timeUpBoostNote" role="status" aria-live="polite"></p><button id="timeUpRetry" class="secondary">Retry puzzle</button><button id="timeUpBack" class="secondary">Return to Levels</button></div></div>
   <div class="pauseLayer" id="pauseLayer" hidden role="dialog" aria-modal="true" aria-labelledby="pauseTitle">
     <div class="pauseInner">
       <div style="font-size:47px;color:var(--mint)">Ⅱ</div>
@@ -583,12 +591,13 @@
   <script src="ranked.js?v=0.7.0"></script>
   <script src="stats-utils.js?v=0.7.0"></script>
   <script src="puzzle.js?v=0.9.9"></script>
-  <script src="levels.js?v=0.9.9"></script>
+  <script src="levels.js?v=0.9.10"></script>
   <script src="win-messages.js?v=0.9.4"></script>
   <script src="daily-journey.js?v=0.9.9"></script>
-  <script src="game.js?v=0.9.9"></script>
+  <script src="club-credits.js?v=0.9.10"></script>
+  <script src="game.js?v=0.9.10"></script>
   <script src="pipe-engine.js?v=0.9.9"></script>
-  <script src="pipe-shift.js?v=0.9.9"></script>
+  <script src="pipe-shift.js?v=0.9.10"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol === 'https:') {
       addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
