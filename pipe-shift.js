@@ -294,15 +294,13 @@ async function syncDailyStart(){
 async function submitDaily(){
  const day=utcToday(),record=progress.daily?.[day];
  if(!record?.completed||record.sync!=='pending'||!rankedReady())return;
+ // Never create a server clock after a player finished an offline board.
+ if(!record.serverAttemptId){record.sync='local';save();return;}
  if(dailySync)return dailySync;
  dailySync=(async()=>{
   try{
-   const start=await GridRanked.call('pipe_start',{day});
-   if(start.state==='completed'){
-     record.sync=start.verified?'verified':'review';record.verified=!!start.verified;
-     record.moves=start.moves;save();return;
-   }
-   const reply=await GridRanked.call('pipe_submit',{day,attemptId:start.attemptId,events:record.events});
+   const reply=await GridRanked.call('pipe_submit',
+     {day,attemptId:record.serverAttemptId,events:record.events});
    if(utcToday()!==day)return;
    record.sync=reply.verified?'verified':'review';record.verified=!!reply.verified;
    record.serverMoves=reply.moves;
