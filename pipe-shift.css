@@ -357,3 +357,7 @@
 
 .pipeHintGold{position:absolute;top:2px;right:4px;z-index:2;
   color:#ffe08b;font-size:13px;line-height:1;text-shadow:0 0 4px #3d2408;}
+
+/* Ranked podium: keep the number visible beside the medal. */
+.pipeDailyRow.pipeDailyPodium>span{font-weight:800;color:#f0dfbb;}
+.pipeDailyRow.pipeDailyPodium{border-top-color:#57617a;}
