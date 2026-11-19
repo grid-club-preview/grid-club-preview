@@ -106,7 +106,7 @@ function refreshCreditControls(){
  const cost=extraTimeCount===0?30:20;
  $('pipeRescue').hidden=!(timed&&expired&&failureReason==='time'&&seconds>0);
  $('pipeRescue').disabled=balance<cost;
- $('pipeRescue').textContent=`Continue +${seconds} seconds · ${cost} ◉`;
+ $('pipeRescue').textContent=`Emergency rescue · +${seconds}s · ${cost} ◉`;
  $('pipeRescueNote').textContent=timed&&expired&&failureReason==='time'?
    (seconds===0?'All 30 extra seconds have been used.':
     balance<cost?`Not enough Club Credits (${balance}/${cost}). Retry is free.`:
@@ -442,17 +442,21 @@ function svgPath(mask){const arms=e.DIRECTIONS.filter(d=>mask&d.bit),end=d=>({1:
  return `M${a[0]} ${a[1]} Q50 50 ${b[0]} ${b[1]}`;}
  return arms.map(d=>{const [x,y]=end(d);return `M50 50 L${x} ${y}`;}).join(' ');
 }
-function render(flow=[]){if(!board)return;
+function render(flow=[],leak=null){if(!board)return;
  const size=puzzle.size,container=$('pipeBoard');container.replaceChildren();
  const valid=selected===null?[]:board.map((_,i)=>e.canMove(board,selected,i)?i:-1).filter(i=>i>=0),flowMap=new Map(flow.map((n,i)=>[n,i]));
+ const leakTarget=leak?.leak?.to>=0?leak.leak.to:leak?.leak?.from;
  let numberIn=0,numberOut=0;
  for(let i=0;i<board.length;i++){
    const t=board[i],b=document.createElement('button');b.type='button';b.dataset.cell=String(i);
    b.className='pipeTile '+(t.kind==='empty'?'pipeEmpty':t.kind==='wall'?'pipeWall':t.kind==='block'?'pipeBlankBlock':t.kind==='source'?'pipeSource':t.kind==='sink'?'pipeSink':'pipePiece')+
      (t.fixed?' pipeFixed':'')+(t.transportPiece?' pipeTransport':'')+
-     (puzzle.solvedBoard?.[i]?.transportPiece?' pipeTransportGoal':'')+(i===selected?' pipeSelected':'')+(valid.includes(i)?' pipeValidDrop':'')+(flowMap.has(i)?' pipeFlowing':'');
+     (puzzle.solvedBoard?.[i]?.transportPiece?' pipeTransportGoal':'')+(i===selected?' pipeSelected':'')+
+     (valid.includes(i)?' pipeValidDrop':'')+(flowMap.has(i)?(leak?' pipeLeakTrace':' pipeFlowing'):'')+
+     (leakTarget===i?' pipeLeakTarget':'');
    b.setAttribute('aria-label',`Row ${Math.floor(i/size)+1}, column ${i%size+1}: ${t.transportPiece?'Gold-collared movable elbow':t.kind==='empty'?'Empty space':t.kind==='wall'?'Fixed obstacle':t.kind==='block'?'Movable blank block':t.kind==='source'?'Inlet':t.kind==='sink'?'Outlet':t.fixed?'Fixed pipe':'Movable pipe'}`);
-   if(flowMap.has(i))b.style.setProperty('--flow-delay',`${flowMap.get(i)*.065}s`);
+   if(flowMap.has(i))b.style.setProperty('--flow-delay',`${flowMap.get(i)*(leak?.segmentMs||140)/1000}s`);
+   if(leakTarget===i)b.style.setProperty('--splash-delay',`${Math.max(.35,flow.length*(leak?.segmentMs||140)/1000)}s`);
    if(t.mask){const ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg');svg.setAttribute('viewBox','0 0 100 100');svg.setAttribute('aria-hidden','true');
      for(const name of ['pipeTube','pipeChannel','pipeWater']){const path=document.createElementNS(ns,'path');path.setAttribute('d',svgPath(t.mask));path.setAttribute('class',name);svg.append(path);}b.append(svg);
    }
@@ -526,15 +530,32 @@ function undoMove(){if(won||expired||trialPending||dailyStartPending||!undo.leng
 function reset(){if(won||expired||trialPending||dailyStartPending)return;clockSync();board=e.clone(puzzle.board);if(mode==='daily')dailyTrace.push({action:'reset'});undo=[];selected=null;render();saveCurrent();}
 function showFailure(){
  const byMoves=failureReason==='moves';
- $('pipeTimeoutTitle').textContent=byMoves?'Move limit reached!':"Time's up!";
+ $('pipeTimeoutTitle').textContent=byMoves?'Move limit reached!':'Flow failed · Leak detected';
  $('pipeTimeoutMessage').textContent=byMoves?'The flow needs fewer moves. Try a different route.':
-   'Continue for credits or retry for free. Retrying forfeits first-attempt credits.';
+   'Water escaped before the network was finished. Use an emergency rescue to continue this attempt, or retry for free (without first-attempt credits).';
  refreshCreditControls();
 }
 function timeout(reason='time'){
  if(won||expired)return;
  clockSync();failureReason=reason;expired=true;timerStop();selected=null;
- updateClock();render();showFailure();$('pipeTimeout').hidden=false;saveCurrent();
+ updateClock();saveCurrent();
+ if(reason!=='time'||section!=='game'||document.hidden){
+   render();showFailure();$('pipeTimeout').hidden=false;return;
+ }
+ // Only trace the water connected to the inlet on the player's CURRENT
+ // board. This never reveals the hidden correct route.
+ const leak=e.traceLeak(board),segmentMs=140;
+ const originalInstruction=$('pipeInstruction').textContent;
+ $('pipeInstruction').textContent='Water pressure rising…';
+ render(leak.flow,{...leak,segmentMs});
+ clearFlow();
+ const delay=Math.min(1900,Math.max(850,450+leak.flow.length*segmentMs));
+ flowTimer=setTimeout(()=>{
+   flowTimer=null;
+   if(section!=='game'||won||!expired||failureReason!=='time')return;
+   $('pipeInstruction').textContent=originalInstruction;
+   render();showFailure();$('pipeTimeout').hidden=false;
+ },delay);
 }
 function retry(){
  if(mode==='levels'&&!progress.completed[currentLevel]){
