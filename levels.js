@@ -11,7 +11,7 @@ const ITEMS=[
     "seed": 795820172,
     "quality": 41,
     "pairs": 4,
-    "limitSec": null
+    "limitSec": 90
   },
   {
     "id": 2,
@@ -61,7 +61,7 @@ const ITEMS=[
     "seed": 2049612900,
     "quality": 42,
     "pairs": 3,
-    "limitSec": null
+    "limitSec": 75
   },
   {
     "id": 7,
@@ -111,7 +111,7 @@ const ITEMS=[
     "seed": 1012543585,
     "quality": 85,
     "pairs": 6,
-    "limitSec": null
+    "limitSec": 180
   },
   {
     "id": 12,
@@ -161,7 +161,7 @@ const ITEMS=[
     "seed": 4258491324,
     "quality": 84,
     "pairs": 7,
-    "limitSec": null
+    "limitSec": 165
   },
   {
     "id": 17,
@@ -211,7 +211,7 @@ const ITEMS=[
     "seed": 1158382795,
     "quality": 90,
     "pairs": 5,
-    "limitSec": null
+    "limitSec": 150
   },
   {
     "id": 22,
@@ -261,7 +261,7 @@ const ITEMS=[
     "seed": 1545214817,
     "quality": 138,
     "pairs": 8,
-    "limitSec": null
+    "limitSec": 330
   },
   {
     "id": 27,
@@ -311,7 +311,7 @@ const ITEMS=[
     "seed": 1262601720,
     "quality": 143,
     "pairs": 10,
-    "limitSec": null
+    "limitSec": 315
   },
   {
     "id": 32,
@@ -361,7 +361,7 @@ const ITEMS=[
     "seed": 166226948,
     "quality": 147,
     "pairs": 7,
-    "limitSec": null,
+    "limitSec": 300,
     "blocked": [
       [
         3,
@@ -661,7 +661,7 @@ const ITEMS=[
     "seed": 2309208829,
     "quality": 151,
     "pairs": 8,
-    "limitSec": null,
+    "limitSec": 285,
     "blocked": [
       [
         0,
@@ -949,7 +949,7 @@ const ITEMS=[
     "seed": 3379839868,
     "quality": 215,
     "pairs": 11,
-    "limitSec": null,
+    "limitSec": 780,
     "blocked": [
       [
         10,
@@ -1297,7 +1297,7 @@ const ITEMS=[
     "seed": 1572249237,
     "quality": 224,
     "pairs": 12,
-    "limitSec": null,
+    "limitSec": 765,
     "blocked": [
       [
         3,
@@ -1613,7 +1613,7 @@ const ITEMS=[
     "seed": 4036546560,
     "quality": 221,
     "pairs": 12,
-    "limitSec": null,
+    "limitSec": 750,
     "blocked": [
       [
         5,
@@ -1933,7 +1933,7 @@ const ITEMS=[
     "seed": 2570080320,
     "quality": 224,
     "pairs": 10,
-    "limitSec": null,
+    "limitSec": 735,
     "blocked": [
       [
         7,
@@ -2473,7 +2473,7 @@ const ITEMS=[
     "seed": 1696603738,
     "quality": 228,
     "pairs": 9,
-    "limitSec": null,
+    "limitSec": 720,
     "blocked": [
       [
         0,
@@ -3057,7 +3057,7 @@ const ITEMS=[
     "seed": 3302023571,
     "quality": 231,
     "pairs": 11,
-    "limitSec": null,
+    "limitSec": 705,
     "blocked": [
       [
         0,
