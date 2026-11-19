@@ -504,21 +504,17 @@
     return game.level.limitMs+(game.extraTimeMs||0)-core.elapsed(game);
   }
   function refreshTimeUpBoost(){
-    const balance=walletBalance();
-    const used=game?.extraTimeCount||0;
-    const remaining=Math.max(0,2-used);
-    const canBoost=mode==='level'&&game&&!game.finishedAt&&remaining>0&&balance>=10;
+    const balance=walletBalance(),used=Math.min(2,game?.extraTimeCount||0);
+    const seconds=(2-used)*15,cost=used===0?30:20;
+    const canBoost=mode==='level'&&game&&!game.finishedAt&&seconds>0&&balance>=cost;
     const button=$('timeUpBoost'),note=$('timeUpBoostNote');
+    button.textContent=seconds?`Continue +${seconds} seconds · ${cost} ◉`:'No extensions remaining';
     button.disabled=!canBoost;
     button.setAttribute('aria-disabled',String(!canBoost));
-    if(remaining===0){
-      note.textContent='No extensions remaining';
-    }else if(balance<10){
-      note.textContent=`Not enough credits (${balance}/10)`;
-    }else{
-      note.textContent=`Balance: ${balance} ◉ · ${remaining} extension${remaining===1?'':'s'} left`;
-    }
-    note.dataset.available=String(!!canBoost);
+    if(!seconds)note.textContent='You have already used your full 30 seconds of extra time.';
+    else if(balance<cost)note.textContent=`Not enough Club Credits (${balance}/${cost}) · Retry is free`;
+    else note.textContent=`Balance: ${balance} ◉ · Resume the same attempt`;
+    note.dataset.available=String(canBoost);
   }
   function triggerTimeout(){
     if(timedOut||!game||game.finishedAt)return;
@@ -531,20 +527,28 @@
   }
   function buyExtraTime(){
     if(mode!=='level'||!game||game.finishedAt||game.level.limitMs===null)return false;
+    // If time has actually expired between animation frames, charge the
+    // rescue price, not the cheaper in-play extension price.
+    if(!timedOut&&remainingLevelMs()<=0)triggerTimeout();
+    const used=game.extraTimeCount||0;
+    const rescue=timedOut;
+    const seconds=rescue?(2-used)*15:15;
+    const cost=rescue?(used===0?30:20):10;
+    const kind=rescue?'extra-time-rescue':'extra-time';
     const p=loadLevelState();
-    if((game.extraTimeCount||0)>=2 || p.credits<10){
-      if(timedOut)refreshTimeUpBoost();
-      else{$('hintStatus').hidden=false;$('hintStatus').textContent=(game.extraTimeCount||0)>=2?'Both time extensions have been used.':'You need 10 Club Credits for +15 seconds.';}
+    if(used>=2||p.credits<cost){
+      if(rescue)refreshTimeUpBoost();
+      else{$('hintStatus').hidden=false;$('hintStatus').textContent=used>=2?'Both time extensions have been used.':`You need ${cost} Club Credits for +15 seconds.`;}
       return false;
     }
-    if(!levelCore.spend(p,10,'extra-time',game.attemptId)){
-      if(timedOut)refreshTimeUpBoost();
+    if(!levelCore.spend(p,cost,kind,game.attemptId)){
+      if(rescue)refreshTimeUpBoost();
       else{$('hintStatus').hidden=false;$('hintStatus').textContent='Could not spend Club Credits for this extension.';}
       return false;
     }
     if(!saveLevelState(p))return false;
-    game.extraTimeMs=(game.extraTimeMs||0)+15000;
-    game.extraTimeCount=(game.extraTimeCount||0)+1;
+    game.extraTimeMs=(game.extraTimeMs||0)+seconds*1000;
+    game.extraTimeCount=rescue?2:used+1;
     timedOut=false;$('timeUpLayer').hidden=true;
     if(game.paused)core.resume(game);
     persist();render();return true;
@@ -694,6 +698,13 @@
     if(mode==='daily'&&!item.daily[date])item.daily[date]=result;
     const ok=writeJSON(STATS_KEY,stats);
     if(!ok)result.saveFailed=true;
+    // Local completion earns one award per game per UTC day, even if the
+    // leaderboard connection is unavailable. No credits for practice replays.
+    if(ok&&mode==='daily'&&result.firstDaily){
+      const award=globalThis.GridClubCredits?.award('club:dot:daily:'+date,10,'daily-dot-trails');
+      result.dailyCredits=award?.awarded||0;
+      result.dailyCreditSaveFailed=!!award?.saveFailed;
+    }
     return result;
   }
   function saveRankTrace(){
@@ -846,6 +857,10 @@
     title.classList.add('victoryAnimate');
     $('winMessage').textContent=`${label()} · ${fmtSeconds(result.elapsedMs)} · ${result.moves} moves`;
     $('rankingBox').hidden = mode !== 'daily';
+    $('dotDailyCreditReward').hidden=mode!=='daily'||(!result.dailyCredits&&!result.dailyCreditSaveFailed);
+    $('dotDailyCreditReward').textContent=result.dailyCreditSaveFailed?
+      'Your credit reward could not be saved.':
+      result.dailyCredits?`+${result.dailyCredits} Club Credits · Balance ${walletBalance()} ◉`:'';
     const newLevelUp=mode==='level'&&game.level.step===5&&Number(levelReward?.stageBonus||0)>0;
     const celebration=$('levelUpCelebration'),finalLevelUp=newLevelUp&&levelId===75;
     celebration.hidden=!newLevelUp;

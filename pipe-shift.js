@@ -5,7 +5,7 @@ const e=globalThis.PipeEngine;if(!e)return;
 const $=id=>document.getElementById(id),root=$('pipeShiftScreen'),hub=$('home');
 if(!root||!hub||!$('pipeShiftEntry'))return;
 const KEY='gridclub-pipeshift-progress-v1',BACKUP=KEY+'-v08-backup',MAX=e.MAX_LEVEL;
-const blank=()=>({version:2,levelCatalog:5,completed:{},best:{},active:{},randomBest:{},randomCount:{},legacyArchived:{},legacyUnlockedStages:{},daily:{},moveStats:{random:{},levels:{count:0,total:0},daily:{count:0,total:0}}});
+const blank=()=>({version:2,levelCatalog:5,completed:{},best:{},active:{},randomBest:{},randomCount:{},legacyArchived:{},legacyUnlockedStages:{},firstAttemptFailed:{},daily:{},moveStats:{random:{},levels:{count:0,total:0},daily:{count:0,total:0}}});
 const oldToNew=id=>{const n=Number(id);return Number.isInteger(n)&&n>=1&&n<=30?Math.floor((n-1)/5)*7+(n-1)%5+1:null;};
 function remapLevels(items){const mapped={};for(const [id,value] of Object.entries(items||{})){const next=oldToNew(id);if(next!==null)mapped[next]=value;}return mapped;}
 let progress=blank(),section='menu',stage=1,mode='levels',currentLevel=null,currentSize=5,puzzle=null;
@@ -13,6 +13,11 @@ let board=null,moves=0,elapsed=0,undo=[],selected=null,won=false,expired=false,j
 let timer=null,lastTick=null,flowTimer=null,pointerOrigin=null,ignoreClickUntil=0,nonce=0;
 let dailyDay='',dailyTrace=[],dailyPractice=false,dailyConnection='',dailySync=null,dailyLoading=null;
 let moveLimit=null,legacyMoveCapExempt=false,failureReason='time';
+let extraTimeMs=0,extraTimeCount=0,attemptId='',creditReward=null;
+const credits=globalThis.GridClubCredits;
+const timeBudget=()=>puzzle?.timerMs?puzzle.timerMs+extraTimeMs:null;
+const creditBalance=()=>credits?.balance()||0;
+const makeAttempt=()=>`pipe:${Date.now()}:${Math.random().toString(36).slice(2,12)}`;
 function bestMoves(){return mode==='random'?progress.randomBest[currentSize]?.moves:mode==='levels'?progress.best[currentLevel]?.moves:null;}
 function refreshMoveInfo(){
  const best=bestMoves(),show=mode==='random'||mode==='levels';
@@ -68,10 +73,10 @@ function clockSync(){if(lastTick===null||won||expired)return;const now=performan
 function timerStop(){if(timer!==null){clearInterval(timer);timer=null;}lastTick=null;}
 function startTicker(){if(trialPending)return;timerStop();lastTick=performance.now();timer=setInterval(()=>{
    if(section!=='game'||won||expired||document.hidden)return;
-   clockSync();updateClock();if(puzzle?.timerMs&&elapsed>=puzzle.timerMs)timeout();
+   clockSync();updateClock();if(timeBudget()&&elapsed>=timeBudget())timeout();
  },100);}
 function updateClock(){
- const limit=puzzle?.timerMs;$('pipeClockBox').hidden=!limit;
+ const limit=timeBudget();$('pipeClockBox').hidden=!limit;
  if(!limit)return;
  const remaining=Math.max(0,Math.ceil((limit-elapsed)/1000)),mm=String(Math.floor(remaining/60)).padStart(2,'0'),ss=String(remaining%60).padStart(2,'0');
  $('pipeClock').textContent=`${mm}:${ss}`;
@@ -79,9 +84,50 @@ function updateClock(){
  // Start the red alert below 15 seconds on timed Levels only.
  $('pipeClockBox').dataset.critical=String(remaining>0&&remaining<15&&!won&&!expired);
 }
+function refreshCreditControls(){
+ const timed=mode==='levels'&&!!puzzle?.timerMs&&!won;
+ const available=timed&&!trialPending&&!expired&&extraTimeCount<2;
+ const balance=creditBalance();
+ $('pipeWallet').hidden=mode!=='levels';
+ $('pipeWallet').textContent=mode==='levels'?`◉ ${balance} Club Credits`:'';
+ const button=$('pipeExtraTime');
+ button.hidden=!timed||expired;
+ button.disabled=!available||balance<10;
+ button.textContent=`+15 seconds · 10 ◉ (${Math.max(0,2-extraTimeCount)} left)`;
+ const note=$('pipeBoostNote');
+ note.textContent=timed&&!expired&&extraTimeCount<2&&balance<10?'Not enough credits for +15 seconds':'';
+ const seconds=(2-extraTimeCount)*15;
+ const cost=extraTimeCount===0?30:20;
+ $('pipeRescue').hidden=!(timed&&expired&&failureReason==='time'&&seconds>0);
+ $('pipeRescue').disabled=balance<cost;
+ $('pipeRescue').textContent=`Continue +${seconds} seconds · ${cost} ◉`;
+ $('pipeRescueNote').textContent=timed&&expired&&failureReason==='time'?
+   (seconds===0?'All 30 extra seconds have been used.':
+    balance<cost?`Not enough Club Credits (${balance}/${cost}). Retry is free.`:
+    `Balance: ${balance} ◉ · Resume the same attempt`):'';
+}
+function buyPipeTime(){
+ if(mode!=='levels'||!puzzle?.timerMs||won||trialPending||extraTimeCount>=2)return false;
+ // Treat a genuinely expired timer as a rescue even if the 100 ms tick
+ // hasn't updated the overlay yet. Never sell a late boost at in-play prices.
+ if(!expired){clockSync();if(elapsed>=timeBudget())timeout('time');}
+ if(expired&&failureReason!=='time')return false;
+ const rescue=expired,seconds=rescue?(2-extraTimeCount)*15:15;
+ const cost=rescue?(extraTimeCount===0?30:20):10;
+ if(!credits?.spend(cost,rescue?'extra-time-rescue':'extra-time',attemptId)){
+   refreshCreditControls();return false;
+ }
+ extraTimeMs+=seconds*1000;
+ extraTimeCount=rescue?2:extraTimeCount+1;
+ if(rescue){
+   expired=false;$('pipeTimeout').hidden=true;startTicker();
+ }
+ updateClock();render();saveCurrent();return true;
+}
 function saveCurrent(){if(!puzzle||!board||won)return;
  clockSync();progress.active[activeKey()]={board:e.clone(board),moves,elapsed,expired,started:!trialPending,catalogVersion:mode==='levels'?5:mode==='daily'||mode==='practice'?puzzle.dailyVersion:null,seed:puzzle.seed??null,
    trace:mode==='daily'?dailyTrace.map(x=>({...x})):null,
+   extraTimeMs,extraTimeCount,attemptId,
    moveCapVersion:mode==='levels'?1:null,moveCapExempt:mode==='levels'&&legacyMoveCapExempt,failureReason,
    undo:undo.slice(-40).map(a=>({board:e.clone(a.board),moves:a.moves}))};save();
 }
@@ -93,6 +139,7 @@ function route(name){
 }
 function home(){cancelDrag();saveCurrent();route('menu');root.hidden=true;hub.hidden=false;}
 function menu(){saveCurrent();hub.hidden=true;root.hidden=false;route('menu');
+ $('pipeMenuWallet').textContent=`◉ ${creditBalance()} Club Credits`;
  $('pipeMainProgress').textContent=`${Object.keys(progress.completed).filter(n=>progress.completed[n]).length}/${MAX}`;
 }
 function statsMenu(){
@@ -246,6 +293,7 @@ function freshRandomSeed(){
 function begin(p,kind,id,skipSave=false){
  if(!skipSave)saveCurrent();mode=kind;currentLevel=kind==='levels'?id:null;if(kind==='levels')stage=e.stageOf(id).id;dailyDay=(kind==='daily'||kind==='practice')?p.day:'';dailyPractice=kind==='practice';dailyTrace=[];currentSize=p.size;puzzle=p;
  won=false;expired=false;justClearedStage=false;selected=null;elapsed=0;moves=0;undo=[];trialPending=!!p.timerMs;
+ extraTimeMs=0;extraTimeCount=0;attemptId=makeAttempt();creditReward=null;
  failureReason='time';legacyMoveCapExempt=false;
  moveLimit=kind==='levels'?e.moveLimitFor(id):null;
  hub.hidden=true;root.hidden=false;route('game');
@@ -253,6 +301,9 @@ function begin(p,kind,id,skipSave=false){
  if(stored&&e.validateBoard(stored.board)&&stored.board.length===p.size*p.size&&
    (kind==='levels'?stored.catalogVersion===5:(kind==='daily'||kind==='practice')?stored.seed===p.seed&&stored.catalogVersion===p.dailyVersion:stored.seed===p.seed)&&Number.isInteger(stored.moves)&&stored.moves>=0&&stored.moves<100000){
    board=e.clone(stored.board);moves=stored.moves;elapsed=Math.max(0,Number(stored.elapsed)||0);expired=!!stored.expired;
+   extraTimeMs=Math.max(0,Math.min(30000,Number(stored.extraTimeMs)||0));
+   extraTimeCount=Math.max(0,Math.min(2,Number(stored.extraTimeCount)||0));
+   attemptId=typeof stored.attemptId==='string'&&stored.attemptId?stored.attemptId:attemptId;
    if(kind==='levels'&&moveLimit!==null){
      legacyMoveCapExempt=stored.moveCapVersion!==1||!!stored.moveCapExempt;
      if(legacyMoveCapExempt)moveLimit=null;
@@ -270,7 +321,7 @@ function begin(p,kind,id,skipSave=false){
  render();updateClock();if(kind==='daily')void syncDailyStart();
  if(expired){showFailure();$('pipeTimeout').hidden=false;}
  else if(moveLimit!==null&&moves>=moveLimit)timeout('moves');
- else if(p.timerMs&&elapsed>=p.timerMs)timeout('time');
+ else if(timeBudget()&&elapsed>=timeBudget())timeout('time');
  else if(trialPending){$('pipeTimeIntro').hidden=false;}
  else startTicker();
  saveCurrent();
@@ -308,21 +359,49 @@ function render(flow=[]){if(!board)return;
    container.append(b);
  }
  $('pipeMoves').textContent=moveLimit!==null?`${moves}/${moveLimit}`:String(moves);
- refreshMoveInfo();
+ refreshMoveInfo();refreshCreditControls();
  $('pipeUndo').disabled=won||expired||undo.length===0;$('pipeReset').disabled=won||expired||moves===0;
 }
 function slide(from,to){if(won||expired||trialPending||!e.canMove(board,from,to))return false;
- clockSync();if(puzzle.timerMs&&elapsed>=puzzle.timerMs){timeout();return false;}
+ clockSync();if(timeBudget()&&elapsed>=timeBudget()){timeout();return false;}
  undo.push({board:e.clone(board),moves});if(undo.length>40)undo.shift();e.move(board,from,to);moves++;selected=null;
  if(mode==='daily')dailyTrace.push({action:'slide',from,to});
  const check=e.evaluate(board);
- if(check.solved){won=true;timerStop();if(mode!=='practice'&&!dailyPractice)recordCompletion(mode,currentSize,moves);if(mode==='levels'){
-     justClearedStage=!progress.completed[currentLevel]&&currentLevel===e.stageOf(currentLevel).last;
-     progress.completed[currentLevel]=true;if(!progress.best[currentLevel]||moves<progress.best[currentLevel].moves)progress.best[currentLevel]={moves,elapsed,when:new Date().toISOString()};
-   }else if(mode==='random'){progress.randomCount[currentSize]=(progress.randomCount[currentSize]||0)+1;
-     if(!progress.randomBest[currentSize]||moves<progress.randomBest[currentSize].moves)progress.randomBest[currentSize]={moves,elapsed};}
-   else if(mode==='daily'&&!dailyPractice){progress.daily[dailyDay]={completed:true,moves,events:dailyTrace.map(x=>({...x})),sync:'pending',verified:false,day:dailyDay};}
-   delete progress.active[activeKey()];save();if(mode==='daily'&&!dailyPractice)void submitDaily();render(check.flow);flowTimer=setTimeout(()=>{flowTimer=null;if(won&&section==='game')victory();},950);
+ if(check.solved){
+   won=true;timerStop();
+   creditReward={puzzle:0,stage:0,daily:0,saveFailed:false};
+   if(mode!=='practice'&&!dailyPractice)recordCompletion(mode,currentSize,moves);
+   if(mode==='levels'){
+     const first=!progress.completed[currentLevel],group=e.stageOf(currentLevel);
+     progress.completed[currentLevel]=true;
+     if(!progress.best[currentLevel]||moves<progress.best[currentLevel].moves)
+       progress.best[currentLevel]={moves,elapsed,when:new Date().toISOString()};
+     if(first&&!progress.firstAttemptFailed?.[currentLevel]){
+       const award=credits?.award('club:pipe:level:'+currentLevel,2,'pipe-level');
+       creditReward.puzzle=award?.awarded||0;
+       creditReward.saveFailed ||= !!award?.saveFailed;
+     }
+     justClearedStage=first&&currentLevel===group.last&&
+       Array.from({length:e.PUZZLES_PER_STAGE},(_,i)=>group.first+i).every(id=>!!progress.completed[id]);
+     if(justClearedStage){
+       const award=credits?.award('club:pipe:stage:'+group.id,5,'pipe-stage');
+       creditReward.stage=award?.awarded||0;
+       creditReward.saveFailed ||= !!award?.saveFailed;
+     }
+   }else if(mode==='random'){
+     progress.randomCount[currentSize]=(progress.randomCount[currentSize]||0)+1;
+     if(!progress.randomBest[currentSize]||moves<progress.randomBest[currentSize].moves)
+       progress.randomBest[currentSize]={moves,elapsed};
+   }else if(mode==='daily'&&!dailyPractice){
+     progress.daily[dailyDay]={completed:true,moves,events:dailyTrace.map(x=>({...x})),sync:'pending',verified:false,day:dailyDay};
+     const award=credits?.award('club:pipe:daily:'+dailyDay,10,'pipe-daily');
+     creditReward.daily=award?.awarded||0;
+     creditReward.saveFailed ||= !!award?.saveFailed;
+   }
+   delete progress.active[activeKey()];save();
+   if(mode==='daily'&&!dailyPractice)void submitDaily();
+   render(check.flow);
+   flowTimer=setTimeout(()=>{flowTimer=null;if(won&&section==='game')victory();},950);
  }else if(moveLimit!==null&&moves>=moveLimit){timeout('moves');}
  else{render();saveCurrent();}
  return true;
@@ -339,18 +418,33 @@ function reset(){if(won||expired||trialPending)return;clockSync();board=e.clone(
 function showFailure(){
  const byMoves=failureReason==='moves';
  $('pipeTimeoutTitle').textContent=byMoves?'Move limit reached!':"Time's up!";
- $('pipeTimeoutMessage').textContent=byMoves?'The flow needs fewer moves. Try a different route.':'Try this puzzle again.';
+ $('pipeTimeoutMessage').textContent=byMoves?'The flow needs fewer moves. Try a different route.':
+   'Continue for credits or retry for free. Retrying forfeits first-attempt credits.';
+ refreshCreditControls();
 }
 function timeout(reason='time'){
  if(won||expired)return;
  clockSync();failureReason=reason;expired=true;timerStop();selected=null;
  updateClock();render();showFailure();$('pipeTimeout').hidden=false;saveCurrent();
 }
-function retry(){delete progress.active[activeKey()];const fresh=mode==='levels'?e.get(currentLevel):e.random(currentSize,puzzle.seed);begin(fresh,mode,currentLevel,true);}
+function retry(){
+ if(mode==='levels'&&!progress.completed[currentLevel]){
+   progress.firstAttemptFailed ||= {};
+   progress.firstAttemptFailed[currentLevel]=true;save();
+ }
+ delete progress.active[activeKey()];
+ const fresh=mode==='levels'?e.get(currentLevel):e.random(currentSize,puzzle.seed);
+ begin(fresh,mode,currentLevel,true);
+}
 function victory(){const phrases=globalThis.GridClubWinMessages?.pipeShift||{};const names=phrases.general?.length?phrases.general:['Flow restored!','Nicely connected.','Let it flow!','Pipes in perfect order.'];
  const celebration=$('pipeStageCelebration'),result=$('pipeResult');
  result.classList.remove('pipeStageWin','pipeGrandFinale');
  celebration.hidden=true;
+ const earned=(creditReward?.puzzle||0)+(creditReward?.stage||0)+(creditReward?.daily||0);
+ $('pipeCreditReward').hidden=!earned&&!creditReward?.saveFailed;
+ $('pipeCreditReward').textContent=creditReward?.saveFailed?
+   'Some credit rewards could not be saved.':
+   `+${earned} Club Credits${creditReward?.stage?` (includes +${creditReward.stage} level bonus)`:''} · Balance: ${creditBalance()} ◉`;
  $('pipeResultTitle').textContent=names[(moves+(currentLevel||0))%names.length];
  if(mode==='random'){$('pipeResultMessage').textContent=`${moves} moves`;$('pipeResultNext').hidden=false;$('pipeResultNext').textContent='Next puzzle →';$('pipeResultLevels').textContent='Back to Free Play';}
  else if(mode==='daily'||mode==='practice'){$('pipeResultMessage').textContent=`${moves} moves · ${dailyDay}${dailyPractice?' · practice':''}`;$('pipeResultNext').hidden=true;$('pipeResultLevels').textContent='Daily leaderboard';}
@@ -389,7 +483,10 @@ $('pipeRandomChoices').addEventListener('click',ev=>{const b=ev.target.closest('
 $('pipeResultNext').onclick=()=>mode==='random'?startRandom(currentSize,true):startLevel(currentLevel+1);
 $('pipeResultLevels').onclick=()=>mode==='random'?randomMenu():mode==='daily'||mode==='practice'?dailyMenu():stages();
 $('pipeTrialStart').onclick=()=>{if(!trialPending||section!=='game')return;trialPending=false;$('pipeTimeIntro').hidden=true;startTicker();saveCurrent();};
-$('pipeRetry').onclick=retry;$('pipeTimeoutBack').onclick=()=>mode==='random'?randomMenu():stageMenu(stage);
+$('pipeRetry').onclick=retry;
+$('pipeRescue').onclick=buyPipeTime;
+$('pipeExtraTime').onclick=buyPipeTime;
+$('pipeTimeoutBack').onclick=()=>mode==='random'?randomMenu():stageMenu(stage);
 $('pipeUndo').onclick=undoMove;$('pipeReset').onclick=reset;$('pipeNew').onclick=()=>startRandom(currentSize,true);
 const grid=$('pipeBoard');
 grid.addEventListener('click',ev=>{if(performance.now()<ignoreClickUntil)return;const b=ev.target.closest('[data-cell]');if(b)clickCell(Number(b.dataset.cell));});
