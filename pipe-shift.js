@@ -377,6 +377,35 @@ function puzzleInstruction(p){
  return p.solvedBoard?.some(t=>t.transportPiece)?
    'Move the gold-collared elbow to the outlined square, then complete the flow.':'';
 }
+// Explain Expert Free Play's stricter victory requirement as the player
+// makes progress. The authored solution is never consulted for dry pipes:
+// only connections reachable from the live IN tile count as carrying water.
+function expertFlowFeedback(p,current){
+ if(!p?.requireAllFlow||!Array.isArray(current))return null;
+ const result=e.evaluate(current),wet=new Set(result.flow);
+ const dry=current.flatMap((tile,i)=>
+   tile.kind==='pipe'&&!tile.decoy&&!wet.has(i)?[i]:[]);
+ const total=current.filter(tile=>tile.kind==='pipe'&&!tile.decoy).length;
+ const connected=total-dry.length;
+ const marker=current.findIndex(tile=>tile.transportPiece);
+ const destination=marker<0?-1:(current[marker].transportTarget??current.length-1);
+ const markerReady=marker<0||marker===destination;
+ let message;
+ if(result.reachedOutlet&&dry.length){
+   message=`IN to OUT connected · ${dry.length} pipe${dry.length===1?'':'s'} still dry. Connect the highlighted pipes.`;
+ }else if(result.reachedOutlet&&result.leaks){
+   message=`IN to OUT connected · ${result.leaks} open pipe connection${result.leaks===1?'':'s'} still leaking.`;
+ }else if(result.reachedOutlet&&!markerReady){
+   message='Every pipe carries water, but the gold-collared elbow is not on its outlined target.';
+ }else if(result.reachedOutlet){
+   message='All connections complete.';
+ }else{
+   message=`Water reaches ${connected}/${total} pipes. Connect IN to OUT, then check every pipe.`;
+ }
+ return {message,dry:result.reachedOutlet?dry:[],dryCount:dry.length,
+   connected,total,outletReached:result.reachedOutlet,leaks:result.leaks,
+   markerReady,solved:result.solved};
+}
 function begin(p,kind,id,skipSave=false){
  if(!skipSave)saveCurrent();mode=kind;currentLevel=kind==='levels'?id:null;if(kind==='levels')stage=e.stageOf(id).id;dailyDay=(kind==='daily'||kind==='practice')?p.day:'';dailyPractice=kind==='practice';dailyTrace=[];currentSize=p.size;puzzle=p;
  won=false;expired=false;justClearedStage=false;selected=null;elapsed=0;moves=0;undo=[];trialPending=!!p.timerMs;
@@ -454,6 +483,14 @@ function render(flow=[],leak=null){if(!board)return;
  const size=puzzle.size,container=$('pipeBoard');container.replaceChildren();
  const valid=selected===null?[]:board.map((_,i)=>e.canMove(board,selected,i)?i:-1).filter(i=>i>=0),flowMap=new Map(flow.map((n,i)=>[n,i]));
  const leakTarget=leak?.leak?.to>=0?leak.leak.to:leak?.leak?.from;
+ const feedback=!won&&!expired?expertFlowFeedback(puzzle,board):null;
+ const dryTiles=new Set(feedback?.dry||[]);
+ const notice=$('pipeFlowFeedback');
+ notice.hidden=!feedback;
+ if(feedback){
+   if(notice.textContent!==feedback.message)notice.textContent=feedback.message;
+   notice.dataset.state=feedback.outletReached?'outlet':'working';
+ }else notice.textContent='';
  let numberIn=0,numberOut=0;
  for(let i=0;i<board.length;i++){
    const t=board[i],b=document.createElement('button');b.type='button';b.dataset.cell=String(i);
@@ -461,7 +498,7 @@ function render(flow=[],leak=null){if(!board)return;
      (t.fixed?' pipeFixed':'')+(t.transportPiece?' pipeTransport':'')+
      (puzzle.solvedBoard?.[i]?.transportPiece?' pipeTransportGoal':'')+(i===selected?' pipeSelected':'')+
      (valid.includes(i)?' pipeValidDrop':'')+(flowMap.has(i)?(leak?' pipeLeakTrace':' pipeFlowing'):'')+
-     (leakTarget===i?' pipeLeakTarget':'');
+     (dryTiles.has(i)?' pipeDry':'')+(leakTarget===i?' pipeLeakTarget':'');
    b.setAttribute('aria-label',`Row ${Math.floor(i/size)+1}, column ${i%size+1}: ${t.transportPiece?'Gold-collared movable elbow':t.kind==='empty'?'Empty space':t.kind==='wall'?'Fixed obstacle':t.kind==='block'?'Movable blank block':t.kind==='source'?'Inlet':t.kind==='sink'?'Outlet':t.fixed?'Fixed pipe':'Movable pipe'}`);
    if(flowMap.has(i))b.style.setProperty('--flow-delay',`${flowMap.get(i)*(leak?.segmentMs||140)/1000}s`);
    if(leakTarget===i)b.style.setProperty('--splash-delay',`${Math.max(.35,flow.length*(leak?.segmentMs||140)/1000)}s`);
