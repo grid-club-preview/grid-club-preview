@@ -5,7 +5,7 @@ const e=globalThis.PipeEngine;if(!e)return;
 const $=id=>document.getElementById(id),root=$('pipeShiftScreen'),hub=$('home');
 if(!root||!hub||!$('pipeShiftEntry'))return;
 const KEY='gridclub-pipeshift-progress-v1',BACKUP=KEY+'-v08-backup',MAX=e.MAX_LEVEL;
-const blank=()=>({version:2,levelCatalog:5,completed:{},best:{},active:{},randomBest:{},randomBestV3:{},randomCount:{},legacyArchived:{},legacyUnlockedStages:{},firstAttemptFailed:{},daily:{},moveStats:{random:{},levels:{count:0,total:0},daily:{count:0,total:0}}});
+const blank=()=>({version:2,levelCatalog:5,completed:{},best:{},active:{},randomBest:{},randomBestV3:{},randomBestV4:{},randomCount:{},legacyArchived:{},legacyUnlockedStages:{},firstAttemptFailed:{},daily:{},moveStats:{random:{},levels:{count:0,total:0},daily:{count:0,total:0}}});
 const oldToNew=id=>{const n=Number(id);return Number.isInteger(n)&&n>=1&&n<=30?Math.floor((n-1)/5)*7+(n-1)%5+1:null;};
 function remapLevels(items){const mapped={};for(const [id,value] of Object.entries(items||{})){const next=oldToNew(id);if(next!==null)mapped[next]=value;}return mapped;}
 let progress=blank(),section='menu',stage=1,mode='levels',currentLevel=null,currentSize=5,puzzle=null;
@@ -20,8 +20,10 @@ const timeBudget=()=>puzzle?.timerMs?puzzle.timerMs+extraTimeMs:null;
 const creditBalance=()=>credits?.balance()||0;
 const makeAttempt=()=>`pipe:${Date.now()}:${Math.random().toString(36).slice(2,12)}`;
 function bestMoves(){
- const source=mode==='random'&&currentSize===7&&puzzle?.randomLayoutVersion===3?
-   progress.randomBestV3:progress.randomBest;
+ const source=mode==='random'&&currentSize===7?
+   puzzle?.randomLayoutVersion===4?progress.randomBestV4:
+   puzzle?.randomLayoutVersion===3?progress.randomBestV3:progress.randomBest:
+   progress.randomBest;
  return mode==='random'?source?.[currentSize]?.moves:
    mode==='levels'?progress.best[currentLevel]?.moves:null;
 }
@@ -192,8 +194,11 @@ function randomMenu(){saveCurrent();hub.hidden=true;root.hidden=false;route('ran
    let sub=text?.querySelector('small');
    if(text&&!sub){sub=document.createElement('small');text.append(sub);}
    const active=progress.active[`random:${size}`];
-   const currentV3=size===7&&(!active||active.randomLayoutVersion===3);
-   const best=(currentV3?progress.randomBestV3:progress.randomBest)?.[size]?.moves;
+   const bestStore=size===7?
+     active?.randomLayoutVersion===3?progress.randomBestV3:
+     (!active||active.randomLayoutVersion===4)?progress.randomBestV4:
+     progress.randomBest:progress.randomBest;
+   const best=bestStore?.[size]?.moves;
    sub.textContent=(Number.isInteger(best)?`Personal best: ${best} moves`:'No completed puzzles yet')+
      (active?' · Continue available':'');
  }
@@ -373,9 +378,9 @@ function freshRandomSeed(){
 function puzzleInstruction(p){
  if(!p)return '';
  if(p.requireAllFlow)
-   return 'Connect every pipe to the flow. Move the gold-collared elbow to its outlined square.';
+   return 'Connect every pipe to the flow. Move the gold-marked pipe to its outlined square.';
  return p.solvedBoard?.some(t=>t.transportPiece)?
-   'Move the gold-collared elbow to the outlined square, then complete the flow.':'';
+   'Move the gold-marked pipe to the outlined square, then complete the flow.':'';
 }
 // Explain Expert Free Play's stricter victory requirement as the player
 // makes progress. The authored solution is never consulted for dry pipes:
@@ -396,7 +401,7 @@ function expertFlowFeedback(p,current){
  }else if(result.reachedOutlet&&result.leaks){
    message=`IN to OUT connected · ${result.leaks} open pipe connection${result.leaks===1?'':'s'} still leaking.`;
  }else if(result.reachedOutlet&&!markerReady){
-   message='Every pipe carries water, but the gold-collared elbow is not on its outlined target.';
+   message='Every pipe carries water, but the gold-marked pipe is not on its outlined target.';
  }else if(result.reachedOutlet){
    message='All connections complete.';
  }else{
@@ -470,7 +475,7 @@ function startRandom(size,newPuzzle=false){if(![5,6,7].includes(size))return;
  // Resume older Free Play variants without changing an unfinished board.
  const savedVersion=!newPuzzle&&saved?.randomLayoutVersion;
  const variant=!newPuzzle&&saved?
-   (savedVersion===2?2:savedVersion===3?false:true):false;
+   (savedVersion===2?2:savedVersion===3?3:savedVersion===4?false:true):false;
  if(newPuzzle)delete progress.active[key];
  begin(e.random(size,seed,variant),'random',null,newPuzzle);
 }
@@ -499,7 +504,7 @@ function render(flow=[],leak=null){if(!board)return;
      (puzzle.solvedBoard?.[i]?.transportPiece?' pipeTransportGoal':'')+(i===selected?' pipeSelected':'')+
      (valid.includes(i)?' pipeValidDrop':'')+(flowMap.has(i)?(leak?' pipeLeakTrace':' pipeFlowing'):'')+
      (dryTiles.has(i)?' pipeDry':'')+(leakTarget===i?' pipeLeakTarget':'');
-   b.setAttribute('aria-label',`Row ${Math.floor(i/size)+1}, column ${i%size+1}: ${t.transportPiece?'Gold-collared movable elbow':t.kind==='empty'?'Empty space':t.kind==='wall'?'Fixed obstacle':t.kind==='block'?'Movable blank block':t.kind==='source'?'Inlet':t.kind==='sink'?'Outlet':t.fixed?'Fixed pipe':'Movable pipe'}`);
+   b.setAttribute('aria-label',`Row ${Math.floor(i/size)+1}, column ${i%size+1}: ${t.transportPiece?'Gold-marked movable pipe':t.kind==='empty'?'Empty space':t.kind==='wall'?'Fixed obstacle':t.kind==='block'?'Movable blank block':t.kind==='source'?'Inlet':t.kind==='sink'?'Outlet':t.fixed?'Fixed pipe':'Movable pipe'}`);
    if(flowMap.has(i))b.style.setProperty('--flow-delay',`${flowMap.get(i)*(leak?.segmentMs||140)/1000}s`);
    if(leakTarget===i)b.style.setProperty('--splash-delay',`${Math.max(.35,flow.length*(leak?.segmentMs||140)/1000)}s`);
    if(t.mask){const ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg');svg.setAttribute('viewBox','0 0 100 100');svg.setAttribute('aria-hidden','true');
@@ -544,7 +549,9 @@ function slide(from,to){if(won||expired||trialPending||dailyStartPending||!e.can
      }
    }else if(mode==='random'){
      progress.randomCount[currentSize]=(progress.randomCount[currentSize]||0)+1;
-     const bests=currentSize===7&&puzzle.randomLayoutVersion===3?
+     const bests=currentSize===7&&puzzle.randomLayoutVersion===4?
+       (progress.randomBestV4 ||= {}):
+       currentSize===7&&puzzle.randomLayoutVersion===3?
        (progress.randomBestV3 ||= {}):progress.randomBest;
      if(!bests[currentSize]||moves<bests[currentSize].moves)
        bests[currentSize]={moves,elapsed};
