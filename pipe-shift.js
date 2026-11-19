@@ -485,7 +485,7 @@ function openHintMenu(){
  $('pipeBoard').classList.remove('pipeHintChoosing');
  hintSelection=null;
  $('pipeHintNote').textContent=
-   'Choose a reveal. For one square or 3×3, pick its location before credits are charged. Previews last five seconds.';
+   'Choose a reveal, then pick the square or 3×3 area before credits are charged. Previews last five seconds; timed clocks pause. Assisted wins count as completed, but do not set unassisted personal bests.';
  refreshHintControls();render();
 }
 function chooseHint(kind){
