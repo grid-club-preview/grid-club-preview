@@ -193,3 +193,20 @@
 #pipeResult .dailyJourneyDone,#win .dailyJourneyDone{margin:12px 0;}
 #dotDailyNextHome{margin-top:12px;}
 @media(max-width:380px){.pipeDailyFeature strong{font-size:17px;}.pipeDailyFeature .pipeButtonIcon{width:43px;height:43px;}}
+
+/* v0.9.6: warn clearly when a timed Level has fewer than 15 seconds left. */
+#time[data-critical="true"],#pipeClockBox[data-critical="true"] strong{
+  color:#ff6576;
+  animation:gridClubCountdownFlash .9s linear infinite;
+}
+@keyframes gridClubCountdownFlash{
+  0%,49%{color:#ff5266;text-shadow:0 0 9px #ff506588;}
+  50%,100%{color:#fff3f4;text-shadow:none;}
+}
+@media(prefers-reduced-motion:reduce){
+  #time[data-critical="true"],#pipeClockBox[data-critical="true"] strong{
+    color:#ff5266;
+    animation:none;
+    text-shadow:none;
+  }
+}
