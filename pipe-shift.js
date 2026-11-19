@@ -17,6 +17,7 @@ let dailyDay='',dailyTrace=[],dailyPractice=false,dailyConnection='',dailySync=n
 let dailyServerAttemptId=null,dailyStartPending=false;
 let moveLimit=null,legacyMoveCapExempt=false,failureReason='time';
 let extraTimeMs=0,extraTimeCount=0,attemptId='',creditReward=null;
+let hintSelection=null,hintPreviewActive=false,hintPreviewInterval=null,hintPreviewUntil=0,hintsUsed=0;
 const credits=globalThis.GridClubCredits;
 const timeBudget=()=>puzzle?.timerMs?puzzle.timerMs+extraTimeMs:null;
 const creditBalance=()=>credits?.balance()||0;
@@ -113,7 +114,7 @@ function save(){
 function activeKey(){return mode==='random'?`random:${currentTier}:${puzzle?.freeObjective||'any'}`:mode==='daily'?`daily:${dailyDay}`:mode==='practice'?`practice:${dailyDay}`:`level:${currentLevel}`;}
 function clockSync(){if(lastTick===null||won||expired)return;const now=performance.now();if(document.hidden){lastTick=null;return;}elapsed+=Math.max(0,now-lastTick);lastTick=now;}
 function timerStop(){if(timer!==null){clearInterval(timer);timer=null;}lastTick=null;}
-function startTicker(){if(trialPending)return;timerStop();lastTick=performance.now();timer=setInterval(()=>{
+function startTicker(){if(trialPending||hintPreviewActive)return;timerStop();lastTick=performance.now();timer=setInterval(()=>{
    if(section!=='game'||won||expired||document.hidden)return;
    clockSync();updateClock();if(timeBudget()&&elapsed>=timeBudget())timeout();
  },100);}
@@ -176,13 +177,16 @@ function saveCurrent(){if(!puzzle||!board||won)return;
    extraTimeMs,extraTimeCount,attemptId,
    moveCapVersion:mode==='levels'?1:null,moveCapExempt:mode==='levels'&&legacyMoveCapExempt,failureReason,
    randomLayoutVersion:mode==='random'?(puzzle.randomLayoutVersion||1):null,
+   hintsUsed,
    freeObjective:mode==='random'?puzzle.freeObjective:null,
    freeTier:mode==='random'?currentTier:null,
-   undo:undo.slice(-40).map(a=>({board:e.clone(a.board),moves:a.moves}))};save();
+   undo:undo.slice(-40).map(a=>({board:e.clone(a.board),moves:a.moves,steps:a.steps||1}))};save();
 }
 function clearFlow(){if(flowTimer!==null){clearTimeout(flowTimer);flowTimer=null;}}
 function route(name){
- clearFlow();timerStop();section=name;
+ clearFlow();timerStop();closeHintPreview(false);hintSelection=null;
+ $('pipeHintMenu').hidden=true;$('pipeHintStatus').hidden=true;
+ $('pipeBoard').classList.remove('pipeHintChoosing');section=name;
  for(const n of ['menu','random','stages','levels','game','stats','daily'])$('pipe-'+n).hidden=n!==name;
  $('pipeResult').hidden=true;$('pipeTimeout').hidden=true;$('pipeTimeIntro').hidden=true;selected=null;cancelDrag();
 }
@@ -447,7 +451,7 @@ function begin(p,kind,id,skipSave=false){
  if(!skipSave)saveCurrent();mode=kind;currentLevel=kind==='levels'?id:null;if(kind==='levels')stage=e.stageOf(id).id;dailyDay=(kind==='daily'||kind==='practice')?p.day:'';dailyPractice=kind==='practice';dailyTrace=[];currentSize=p.size;currentTier=p.freeTier||fallbackTier(p.size);puzzle=p;
  won=false;expired=false;justClearedStage=false;selected=null;elapsed=0;moves=0;undo=[];trialPending=!!p.timerMs;
  dailyServerAttemptId=null;dailyStartPending=false;
- extraTimeMs=0;extraTimeCount=0;attemptId=makeAttempt();creditReward=null;
+ extraTimeMs=0;extraTimeCount=0;attemptId=makeAttempt();creditReward=null;hintsUsed=0;
  failureReason='time';legacyMoveCapExempt=false;
  // Existing v6 attempts of redesigned puzzles 6 and 7 keep their original
  // move budgets and boards; fresh starts use the more demanding v7 layout.
@@ -461,6 +465,7 @@ function begin(p,kind,id,skipSave=false){
    extraTimeMs=Math.max(0,Math.min(30000,Number(stored.extraTimeMs)||0));
    extraTimeCount=Math.max(0,Math.min(2,Number(stored.extraTimeCount)||0));
    attemptId=typeof stored.attemptId==='string'&&stored.attemptId?stored.attemptId:attemptId;
+   hintsUsed=Math.max(0,Math.min(100,Number(stored.hintsUsed)||0));
    if(kind==='levels'&&moveLimit!==null){
      legacyMoveCapExempt=stored.moveCapVersion!==1||!!stored.moveCapExempt;
      if(legacyMoveCapExempt)moveLimit=null;
@@ -562,7 +567,7 @@ function render(flow=[],leak=null){if(!board)return;
    container.append(b);
  }
  $('pipeMoves').textContent=moveLimit!==null?`${moves}/${moveLimit}`:String(moves);
- refreshMoveInfo();refreshCreditControls();
+ refreshMoveInfo();refreshCreditControls();refreshHintControls();
  $('pipeUndo').disabled=won||expired||undo.length===0;$('pipeReset').disabled=won||expired||moves===0;
 }
 function availableDestinations(from){
@@ -636,8 +641,8 @@ function clickCell(i){if(section!=='game'||won||expired||trialPending||dailyStar
  if(options.length===1){slide(i,options[0]);return;}
  selected=selected===i?null:i;render();
 }
-function undoMove(){if(won||expired||trialPending||dailyStartPending||!undo.length)return;clockSync();const last=undo.pop();board=e.clone(last.board);if(mode==='daily')for(let step=0;step<(last.steps||1);step++)dailyTrace.push({action:'undo'});selected=null;render();saveCurrent();}
-function reset(){if(won||expired||trialPending||dailyStartPending)return;clockSync();board=e.clone(puzzle.board);if(mode==='daily')dailyTrace.push({action:'reset'});undo=[];selected=null;render();saveCurrent();}
+function undoMove(){if(won||expired||trialPending||dailyStartPending||hintPreviewActive||hintSelection||!undo.length)return;clockSync();const last=undo.pop();board=e.clone(last.board);if(mode==='daily')for(let step=0;step<(last.steps||1);step++)dailyTrace.push({action:'undo'});selected=null;render();saveCurrent();}
+function reset(){if(won||expired||trialPending||dailyStartPending||hintPreviewActive||hintSelection)return;clockSync();board=e.clone(puzzle.board);if(mode==='daily')dailyTrace.push({action:'reset'});undo=[];selected=null;render();saveCurrent();}
 function showFailure(){
  const byMoves=failureReason==='moves';
  $('pipeTimeoutTitle').textContent=byMoves?'Move limit reached!':'Flow failed · Leak detected';
