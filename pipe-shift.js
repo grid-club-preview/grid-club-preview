@@ -136,6 +136,7 @@ function route(name){
 }
 function home(){cancelDrag();saveCurrent();route('menu');root.hidden=true;hub.hidden=false;}
 function menu(){saveCurrent();hub.hidden=true;root.hidden=false;route('menu');
+ $('pipeMenuWallet').textContent=`◉ ${creditBalance()} Club Credits`;
  $('pipeMainProgress').textContent=`${Object.keys(progress.completed).filter(n=>progress.completed[n]).length}/${MAX}`;
 }
 function statsMenu(){
@@ -363,13 +364,41 @@ function slide(from,to){if(won||expired||trialPending||!e.canMove(board,from,to)
  undo.push({board:e.clone(board),moves});if(undo.length>40)undo.shift();e.move(board,from,to);moves++;selected=null;
  if(mode==='daily')dailyTrace.push({action:'slide',from,to});
  const check=e.evaluate(board);
- if(check.solved){won=true;timerStop();if(mode!=='practice'&&!dailyPractice)recordCompletion(mode,currentSize,moves);if(mode==='levels'){
-     justClearedStage=!progress.completed[currentLevel]&&currentLevel===e.stageOf(currentLevel).last;
-     progress.completed[currentLevel]=true;if(!progress.best[currentLevel]||moves<progress.best[currentLevel].moves)progress.best[currentLevel]={moves,elapsed,when:new Date().toISOString()};
-   }else if(mode==='random'){progress.randomCount[currentSize]=(progress.randomCount[currentSize]||0)+1;
-     if(!progress.randomBest[currentSize]||moves<progress.randomBest[currentSize].moves)progress.randomBest[currentSize]={moves,elapsed};}
-   else if(mode==='daily'&&!dailyPractice){progress.daily[dailyDay]={completed:true,moves,events:dailyTrace.map(x=>({...x})),sync:'pending',verified:false,day:dailyDay};}
-   delete progress.active[activeKey()];save();if(mode==='daily'&&!dailyPractice)void submitDaily();render(check.flow);flowTimer=setTimeout(()=>{flowTimer=null;if(won&&section==='game')victory();},950);
+ if(check.solved){
+   won=true;timerStop();
+   creditReward={puzzle:0,stage:0,daily:0,saveFailed:false};
+   if(mode!=='practice'&&!dailyPractice)recordCompletion(mode,currentSize,moves);
+   if(mode==='levels'){
+     const first=!progress.completed[currentLevel],group=e.stageOf(currentLevel);
+     progress.completed[currentLevel]=true;
+     if(!progress.best[currentLevel]||moves<progress.best[currentLevel].moves)
+       progress.best[currentLevel]={moves,elapsed,when:new Date().toISOString()};
+     if(first&&!progress.firstAttemptFailed?.[currentLevel]){
+       const award=credits?.award('club:pipe:level:'+currentLevel,2,'pipe-level');
+       creditReward.puzzle=award?.awarded||0;
+       creditReward.saveFailed ||= !!award?.saveFailed;
+     }
+     justClearedStage=first&&currentLevel===group.last&&
+       Array.from({length:e.PUZZLES_PER_STAGE},(_,i)=>group.first+i).every(id=>!!progress.completed[id]);
+     if(justClearedStage){
+       const award=credits?.award('club:pipe:stage:'+group.id,5,'pipe-stage');
+       creditReward.stage=award?.awarded||0;
+       creditReward.saveFailed ||= !!award?.saveFailed;
+     }
+   }else if(mode==='random'){
+     progress.randomCount[currentSize]=(progress.randomCount[currentSize]||0)+1;
+     if(!progress.randomBest[currentSize]||moves<progress.randomBest[currentSize].moves)
+       progress.randomBest[currentSize]={moves,elapsed};
+   }else if(mode==='daily'&&!dailyPractice){
+     progress.daily[dailyDay]={completed:true,moves,events:dailyTrace.map(x=>({...x})),sync:'pending',verified:false,day:dailyDay};
+     const award=credits?.award('club:pipe:daily:'+dailyDay,10,'pipe-daily');
+     creditReward.daily=award?.awarded||0;
+     creditReward.saveFailed ||= !!award?.saveFailed;
+   }
+   delete progress.active[activeKey()];save();
+   if(mode==='daily'&&!dailyPractice)void submitDaily();
+   render(check.flow);
+   flowTimer=setTimeout(()=>{flowTimer=null;if(won&&section==='game')victory();},950);
  }else if(moveLimit!==null&&moves>=moveLimit){timeout('moves');}
  else{render();saveCurrent();}
  return true;
@@ -408,6 +437,11 @@ function victory(){const phrases=globalThis.GridClubWinMessages?.pipeShift||{};c
  const celebration=$('pipeStageCelebration'),result=$('pipeResult');
  result.classList.remove('pipeStageWin','pipeGrandFinale');
  celebration.hidden=true;
+ const earned=(creditReward?.puzzle||0)+(creditReward?.stage||0)+(creditReward?.daily||0);
+ $('pipeCreditReward').hidden=!earned&&!creditReward?.saveFailed;
+ $('pipeCreditReward').textContent=creditReward?.saveFailed?
+   'Some credit rewards could not be saved.':
+   `+${earned} Club Credits${creditReward?.stage?` (includes +${creditReward.stage} level bonus)`:''} · Balance: ${creditBalance()} ◉`;
  $('pipeResultTitle').textContent=names[(moves+(currentLevel||0))%names.length];
  if(mode==='random'){$('pipeResultMessage').textContent=`${moves} moves`;$('pipeResultNext').hidden=false;$('pipeResultNext').textContent='Next puzzle →';$('pipeResultLevels').textContent='Back to Free Play';}
  else if(mode==='daily'||mode==='practice'){$('pipeResultMessage').textContent=`${moves} moves · ${dailyDay}${dailyPractice?' · practice':''}`;$('pipeResultNext').hidden=true;$('pipeResultLevels').textContent='Daily leaderboard';}
