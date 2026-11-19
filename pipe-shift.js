@@ -67,7 +67,10 @@ function updateClock(){
  const limit=puzzle?.timerMs;$('pipeClockBox').hidden=!limit;
  if(!limit)return;
  const remaining=Math.max(0,Math.ceil((limit-elapsed)/1000)),mm=String(Math.floor(remaining/60)).padStart(2,'0'),ss=String(remaining%60).padStart(2,'0');
- $('pipeClock').textContent=`${mm}:${ss}`;$('pipeClockBox').dataset.low=String(remaining<=30);
+ $('pipeClock').textContent=`${mm}:${ss}`;
+ $('pipeClockBox').dataset.low=String(remaining<=30);
+ // Start the red alert below 15 seconds on timed Levels only.
+ $('pipeClockBox').dataset.critical=String(remaining>0&&remaining<15&&!won&&!expired);
 }
 function saveCurrent(){if(!puzzle||!board||won)return;
  clockSync();progress.active[activeKey()]={board:e.clone(board),moves,elapsed,expired,started:!trialPending,catalogVersion:mode==='levels'?5:mode==='daily'||mode==='practice'?puzzle.dailyVersion:null,seed:puzzle.seed??null,
