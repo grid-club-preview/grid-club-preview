@@ -281,7 +281,9 @@
     const fixed=mode==='level'?levelCore.get(levelId):null;
     const seed = mode === 'daily' ? dailyLevelSeed() : fixed?fixed.seed:randomSeed();
     const plain=core.generate(size,seed,{daily:mode==='daily'});
-    const blocked=fixed?.blocked?.length?core.withBlocked(plain,fixed.blocked):plain;
+    const curatedPath=Number.isInteger(fixed?.blockedPathIndex)?plain.solution[fixed.blockedPathIndex]:null;
+    const blocked=fixed?.blocked?.length?core.withBlocked(plain,fixed.blocked):
+      curatedPath?core.withBlocked(plain,curatedPath):plain;
     // Curated Hard/Expert levels gain extra coloured pairs by splitting
     // existing complete solution paths. Previous saved boards remain playable.
     const puzzle=fixed?.extraPairs?core.withExtraPairs(blocked,fixed.extraPairs):blocked;
