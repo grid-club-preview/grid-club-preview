@@ -259,8 +259,9 @@
   function updateHome() {
     const solved=dailySolved();
     $('solvedTag').hidden = !solved;
-    $('dailyStartText').textContent = dailySolved() ? 'View today’s stats' :
-      savedGame('daily',11) ? 'Continue today’s puzzle' : 'Play today’s puzzle';
+    $('dailyStartText').textContent = '11×11 · '+(solved?'View today’s stats':
+      savedGame('daily',11) ? 'Continue today’s puzzle' : 'Play today’s puzzle');
+    $('dotMenuWallet').textContent=`◉ ${walletBalance()}`;
     $('freeStartText').textContent = 'Dot Trails';
     const progress=loadLevelState();
     const finished=Object.keys(progress.completed).filter(id=>progress.completed[id]).length;
@@ -410,13 +411,33 @@
       statBox('Stages',`${stagesComplete}/15`)
     );
     const levels=$('difficultyStats');levels.replaceChildren();
-    for(const x of reports.levels){
-      const card=document.createElement('div');card.className='difficultyStat';
-      const name=document.createElement('strong');name.textContent=`${x.name} · ${x.size}×${x.size}`;
-      const detail=document.createElement('small');
-      detail.textContent=x.count?`${statsUtil.plural(x.count,'puzzle')} · Average ${statsUtil.fmt(x.averageMs)} · Best ${statsUtil.fmt(x.bestMs)} · ${x.averageMoves} avg moves · ${x.assistedCount} assisted`:'No puzzles completed yet';
-      card.append(name,detail);levels.append(card);
+    // Comparable columns make the timing differences across grid sizes clear.
+    // All values come from the existing local stats summary; no data migration.
+    const table=document.createElement('table');table.className='difficultyTable';
+    const head=document.createElement('thead'),headRow=document.createElement('tr');
+    for(const heading of ['Difficulty','Solved','Average','Median','Best']){
+      const th=document.createElement('th');th.scope='col';th.textContent=heading;
+      headRow.append(th);
     }
+    head.append(headRow);table.append(head);
+    const body=document.createElement('tbody');
+    for(const x of reports.levels){
+      const row=document.createElement('tr'),nameCell=document.createElement('td');
+      const name=document.createElement('strong');name.className='difficultyName';name.textContent=x.name;
+      const detail=document.createElement('small');detail.className='difficultyDetail';
+      detail.textContent=`${x.size}×${x.size}${x.count?` · ${x.averageMoves} avg moves${x.assistedCount?` · ${x.assistedCount} assisted`:''}`:''}`;
+      nameCell.append(name,detail);row.append(nameCell);
+      const values=[x.count,x.averageMs,x.medianMs,x.bestMs];
+      for(let i=0;i<values.length;i++){
+        const cell=document.createElement('td');
+        const present=i===0||x.count>0;
+        cell.textContent=present?(i===0?String(values[i]):statsUtil.fmt(values[i])):'—';
+        if(i>0)cell.className=present?'difficultyTime':'difficultyEmpty';
+        row.append(cell);
+      }
+      body.append(row);
+    }
+    table.append(body);levels.append(table);
     const daily=$('dailyStats');daily.replaceChildren(
       statBox('Daily average',reports.daily.count?statsUtil.fmt(reports.daily.averageMs):'—'),
       statBox('Daily best',reports.daily.count?statsUtil.fmt(reports.daily.bestMs):'—')
