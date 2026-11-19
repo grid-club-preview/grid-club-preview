@@ -293,7 +293,8 @@ const ITEMS=[
     "quality": 141,
     "pairs": 7,
     "limitSec": 216,
-    "extraPairs": 2
+    "extraPairs": 2,
+    "blockedPathIndex": 4
   },
   {
     "id": 30,
@@ -324,7 +325,8 @@ const ITEMS=[
     "quality": 148,
     "pairs": 8,
     "limitSec": 255,
-    "extraPairs": 2
+    "extraPairs": 2,
+    "blockedPathIndex": 2
   },
   {
     "id": 33,
@@ -345,7 +347,8 @@ const ITEMS=[
     "quality": 145,
     "pairs": 7,
     "limitSec": 201,
-    "extraPairs": 2
+    "extraPairs": 2,
+    "blockedPathIndex": 0
   },
   {
     "id": 35,
