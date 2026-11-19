@@ -343,9 +343,15 @@ function begin(p,kind,id,skipSave=false){
  saveCurrent();
 }
 function startLevel(n){if(!Number.isInteger(n)||n<1||n>MAX||!canStartLevel(n))return;
- // Earlier in-progress v5 boards retain their original shape and valid
- // solution. Fresh attempts and retries use the new, varied v6 layouts.
- const savedVersion=progress.active[`level:${n}`]?.catalogVersion;
+ // Preserve meaningful attempts from earlier board versions. For the two
+ // newly redesigned puzzles, an untouched old board is safely replaced
+ // without consuming a first attempt or taking away paid time.
+ const slot=`level:${n}`,stored=progress.active[slot];
+ if([27,28].includes(n)&&stored?.catalogVersion===6&&
+   Number(stored.moves||0)===0&&Number(stored.extraTimeCount||0)===0){
+   delete progress.active[slot];save();
+ }
+ const savedVersion=progress.active[slot]?.catalogVersion;
  const variant=savedVersion===5?true:savedVersion===6&&[27,28].includes(n)?6:false;
  begin(e.get(n,undefined,variant),'levels',n);
 }
