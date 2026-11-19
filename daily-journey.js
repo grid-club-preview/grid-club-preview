@@ -16,6 +16,8 @@
    const rotated=index<0?order:[...order.slice(index+1),...order.slice(0,index+1)];
    return rotated.find(id=>!s.completed[id])||null;
  }
+ function remaining(){const s=status();return Math.max(0,s.total-s.count);}
+ function remainingLabel(){return `Daily Challenges remaining: ${remaining()}`;}
  function summary(){
    const s=status();
    return `${s.count}/${s.total} complete today · Dot Trails ${s.completed.dotTrails?'✓':'○'} · Pipe Shift ${s.completed.pipeShift?'✓':'○'}`;
@@ -33,5 +35,5 @@
    }
    return true;
  }
- root.GridClubDailyJourney=Object.freeze({status,nextGame,summary,visitNext});
+ root.GridClubDailyJourney=Object.freeze({status,nextGame,remaining,remainingLabel,summary,visitNext});
 })(globalThis);
