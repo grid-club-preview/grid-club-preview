@@ -34,10 +34,21 @@
     .overviewItem{background:var(--surface);border:1px solid #344157;border-radius:15px;padding:15px;}
     .overviewItem small{display:block;color:var(--muted);font-size:12px;margin-bottom:8px;}
     .overviewItem strong{display:block;font-size:22px;font-variant-numeric:tabular-nums;}
-    .difficultyStats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
-    .difficultyStat{background:var(--surface);border-radius:15px;padding:14px;border:1px solid #354258;}
-    .difficultyStat strong{display:block;font-size:16px;margin-bottom:7px;}
-    .difficultyStat small{display:block;color:var(--muted);font-size:12px;line-height:1.55;}
+    .difficultyStats{overflow-x:auto;border:1px solid #3b4a62;border-radius:15px;background:var(--surface);-webkit-overflow-scrolling:touch;}
+    .difficultyTable{border-collapse:collapse;width:100%;min-width:320px;text-align:left;font-size:12px;font-variant-numeric:tabular-nums;}
+    .difficultyTable thead{background:#283950;color:#c3d0df;}
+    .difficultyTable th,.difficultyTable td{padding:12px 7px;border-bottom:1px solid #344357;vertical-align:middle;white-space:nowrap;}
+    .difficultyTable th{font-size:11px;letter-spacing:.15px;font-weight:800;}
+    .difficultyTable td:first-child,.difficultyTable th:first-child{padding-left:12px;}
+    .difficultyTable td:last-child,.difficultyTable th:last-child{padding-right:12px;}
+    .difficultyTable tbody tr:last-child td{border-bottom:0;}
+    .difficultyTable tbody tr:nth-child(even){background:#202d43;}
+    .difficultyTable .difficultyName{font-size:13px;color:#f3f7fd;font-weight:800;}
+    .difficultyTable .difficultyDetail{display:block;color:#a2b6cb;font-size:10px;font-weight:500;line-height:1.4;margin-top:3px;white-space:normal;}
+    .difficultyTable .difficultyTime{font-weight:800;color:#b6e9df;}
+    .difficultyTable .difficultyEmpty{color:#91a4b9;font-weight:500;}
+    .difficultyTable td:not(:first-child),.difficultyTable th:not(:first-child){text-align:right;}
+    @media(max-width:380px){.difficultyTable th,.difficultyTable td{padding:10px 5px;}.difficultyTable td:first-child,.difficultyTable th:first-child{padding-left:9px;}}
     .communityCard{background:var(--surface);border-radius:15px;padding:15px;border:1px solid #394a60;margin:10px 0;}
     .communityCard strong{display:block;color:var(--mint);margin-bottom:6px;}
     .communityCard p{margin:5px 0;font-size:13px;color:#dae5ef;line-height:1.5;}
@@ -194,8 +205,16 @@
     .winInner button.secondary {background:transparent;color:white;margin-top:7px;}
 
     /* Dot Trails owns its daily challenge and its statistics. Home remains a game hub. */
-    .dotDailyCard {margin-bottom:23px;}
-    .dotDailyCard p{margin-top:12px;}
+    /* Shared game-header credit badge and compact Dot Trails hero. */
+    .clubWalletBadge{margin-left:auto;flex:none;border:1px solid #9b8152;border-radius:999px;padding:8px 12px;background:#433a2b;color:#ffdd91;font-size:14px;font-weight:850;white-space:nowrap;font-variant-numeric:tabular-nums;}
+    .dotDailyFeature{background:linear-gradient(115deg,#20544e,#244860);border:1px solid #76cbb8;padding:18px 16px;margin:5px 0 13px;box-shadow:0 5px 20px #07101d43;}
+    .dotDailyFeature .modeIcon{background:#36746c;border:1px solid #89dcc8;color:#e0fff6;}
+    .dotDailyFeature strong{color:#e9fff9;font-size:19px;}
+    .dotDailyFeature .modeArrow{color:#c5fff0;}
+    .dotDailyFeature .dotSolvedTag{color:#acebd6;font-size:11px;font-weight:800;}
+    .dotHeroBanner{display:grid;place-items:center;min-height:96px;margin:0 0 12px;padding:11px 14px;background:#1c2b43;border:1px solid #344963;border-radius:20px;}
+    .dotHeroBanner svg{display:block;width:142px;max-width:100%;height:72px;}
+    @media(max-width:380px){.dotDailyFeature strong{font-size:17px;}.clubWalletBadge{font-size:12px;padding:7px 9px;}}
     .dotSectionLabel{color:var(--muted);margin:4px 0 12px;}
     .dotStatsLink{margin:18px 0 14px;}
     .playModeCard{width:100%;display:flex;gap:16px;align-items:center;text-align:left;padding:18px 17px;margin:11px 0;background:var(--surface);border:1px solid #38495f;border-radius:17px;color:#eff9fa;}
@@ -294,7 +313,7 @@
 <body>
   <main class="shell">
     <section id="home">
-      <header><div><div class="eyebrow">GRID CLUB</div><h1>A little puzzle break.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.11</span></div></header>
+      <header><div><div class="eyebrow">GRID CLUB</div><h1>A little puzzle break.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.12</span></div></header>
       <details class="backendCheck" aria-label="Leaderboard connection diagnostics">
         <summary class="backendCheckTitle">Connection diagnostics (beta)</summary>
         <p id="backendCheckMessage" role="status" aria-live="polite">Checking configuration…</p>
@@ -333,13 +352,12 @@
       <div id="pipe-menu">
         <div class="pipeHeader"><button class="back" id="pipeHomeBack" aria-label="Back to Grid Club">‹</button>
           <div><div class="eyebrow">GRID CLUB</div><h2>Pipe Shift</h2></div>
-          <span class="pipeHeaderMeta" id="pipeMainProgress">0/42</span>
+          <span class="clubWalletBadge" id="pipeMenuWallet" aria-label="Club Credits balance">◉ 0</span>
         </div>
         <button type="button" class="pipeButton pipeDailyFeature" id="pipeDailyEntry">
           <span class="pipeButtonIcon" aria-hidden="true">◷</span>
           <span><strong>Today's Daily Challenge</strong><small>One puzzle worldwide · fewest moves wins</small></span><span class="pipeChevron">›</span>
         </button>
-        <p id="pipeMenuWallet" class="pipeWalletStatus">◉ 0 Club Credits</p>
         <div class="pipeCard pipeHero" aria-hidden="true">
           <svg width="133" height="73" viewBox="0 0 170 93" fill="none" style="max-width:100%">
             <path d="M10 28H60V69H110V33H160" stroke="#17263b" stroke-width="27" stroke-linecap="round" stroke-linejoin="round"/>
@@ -354,7 +372,7 @@
         </button>
         <button type="button" class="pipeButton" id="pipeLevelsEntry">
           <span class="pipeButtonIcon" aria-hidden="true">🏆</span>
-          <span><strong>Play Levels</strong><small>42 progressive puzzles · 7 per level</small></span><span class="pipeChevron">›</span>
+          <span><strong>Play Levels</strong><small id="pipeLevelsSummary">Level 1 · 42 puzzles remaining</small></span><span class="pipeChevron">›</span>
         </button>
         <button type="button" class="pipeStatsTextLink" id="pipeStatsEntry">
           Your stats <span aria-hidden="true">→</span>
@@ -476,8 +494,8 @@
         <div><div class="eyebrow">GRID CLUB · DOT TRAILS</div><h2>Your statistics</h2></div></div>
       <p class="chooseIntro">Your progress and daily results.</p>
       <div id="statsOverview" class="overviewRow" aria-label="Your performance overview"></div>
-      <div class="statHeading">Your Free Play and Level averages</div>
-      <div id="difficultyStats" class="difficultyStats" aria-label="Statistics by difficulty"></div>
+      <div class="statHeading">Performance by difficulty</div>
+      <div id="difficultyStats" class="difficultyStats" aria-label="Free Play and Levels performance by difficulty"></div>
       <div class="statHeading">Daily Challenge history</div>
       <div id="dailyStats" class="overviewRow"></div>
       <div class="statHeading">Today's verified community <span id="communityDay"></span></div>
@@ -488,12 +506,27 @@
     <section id="difficultyScreen" hidden>
       <div class="chooseHeader">
         <button class="back" id="chooseBack" aria-label="Back to Grid Club games">‹</button>
-        <div><div class="eyebrow">GRID CLUB · DOT TRAILS</div><h2>Dot Trails</h2></div>
+        <div><div class="eyebrow">GRID CLUB</div><h2>Dot Trails</h2></div>
+        <span class="clubWalletBadge" id="dotMenuWallet" aria-label="Club Credits balance">◉ 0</span>
       </div>
-      <div class="panel hero dotDailyCard">
-        <div class="eyebrow">◷ &nbsp; TODAY'S CHALLENGE <span id="solvedTag" style="float:right" hidden>✓ SOLVED</span></div>
-        <p>11×11 · Fill every square</p>
-        <button class="primary" id="dailyStart"><span id="dailyStartText">Play today's puzzle</span><span>→</span></button>
+      <button type="button" id="dailyStart" class="playModeCard dotDailyFeature">
+        <span class="modeIcon" aria-hidden="true">◷</span>
+        <span class="modeCopy">
+          <strong>Today's Daily Challenge</strong>
+          <small id="dailyStartText">11×11 · Play today's puzzle</small>
+          <small id="solvedTag" class="dotSolvedTag" hidden>✓ Solved today</small>
+        </span>
+        <span class="modeArrow" aria-hidden="true">›</span>
+      </button>
+      <div class="dotHeroBanner" aria-hidden="true">
+        <svg viewBox="0 0 170 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M14 19H71V43H111V19H157" stroke="#152b37" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M14 19H71V43H111V19H157" stroke="#78dfcc" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="14" cy="19" r="7" fill="#a5f5df"/><circle cx="157" cy="19" r="7" fill="#a5f5df"/>
+          <path d="M14 68H49V49H88V72H157" stroke="#152b37" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M14 68H49V49H88V72H157" stroke="#bba4ff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="14" cy="68" r="7" fill="#d6c9ff"/><circle cx="157" cy="72" r="7" fill="#d6c9ff"/>
+        </svg>
       </div>
       <button type="button" id="randomStart" class="playModeCard"><span class="modeIcon" aria-hidden="true">⤨</span><span class="modeCopy"><strong>Free Play</strong><small>Choose a difficulty</small></span><span class="modeArrow" aria-hidden="true">›</span></button>
       <button type="button" id="levelsStart" class="playModeCard levelsModeCard"><span class="modeIcon" aria-hidden="true">🏆</span><span class="modeCopy"><strong>Play Levels</strong><small id="levelsSubtitle">Complete levels · Earn credits</small></span><span class="modeArrow" aria-hidden="true">›</span></button>
@@ -573,7 +606,7 @@
       </div>
       
       <div class="adSlot" id="adSlot" aria-hidden="true" hidden></div>
-      <footer>Grid Club · v0.9.11 beta</footer>
+      <footer>Grid Club · v0.9.12 beta</footer>
     </section>
   </main>
   <div class="pauseLayer" id="timeUpLayer" hidden role="dialog" aria-modal="true" aria-labelledby="timeUpTitle"><div class="pauseInner"><div style="font-size:47px;color:var(--mint)">◷</div><h2 id="timeUpTitle">Time's up!</h2><p>Retry for free (first-attempt puzzle credits forfeited), or continue this attempt for credits.</p><button id="timeUpBoost" type="button">Continue +30 seconds · 30 ◉</button><p id="timeUpBoostNote" class="timeUpBoostNote" role="status" aria-live="polite"></p><button id="timeUpRetry" class="secondary">Retry puzzle</button><button id="timeUpBack" class="secondary">Return to Levels</button></div></div>
@@ -595,9 +628,9 @@
   <script src="win-messages.js?v=0.9.4"></script>
   <script src="daily-journey.js?v=0.9.9"></script>
   <script src="club-credits.js?v=0.9.11"></script>
-  <script src="game.js?v=0.9.11"></script>
+  <script src="game.js?v=0.9.12"></script>
   <script src="pipe-engine.js?v=0.9.11"></script>
-  <script src="pipe-shift.js?v=0.9.11"></script>
+  <script src="pipe-shift.js?v=0.9.12"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol === 'https:') {
       addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
