@@ -441,6 +441,36 @@ function freshRandomSeed(){
  try{if(globalThis.crypto?.getRandomValues){const data=new Uint32Array(1);crypto.getRandomValues(data);seed^=data[0];}}catch(_){}
  return seed>>>0;
 }
+// Only the live, player-connected pipe network is inspected here.
+// The feedback never reveals the authored solved board or unseen moves.
+// A missing definition of this helper blanked every Pipe Shift board in
+// v0.9.19/v0.9.20, because render() called it before creating the tiles.
+function expertFlowFeedback(p,current){
+ if(!p?.requireAllFlow||!Array.isArray(current))return null;
+ const result=e.evaluate(current),wet=new Set(result.flow);
+ const dry=current.flatMap((tile,i)=>
+   tile.kind==='pipe'&&!tile.decoy&&!wet.has(i)?[i]:[]);
+ const total=current.filter(tile=>tile.kind==='pipe'&&!tile.decoy).length;
+ const connected=total-dry.length;
+ const marker=current.findIndex(tile=>tile.transportPiece);
+ const destination=marker<0?-1:(current[marker].transportTarget??current.length-1);
+ const markerReady=marker<0||marker===destination;
+ let message;
+ if(result.reachedOutlet&&dry.length){
+   message=`IN to OUT connected · ${dry.length} pipe${dry.length===1?'':'s'} still dry. Connect the highlighted pipes.`;
+ }else if(result.reachedOutlet&&result.leaks){
+   message=`IN to OUT connected · ${result.leaks} open pipe connection${result.leaks===1?'':'s'} still leaking.`;
+ }else if(result.reachedOutlet&&!markerReady){
+   message='Every pipe carries water, but the gold-marked pipe is not on its outlined target.';
+ }else if(result.reachedOutlet){
+   message='All connections complete.';
+ }else{
+   message=`Water reaches ${connected}/${total} pipes. Connect IN to OUT, then check every pipe.`;
+ }
+ return {message,dry:result.reachedOutlet?dry:[],dryCount:dry.length,
+   connected,total,outletReached:result.reachedOutlet,leaks:result.leaks,
+   markerReady,solved:result.solved};
+}
 function puzzleInstruction(p){
  if(!p)return '';
  if(p.freeObjective==='any')
