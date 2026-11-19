@@ -1,15 +1,15 @@
-/* Grid Club Pipe Shift v0.9.4 · reproducible challenges and shortcut-audited levels */
+/* Grid Club Pipe Shift v0.9.5 · reproducible challenges and shortcut-audited levels */
 (function(root,factory){const api=factory();if(typeof module!=='undefined'&&module.exports)module.exports=api;if(root)root.PipeEngine=api;})(typeof globalThis!=='undefined'?globalThis:this,function(){
 'use strict';
-const N=1,E=2,S=4,W=8,SIZE=5,MAX_LEVEL=30;
+const N=1,E=2,S=4,W=8,SIZE=5,MAX_LEVEL=42,PUZZLES_PER_STAGE=7;
 const DIRECTIONS=[{bit:N,dx:0,dy:-1,opposite:S},{bit:E,dx:1,dy:0,opposite:W},{bit:S,dx:0,dy:1,opposite:N},{bit:W,dx:-1,dy:0,opposite:E}];
 const STAGES=[
- {id:1,name:'Beginner',size:5,first:1,last:5,mode:'path'},
- {id:2,name:'Advanced',size:6,first:6,last:10,mode:'path'},
- {id:3,name:'Expert',size:7,first:11,last:15,mode:'path'},
- {id:4,name:'Expert · Branches',size:7,first:16,last:20,mode:'loop'},
- {id:5,name:'Expert · Multiple terminals',size:7,first:21,last:25,mode:'multiple'},
- {id:6,name:'Expert · Full network',size:7,first:26,last:30,mode:'double'}
+ {id:1,name:'Beginner',size:5,first:1,last:7,mode:'path'},
+ {id:2,name:'Advanced',size:6,first:8,last:14,mode:'path'},
+ {id:3,name:'Expert',size:7,first:15,last:21,mode:'path'},
+ {id:4,name:'Expert · Branches',size:7,first:22,last:28,mode:'loop'},
+ {id:5,name:'Expert · Multiple terminals',size:7,first:29,last:35,mode:'multiple'},
+ {id:6,name:'Expert · Full network',size:7,first:36,last:42,mode:'double'}
 ];
 const sizeOf=b=>Array.isArray(b)&&[5,6,7].includes(Math.sqrt(b.length))?Math.sqrt(b.length):0;
 const id=(x,y,s=5)=>x+y*s,at=(i,s=5)=>({x:i%s,y:Math.floor(i/s)});
@@ -116,19 +116,21 @@ function timerFor(n){const s=stageOf(n);if(!s)return null;const at=n-s.first;if(
  // Challenge clock begins after the pre-trial prompt; Level 3 is calibrated to user testing.
  const base=[70,115,125,165,210,245][s.id-1];
  const finaleReduction=[18,20,22,25,30,35][s.id-1];
- return (base-(at===4?finaleReduction:0))*1000;}
+ return (at===4?base-finaleReduction:at===5?base+20:at===6?base+10:base)*1000;}
 const cache=new Map();
 const FIXED_SEEDS=Object.freeze({1:3074878952,2:4088790921,3:3074894406,4:3074902133,5:4088814102,6:1434386060,7:1434393787,8:420497272,9:420504999,10:3074948495,11:3074956222,12:420528180,13:3074971676,14:420543634,15:3074987130,16:3074994857,17:420566815,18:4088914553,19:1434486511,20:3462302722,21:3075033492,22:3075041219,23:420613177,24:420620904,25:420628631,26:3075072127,27:3075079854,28:420651812,29:420659539,30:420667266}); // Audited 2026-11-18; freeze for this catalogue.
+const EXTRA_SEEDS=Object.freeze({6:3074917587,7:4088829556,13:420535907,14:2835629075,20:4088930007,21:3075033492,27:1434548327,28:1434556054,34:1434602416,35:1434610143,41:4089092274,42:4089100001}); // Additional audited puzzle seeds.
 function get(n,seedOverride){if(!Number.isInteger(n)||n<1||n>MAX_LEVEL)return null;
  const override=Number.isInteger(seedOverride),key=override?`trial:${n}:${seedOverride}`:n;
  if(!cache.has(key)){
-   const s=stageOf(n),k=n-s.first,seed=(override?seedOverride:(FIXED_SEEDS[n]??((0x190f5600+n*7727)>>>0)))>>>0;
+   const s=stageOf(n),k=n-s.first,originalId=k<5?(s.id-1)*5+k+1:null;
+   const seed=(override?seedOverride:(FIXED_SEEDS[originalId]??EXTRA_SEEDS[n]))>>>0;
    // A solved, leak-free network is constructed first, with dense pipe decoys
    // and unmistakable fixed metal plates, then scrambled by legal slides.
    // Previous completions are preserved; unfinished v0.9.2 boards are restarted.
    const options={size:s.size,mode:s.mode,seed,
      complexity:1+Math.floor(k/2),
-     fixedCount:s.id===1?Math.floor(k/2):s.id===2?2+k:Math.min(7,s.id-1+Math.floor(k/2)),
+     fixedCount:s.id===1?Math.floor(k/2):s.id===2?Math.min(7,2+k):Math.min(7,s.id-1+Math.floor(k/2)),
      walls:s.id===1?1+Math.floor(k/2):s.id===2?2+Math.floor(k/2):Math.min(7,2+Math.floor(k/2)+Math.floor((s.id-3)/2)),
      decoys:s.id===1?7+k:s.id===2?9+2*k:18+2*k+Math.max(0,s.id-3),
      blocks:s.id<=2?0:s.id===3?(k>=2?1+Math.floor((k-2)/2):0):2+(s.id-4)+Math.floor(k/2)};
@@ -190,5 +192,5 @@ function random(size,seed){if(![5,6,7].includes(size))throw Error('Unknown Rando
  return {mode:'random',size,seed,timerMs:null,level:null,stage:null,...scrambled,solvedBoard,initialMoves:scrambled.solutionMoves.length,networkType:mode};
 }
 function validateBoard(b){const size=sizeOf(b);return !!size&&b.every(t=>t&&['empty','wall','block','pipe','source','sink'].includes(t.kind)&&Number.isInteger(t.mask)&&t.mask>=0&&t.mask<=15&&typeof t.fixed==='boolean'&&(t.kind==='pipe'||t.kind==='source'||t.kind==='sink'||t.mask===0))&&[1,2].includes(b.filter(t=>t.kind==='source').length)&&[1,2].includes(b.filter(t=>t.kind==='sink').length);}
-return Object.freeze({SIZE,MAX_LEVEL,N,E,S,W,DIRECTIONS,STAGES,sizeOf,at,id,adjacent,direction,clone,rng,get,random,daily,hashSeed,stageOf,timerFor,move,canMove,legalMoves,evaluate,validateBoard,signature});
+return Object.freeze({SIZE,MAX_LEVEL,PUZZLES_PER_STAGE,N,E,S,W,DIRECTIONS,STAGES,sizeOf,at,id,adjacent,direction,clone,rng,get,random,daily,hashSeed,stageOf,timerFor,move,canMove,legalMoves,evaluate,validateBoard,signature});
 });
