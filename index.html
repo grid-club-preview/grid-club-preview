@@ -12,7 +12,7 @@
   <link rel="icon" href="./icons/icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
   <title>Grid Club · Dot Trails &amp; Pipe Shift</title>
-  <link rel="stylesheet" href="pipe-shift.css?v=0.9.6">
+  <link rel="stylesheet" href="pipe-shift.css?v=0.9.9">
   <style>
     :root { color-scheme: dark; --bg:#0e1424; --surface:#1a243a; --tile:#253147; --muted:#9daabe; --mint:#7be3d4; --purple:#a178ff; }
     * { box-sizing: border-box; }
@@ -294,7 +294,7 @@
 <body>
   <main class="shell">
     <section id="home">
-      <header><div><div class="eyebrow">GRID CLUB</div><h1>A little puzzle break.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.8</span></div></header>
+      <header><div><div class="eyebrow">GRID CLUB</div><h1>A little puzzle break.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.9</span></div></header>
       <details class="backendCheck" aria-label="Leaderboard connection diagnostics">
         <summary class="backendCheckTitle">Connection diagnostics (beta)</summary>
         <p id="backendCheckMessage" role="status" aria-live="polite">Checking configuration…</p>
@@ -337,7 +337,7 @@
         </div>
         <button type="button" class="pipeButton pipeDailyFeature" id="pipeDailyEntry">
           <span class="pipeButtonIcon" aria-hidden="true">◷</span>
-          <span><strong>Today's Daily Challenge</strong><small>One puzzle worldwide · fewest moves wins</small><small class="dailyJourneyStatus" id="pipeDailyStatus"></small></span><span class="pipeChevron">›</span>
+          <span><strong>Today's Daily Challenge</strong><small>One puzzle worldwide · fewest moves wins</small></span><span class="pipeChevron">›</span>
         </button>
         <div class="pipeCard pipeHero" aria-hidden="true">
           <svg width="133" height="73" viewBox="0 0 170 93" fill="none" style="max-width:100%">
@@ -355,9 +355,8 @@
           <span class="pipeButtonIcon" aria-hidden="true">🏆</span>
           <span><strong>Play Levels</strong><small>42 progressive puzzles · 7 per level</small></span><span class="pipeChevron">›</span>
         </button>
-        <button type="button" class="pipeButton" id="pipeStatsEntry">
-          <span class="pipeButtonIcon" aria-hidden="true">▥</span>
-          <span><strong>Your stats</strong></span><span class="pipeChevron">›</span>
+        <button type="button" class="pipeStatsTextLink" id="pipeStatsEntry">
+          Your stats <span aria-hidden="true">→</span>
         </button>
       </div>
       <div id="pipe-daily" hidden>
@@ -370,10 +369,7 @@
           <p>Fix the flow using as few moves as possible.</p>
           <p id="pipeDailyNote">One ranked result per day. No timer.</p>
           <button id="pipeDailyPlay" type="button" class="pipeButton pipeDailyAction">Play today’s puzzle</button>
-          <p id="pipeDailyLandingStatus" class="dailyJourneyStatus"></p>
         </div>
-        <button type="button" id="pipeDailyLandingNext" class="dailyJourneyNext" hidden>Next Daily Challenge &gt;</button>
-        <p id="pipeDailyLandingDone" class="dailyJourneyDone" hidden>More Daily Challenges tomorrow</p>
         <div class="pipeDailyBoard">
           <div class="pipeDailyBoardHeader"><strong>Global leaderboard</strong><button id="pipeDailyRefresh" type="button">Refresh</button></div>
           <div id="pipeDailyRank" class="pipeDailyRank" aria-live="polite"></div>
@@ -425,6 +421,7 @@
             <div id="pipeClockBox" hidden><small>Time left</small><strong id="pipeClock">03:00</strong></div>
             <span id="pipeGridSize" class="pipeGridLabel">5×5</span>
           </div>
+          <div id="pipeBestBox" class="pipeBestLine" hidden>Personal best <strong id="pipeBestMoves">—</strong></div>
           <div class="pipeBoardHolder">
             <div id="pipeBoard" class="pipeBoard" role="group" aria-label="Pipe Shift sliding grid"></div>
             <div class="pipeResult" id="pipeResult" hidden role="dialog" aria-label="Puzzle complete">
@@ -436,6 +433,7 @@
                   <strong id="pipeStageHeading" class="pipeStageHeading">Level complete!</strong>
                 </div>
                 <button type="button" id="pipeResultNext">Next puzzle →</button>
+                <p id="pipeDailyRemainingWin" class="dailyJourneyRemaining" hidden></p>
                 <button type="button" id="pipeDailyNextWin" class="dailyJourneyNext" hidden>Next Daily Challenge &gt;</button>
                 <p id="pipeDailyTomorrowWin" class="dailyJourneyDone" hidden>More Daily Challenges tomorrow</p>
                 <button type="button" class="pipeSecondary" id="pipeResultLevels">Back to Levels</button>
@@ -443,14 +441,14 @@
             </div>
             <div class="pipeResult pipeTrialIntro" id="pipeTimeIntro" hidden role="dialog" aria-modal="true" aria-label="Time trial">
               <div class="pipeResultInner"><div class="pipeVictoryIcon" aria-hidden="true">⏱</div>
-                <h3>Fix that leak. Time is running out!</h3>
-                <p>Beat the clock to restore the flow.</p>
-                <button type="button" id="pipeTrialStart">Start time trial →</button>
+                <h3>Time and moves matter!</h3>
+                <p id="pipeTrialDescription">Restore the flow before the clock or move budget runs out.</p>
+                <button type="button" id="pipeTrialStart">Start challenge →</button>
               </div>
             </div>
             <div class="pipeResult" id="pipeTimeout" hidden role="dialog" aria-label="Time's up">
               <div class="pipeResultInner"><div class="pipeVictoryIcon" aria-hidden="true">⌛</div>
-                <h3>Time's up!</h3><p>Try this puzzle again.</p>
+                <h3 id="pipeTimeoutTitle">Time's up!</h3><p id="pipeTimeoutMessage">Try this puzzle again.</p>
                 <button type="button" id="pipeRetry">Retry</button>
                 <button type="button" class="pipeSecondary" id="pipeTimeoutBack">Back to Levels</button>
               </div>
@@ -488,10 +486,7 @@
       <div class="panel hero dotDailyCard">
         <div class="eyebrow">◷ &nbsp; TODAY'S CHALLENGE <span id="solvedTag" style="float:right" hidden>✓ SOLVED</span></div>
         <p>11×11 · Fill every square</p>
-        <p id="dotDailyStatus" class="dailyJourneyStatus"></p>
         <button class="primary" id="dailyStart"><span id="dailyStartText">Play today's puzzle</span><span>→</span></button>
-        <button type="button" id="dotDailyNextHome" class="dailyJourneyNext" hidden>Next Daily Challenge &gt;</button>
-        <p id="dotDailyTomorrowHome" class="dailyJourneyDone" hidden>More Daily Challenges tomorrow</p>
       </div>
       <button type="button" id="randomStart" class="playModeCard"><span class="modeIcon" aria-hidden="true">⤨</span><span class="modeCopy"><strong>Free Play</strong><small>Choose a difficulty</small></span><span class="modeArrow" aria-hidden="true">›</span></button>
       <button type="button" id="levelsStart" class="playModeCard levelsModeCard"><span class="modeIcon" aria-hidden="true">🏆</span><span class="modeCopy"><strong>Play Levels</strong><small id="levelsSubtitle">Complete levels · Earn credits</small></span><span class="modeArrow" aria-hidden="true">›</span></button>
@@ -548,6 +543,7 @@
             <div class="resultStatus" id="resultStatus" hidden aria-live="polite"></div>
             <button type="button" id="resultStatsLink" class="winStatsLink">Result added to your stats <span aria-hidden="true">→</span></button>
             <button id="next">Next puzzle</button>
+            <p id="dotDailyRemainingWin" class="dailyJourneyRemaining" hidden></p>
             <button type="button" id="dotDailyNextWin" class="dailyJourneyNext" hidden>Next Daily Challenge &gt;</button>
             <p id="dotDailyTomorrowWin" class="dailyJourneyDone" hidden>More Daily Challenges tomorrow</p>
             <button type="button" id="winToLevels" class="secondary" hidden>Return to Levels overview</button>
@@ -569,7 +565,7 @@
       </div>
       
       <div class="adSlot" id="adSlot" aria-hidden="true" hidden></div>
-      <footer>Grid Club · v0.9.8 beta</footer>
+      <footer>Grid Club · v0.9.9 beta</footer>
     </section>
   </main>
   <div class="pauseLayer" id="timeUpLayer" hidden role="dialog" aria-modal="true" aria-labelledby="timeUpTitle"><div class="pauseInner"><div style="font-size:47px;color:var(--mint)">◷</div><h2 id="timeUpTitle">Time's up!</h2><p>Retrying forfeits this puzzle’s credits.</p><button id="timeUpBoost" type="button">+15 seconds · 10 ◉</button><p id="timeUpBoostNote" class="timeUpBoostNote" role="status" aria-live="polite"></p><button id="timeUpRetry" class="secondary">Retry puzzle</button><button id="timeUpBack" class="secondary">Return to Levels</button></div></div>
@@ -586,13 +582,13 @@
   <script src="backend-config.js?v=0.7.0"></script>
   <script src="ranked.js?v=0.7.0"></script>
   <script src="stats-utils.js?v=0.7.0"></script>
-  <script src="puzzle.js?v=0.7.0"></script>
-  <script src="levels.js?v=0.9.8"></script>
+  <script src="puzzle.js?v=0.9.9"></script>
+  <script src="levels.js?v=0.9.9"></script>
   <script src="win-messages.js?v=0.9.4"></script>
-  <script src="daily-journey.js?v=0.9.5"></script>
-  <script src="game.js?v=0.9.8"></script>
-  <script src="pipe-engine.js?v=0.9.5"></script>
-  <script src="pipe-shift.js?v=0.9.6"></script>
+  <script src="daily-journey.js?v=0.9.9"></script>
+  <script src="game.js?v=0.9.9"></script>
+  <script src="pipe-engine.js?v=0.9.9"></script>
+  <script src="pipe-shift.js?v=0.9.9"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol === 'https:') {
       addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));

@@ -140,6 +140,24 @@
       const [x,y]=k.split(',').map(Number);return {x,y};
     }), solution, pairs:solution.map((path,id)=>({id,a:path[0],b:path[path.length-1]}))};
   }
+  // Extra coloured pairs for selected fixed Levels only. The original
+  // full-grid solution and all existing blocked squares stay intact.
+  // Splitting a long complete reference path preserves a valid solution.
+  function withExtraPairs(level,extra=0){
+    if(!Number.isInteger(extra)||extra<0||extra>4)throw new Error('Invalid extra pair count');
+    if(!extra)return level;
+    const solution=level.solution.map(path=>path.map(p=>({...p})));
+    for(let n=0;n<extra;n++){
+      let longest=-1;
+      for(let i=0;i<solution.length;i++){
+        if(solution[i].length>=8&&(longest<0||solution[i].length>solution[longest].length))longest=i;
+      }
+      if(longest<0)throw new Error('Not enough path length for extra pairs');
+      const path=solution[longest],cut=Math.floor(path.length/2);
+      solution.splice(longest,1,path.slice(0,cut),path.slice(cut));
+    }
+    return {...level,solution,pairs:solution.map((path,id)=>({id,a:path[0],b:path[path.length-1]})),extraPairs:extra};
+  }
   function isBlocked(level,p){
     return !!level?.blocked?.some(cell=>eq(cell,p));
   }
@@ -335,7 +353,7 @@
     // Reset clears lines, not the clock or previously used hints/moves.
     g.drag = null;g.tapClear = false;
   }
-  const core = { SIZES, hash, generate, withBlocked, isBlocked, playableCells, create, endpoint, owner, connected,
+  const core = { SIZES, hash, generate, withBlocked, withExtraPairs, isBlocked, playableCells, create, endpoint, owner, connected,
     filled, begin, move, end, undo, hint, reset, adjacent, eq, samePath, quality,
     elapsed, pause, resume, serialize, restore, PAIR_RANGES };
   if (typeof module !== 'undefined' && module.exports) module.exports = core;

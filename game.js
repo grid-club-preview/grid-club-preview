@@ -257,12 +257,8 @@
     if(dirty)writeJSON(STATS_KEY,stats);
   }
   function updateHome() {
-    const solved=dailySolved(),journey=globalThis.GridClubDailyJourney;
+    const solved=dailySolved();
     $('solvedTag').hidden = !solved;
-    $('dotDailyStatus').textContent=journey?.summary()||'';
-    const nextDaily=solved?journey?.nextGame('dotTrails'):null;
-    $('dotDailyNextHome').hidden=!nextDaily;
-    $('dotDailyTomorrowHome').hidden=!solved||!!nextDaily;
     $('dailyStartText').textContent = dailySolved() ? 'View today’s stats' :
       savedGame('daily',11) ? 'Continue today’s puzzle' : 'Play today’s puzzle';
     $('freeStartText').textContent = 'Dot Trails';
@@ -285,7 +281,12 @@
     const fixed=mode==='level'?levelCore.get(levelId):null;
     const seed = mode === 'daily' ? dailyLevelSeed() : fixed?fixed.seed:randomSeed();
     const plain=core.generate(size,seed,{daily:mode==='daily'});
-    const puzzle=fixed?.blocked?.length?core.withBlocked(plain,fixed.blocked):plain;
+    const curatedPath=Number.isInteger(fixed?.blockedPathIndex)?plain.solution[fixed.blockedPathIndex]:null;
+    const blocked=fixed?.blocked?.length?core.withBlocked(plain,fixed.blocked):
+      curatedPath?core.withBlocked(plain,curatedPath):plain;
+    // Curated Hard/Expert levels gain extra coloured pairs by splitting
+    // existing complete solution paths. Previous saved boards remain playable.
+    const puzzle=fixed?.extraPairs?core.withExtraPairs(blocked,fixed.extraPairs):blocked;
     if(fixed){puzzle.levelId=fixed.id;puzzle.stage=fixed.stage;puzzle.step=fixed.step;puzzle.limitMs=fixed.limitSec===null?null:fixed.limitSec*1000;}
     const g=core.create(puzzle);
     if(fixed){g.extraTimeMs=0;g.extraTimeCount=0;}
@@ -901,7 +902,10 @@
     // The daily CTA belongs to the result screen, after the completion has
     // actually been saved. Never reference a result while setting up a board.
     const dailyComplete=mode==='daily'&&result.date===today()&&dailySolved();
-    const nextDaily=dailyComplete?globalThis.GridClubDailyJourney?.nextGame('dotTrails'):null;
+    const journey=globalThis.GridClubDailyJourney;
+    const nextDaily=dailyComplete?journey?.nextGame('dotTrails'):null;
+    $('dotDailyRemainingWin').hidden=!dailyComplete;
+    $('dotDailyRemainingWin').textContent=dailyComplete?journey?.remainingLabel()||'':'';
     $('dotDailyNextWin').hidden=!nextDaily;
     $('dotDailyTomorrowWin').hidden=!dailyComplete||!!nextDaily;
     $('win').classList.add('show');
@@ -1152,7 +1156,6 @@
   };
   refreshBackendCheck();
   $('dailyStart').onclick=()=>start('daily');
-  $('dotDailyNextHome').onclick=()=>globalThis.GridClubDailyJourney?.visitNext('dotTrails');
   $('dotDailyNextWin').onclick=()=>globalThis.GridClubDailyJourney?.visitNext('dotTrails');
   $('levelsStart').onclick=()=>showLevelBrowser();
   $('randomStart').onclick=showRandomScreen;

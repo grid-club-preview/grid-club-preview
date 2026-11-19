@@ -117,6 +117,16 @@ function timerFor(n){const s=stageOf(n);if(!s)return null;const at=n-s.first;if(
  const base=[70,115,125,165,210,245][s.id-1];
  const finaleReduction=[18,20,22,25,30,35][s.id-1];
  return (at===4?base-finaleReduction:at===5?base+20:at===6?base+10:base)*1000;}
+// A move budget applies only to timed numbered Levels, never Free Play or Daily.
+ // It is calibrated from the catalogue's known legal solution route, with room
+ // for exploration. The last legal move is allowed to solve the board.
+function moveLimitFor(n){
+ const stage=stageOf(n);
+ if(!stage||timerFor(n)===null)return null;
+ const baseline=get(n).solutionMoves.length;
+ const multiplier=[2.0,1.85,1.7,1.6,1.5,1.45][stage.id-1];
+ return Math.ceil(baseline*multiplier/5)*5;
+}
 const cache=new Map();
 const FIXED_SEEDS=Object.freeze({1:3074878952,2:4088790921,3:3074894406,4:3074902133,5:4088814102,6:1434386060,7:1434393787,8:420497272,9:420504999,10:3074948495,11:3074956222,12:420528180,13:3074971676,14:420543634,15:3074987130,16:3074994857,17:420566815,18:4088914553,19:1434486511,20:3462302722,21:3075033492,22:3075041219,23:420613177,24:420620904,25:420628631,26:3075072127,27:3075079854,28:420651812,29:420659539,30:420667266}); // Audited 2026-11-18; freeze for this catalogue.
 const EXTRA_SEEDS=Object.freeze({6:3074917587,7:4088829556,13:420535907,14:2835629075,20:4088930007,21:3075033492,27:1434548327,28:1434556054,34:1434602416,35:1434610143,41:4089092274,42:4089100001}); // Additional audited puzzle seeds.
@@ -192,5 +202,5 @@ function random(size,seed){if(![5,6,7].includes(size))throw Error('Unknown Rando
  return {mode:'random',size,seed,timerMs:null,level:null,stage:null,...scrambled,solvedBoard,initialMoves:scrambled.solutionMoves.length,networkType:mode};
 }
 function validateBoard(b){const size=sizeOf(b);return !!size&&b.every(t=>t&&['empty','wall','block','pipe','source','sink'].includes(t.kind)&&Number.isInteger(t.mask)&&t.mask>=0&&t.mask<=15&&typeof t.fixed==='boolean'&&(t.kind==='pipe'||t.kind==='source'||t.kind==='sink'||t.mask===0))&&[1,2].includes(b.filter(t=>t.kind==='source').length)&&[1,2].includes(b.filter(t=>t.kind==='sink').length);}
-return Object.freeze({SIZE,MAX_LEVEL,PUZZLES_PER_STAGE,N,E,S,W,DIRECTIONS,STAGES,sizeOf,at,id,adjacent,direction,clone,rng,get,random,daily,hashSeed,stageOf,timerFor,move,canMove,legalMoves,evaluate,validateBoard,signature});
+return Object.freeze({SIZE,MAX_LEVEL,PUZZLES_PER_STAGE,N,E,S,W,DIRECTIONS,STAGES,sizeOf,at,id,adjacent,direction,clone,rng,get,random,daily,hashSeed,stageOf,timerFor,moveLimitFor,move,canMove,legalMoves,evaluate,validateBoard,signature});
 });
