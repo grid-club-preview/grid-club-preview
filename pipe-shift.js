@@ -443,8 +443,10 @@ function begin(p,kind,id,skipSave=false){
  }else board=e.clone(p.board);
  $('pipeGameName').textContent=kind==='levels'?`Puzzle ${id-e.stageOf(id).first+1}/${e.PUZZLES_PER_STAGE}`:kind==='daily'||kind==='practice'?'Daily Challenge':(p.size===5?'Beginner':p.size===6?'Advanced':'Expert');
  $('pipeDifficultyTag').textContent=kind==='levels'? `Level ${p.stage}`:
-   kind==='daily'||kind==='practice'?(dailyPractice?'Practice':p.day):
-   `Free Play · ${p.freeObjective==='all'?'All pipes':'Any pipes'}`;
+   kind==='daily'||kind==='practice'?(dailyPractice?'Practice':p.day):'Free Play';
+ $('pipeObjectiveTag').hidden=kind!=='random';
+ if(kind==='random')$('pipeObjectiveLabel').textContent=
+   p.freeObjective==='all'?'Use all pipes':'Use any pipes';
  $('pipeGridSize').textContent=`${p.size}×${p.size}`;
  $('pipeInstruction').textContent=puzzleInstruction(p);
  $('pipeNew').hidden=kind!=='random';
