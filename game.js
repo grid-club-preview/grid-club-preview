@@ -491,7 +491,7 @@
   }
   function renderLevelBrowser(){
     const progress=loadLevelState();
-    $('levelsWallet').textContent=String(progress.credits);
+    $('levelsWallet').textContent=`◉ ${progress.credits}`;
     if(!saveWarningShown)showLevelSaveStatus(Object.keys(progress.completed).length?`Saved on this device · ${Object.keys(progress.completed).length}/75 puzzles complete`:'No completed levels found in this app’s local storage.');
     const list=$('stageList'),detail=$('stageDetail');
     const hasStage=!!selectedStage;
