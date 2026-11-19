@@ -185,6 +185,15 @@
     .pauseInner button:disabled {background:#3a4350;color:#88939d;opacity:.66;cursor:not-allowed;box-shadow:none;}
     .pauseInner .timeUpBoostNote {font-size:13px;line-height:1.5;color:#f0bd9f;margin:8px 4px 14px;}
     .pauseInner .timeUpBoostNote[data-available="true"] {color:#a9dfc8;}
+    .dailyCompleteIcon{display:grid;place-items:center;width:54px;height:54px;border-radius:17px;margin:0 auto 12px;background:#204b48;border:1px solid #68b6a8;color:#a4f5d8;font-size:27px;}
+    #dotDailyCompleteLayer .pauseInner{padding:25px 18px;border:1px solid #445c69;border-radius:22px;background:#1c2b40;box-shadow:0 18px 45px #0008;}
+    #dotDailyCompleteLayer .pauseInner h2{font-size:24px;line-height:1.2;margin:10px 0 9px;}
+    #dotDailyCompleteLayer .pauseInner p{margin:0 0 12px;}
+    #dotDailyCompleteLayer .dailyCompletedRemaining{color:#abcfcc;font-size:12px;font-weight:750;}
+    #dotDailyCompleteLayer .dailyCompletedTomorrow{color:#b6c6d5;font-size:13px;margin:13px 0;}
+    #dotDailyCompleteLayer .dailyCompletedClose{margin:14px auto 0;width:auto;padding:8px 16px;font-size:12px;color:#aebdcd;background:transparent;}
+    #dotDailyCompleteLayer .dailyCompletedStats{background:#34475b;color:#e3edf6;}
+    #dotDailyCompleteLayer .dailyCompletedFree{background:#34475b;color:#e3edf6;}
     .rankingBox {text-align:left;background:#202f44;border-radius:12px;padding:13px;margin:12px 0;font-size:12px;line-height:1.7;color:#d8e6f0;}
     .rankingBox strong {display:block;font-size:14px;color:#e5fff6;margin-bottom:4px;}
     .winInner .resultStatus {font-size:12px;color:#bde9e0;background:#203b42;padding:10px;border-radius:10px;margin-bottom:8px;line-height:1.4;}
@@ -615,6 +624,19 @@
       <footer>Grid Club · v0.9.13 beta</footer>
     </section>
   </main>
+  <div class="pauseLayer" id="dotDailyCompleteLayer" hidden role="dialog" aria-modal="true" aria-labelledby="dotDailyCompleteTitle">
+    <div class="pauseInner">
+      <div class="dailyCompleteIcon" aria-hidden="true">✓</div>
+      <h2 id="dotDailyCompleteTitle">Dot Trails Daily Challenge complete</h2>
+      <p id="dotDailyCompleteInfo">Today's puzzle has already been completed.</p>
+      <p id="dotDailyCompleteRemaining" class="dailyCompletedRemaining" hidden></p>
+      <button type="button" id="dotDailyCompleteStats" class="secondary dailyCompletedStats">View stats</button>
+      <button type="button" id="dotDailyCompleteNext" hidden>Next Daily Challenge ›</button>
+      <p id="dotDailyCompleteTomorrow" class="dailyCompletedTomorrow" hidden>More Daily Challenges tomorrow</p>
+      <button type="button" id="dotDailyCompleteFree" class="secondary dailyCompletedFree">Free Play</button>
+      <button type="button" id="dotDailyCompleteClose" class="secondary dailyCompletedClose">Back to Dot Trails</button>
+    </div>
+  </div>
   <div class="pauseLayer" id="timeUpLayer" hidden role="dialog" aria-modal="true" aria-labelledby="timeUpTitle"><div class="pauseInner"><div style="font-size:47px;color:var(--mint)">◷</div><h2 id="timeUpTitle">Time's up!</h2><p>Retry for free (first-attempt puzzle credits forfeited), or continue this attempt for credits.</p><button id="timeUpBoost" type="button">Continue +30 seconds · 30 ◉</button><p id="timeUpBoostNote" class="timeUpBoostNote" role="status" aria-live="polite"></p><button id="timeUpRetry" class="secondary">Retry puzzle</button><button id="timeUpBack" class="secondary">Return to Levels</button></div></div>
   <div class="pauseLayer" id="pauseLayer" hidden role="dialog" aria-modal="true" aria-labelledby="pauseTitle">
     <div class="pauseInner">
