@@ -12,7 +12,7 @@
   <link rel="icon" href="./icons/icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
   <title>Grid Club · Dot Trails &amp; Pipe Shift</title>
-  <link rel="stylesheet" href="pipe-shift.css?v=0.9.15">
+  <link rel="stylesheet" href="pipe-shift.css?v=0.9.16">
   <style>
     :root { color-scheme: dark; --bg:#0e1424; --surface:#1a243a; --tile:#253147; --muted:#9daabe; --mint:#7be3d4; --purple:#a178ff; }
     * { box-sizing: border-box; }
@@ -330,7 +330,7 @@
 <body>
   <main class="shell">
     <section id="home">
-      <header><div><div class="eyebrow">GRID CLUB</div><h1>A little puzzle break.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.15</span></div></header>
+      <header><div><div class="eyebrow">GRID CLUB</div><h1>A little puzzle break.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.16</span></div></header>
       <details class="backendCheck" aria-label="Leaderboard connection diagnostics">
         <summary class="backendCheckTitle">Connection diagnostics (beta)</summary>
         <p id="backendCheckMessage" role="status" aria-live="polite">Checking configuration…</p>
@@ -487,7 +487,7 @@
             <div class="pipeResult" id="pipeTimeout" hidden role="dialog" aria-label="Time's up">
               <div class="pipeResultInner"><div class="pipeVictoryIcon" aria-hidden="true">⌛</div>
                 <h3 id="pipeTimeoutTitle">Time's up!</h3><p id="pipeTimeoutMessage">Try this puzzle again.</p>
-                <button type="button" id="pipeRescue" hidden>Continue +30 seconds · 30 ◉</button>
+                <button type="button" id="pipeRescue" hidden>Emergency rescue · +30s · 30 ◉</button>
                 <p id="pipeRescueNote" class="pipeRescueNote" role="status"></p>
                 <button type="button" id="pipeRetry">Retry for free</button>
                 <button type="button" class="pipeSecondary" id="pipeTimeoutBack">Back to Levels</button>
@@ -624,7 +624,7 @@
       </div>
       
       <div class="adSlot" id="adSlot" aria-hidden="true" hidden></div>
-      <footer>Grid Club · v0.9.15 beta</footer>
+      <footer>Grid Club · v0.9.16 beta</footer>
     </section>
   </main>
   <div class="pauseLayer" id="dotDailyCompleteLayer" hidden role="dialog" aria-modal="true" aria-labelledby="dotDailyCompleteTitle">
@@ -660,8 +660,8 @@
   <script src="daily-journey.js?v=0.9.9"></script>
   <script src="club-credits.js?v=0.9.11"></script>
   <script src="game.js?v=0.9.15"></script>
-  <script src="pipe-engine.js?v=0.9.14"></script>
-  <script src="pipe-shift.js?v=0.9.15"></script>
+  <script src="pipe-engine.js?v=0.9.16"></script>
+  <script src="pipe-shift.js?v=0.9.16"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol === 'https:') {
       addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));

@@ -66,7 +66,7 @@ function weaveDesignB(){
  sources:[[6,0]],sinks:[[0,6]]};
 }
 const DECORS=[N|S,E|W,N|E,E|S,S|W,W|N];
-function network({size,mode,seed,complexity=1,fixedCount=0,walls=0,decoys=0,blocks=0}){
+function network({size,mode,seed,complexity=1,fixedCount=0,walls=0,decoys=0,blocks=0,requireAllFlow=false}){
  const graph=mode==='corner'?cornerTraverseDesign():mode==='weaveA'?weaveDesignA():mode==='weaveB'?weaveDesignB():mode==='loop'?loopDesign(seed):mode==='multiple'?multipleDesign(seed):mode==='double'?doubleDesign(seed):pathDesign(size,seed,complexity);
  const rand=rng(seed^0x87661ab5),board=Array.from({length:size*size},()=>({kind:'empty',mask:0,fixed:false})),ports=new Map();
  for(const path of graph.paths)for(let i=1;i<path.length;i++){
@@ -80,6 +80,9 @@ function network({size,mode,seed,complexity=1,fixedCount=0,walls=0,decoys=0,bloc
    if(kind!=='pipe'&&degrees!==1)throw Error('Terminal is not an endpoint');
    board[index]={kind,mask,fixed:kind!=='pipe'};
  }
+ // New Expert Free Play explicitly requires all working pipes to carry
+ // water, preventing a short inlet-to-outlet shortcut from winning.
+ if(requireAllFlow)for(const source of sources)board[source].requireAllFlow=true;
  if(['corner','weaveA','weaveB'].includes(mode)){
    const target=mode==='weaveA'?id(5,5,size):mode==='weaveB'?id(0,5,size):id(6,6,size);
    if(board[target].kind!=='pipe')throw Error('Missing target elbow');
@@ -123,7 +126,48 @@ function evaluate(board){const size=sizeOf(board);if(!size)return {solved:false,
  const special=board.findIndex(tile=>tile.transportPiece===true);
  const target=special<0?-1:(board[special].transportTarget??board.length-1);
  const transportReady=special<0||(special===target&&visited.has(special));
- return {solved:leaks===0&&reachedOutlet&&sourcesReached&&transportReady,leaks,reachedOutlet,sourcesReached,flow:[...visited],branches,cycles:degreeSum/2-visited.size+1,sources:sources.length,sinks:sinks.length};
+ const allPipesRequired=board.some(tile=>tile.requireAllFlow===true);
+ const everyPipeConnected=!allPipesRequired||board.every((tile,i)=>
+   tile.kind!=='pipe'||tile.decoy===true||visited.has(i));
+ return {solved:leaks===0&&reachedOutlet&&sourcesReached&&transportReady&&everyPipeConnected,
+   leaks,reachedOutlet,sourcesReached,flow:[...visited],branches,cycles:degreeSum/2-visited.size+1,
+   sources:sources.length,sinks:sinks.length};
+}
+// Starting at an inlet, find the FIRST broken connection and the actual
+// connected path water can reach before it leaks. The failure animation uses
+// this rather than revealing any intended solution or future pipe positions.
+function traceLeak(board){
+ const size=sizeOf(board);
+ if(!size)return {flow:[],leak:null};
+ const source=board.findIndex(t=>t.kind==='source');
+ if(source<0)return {flow:[],leak:null};
+ const queue=[source],parents=new Map([[source,-1]]);
+ let failed=null,visited=[];
+ for(let cursor=0;cursor<queue.length;cursor++){
+   const here=queue[cursor],tile=board[here],p=at(here,size);
+   visited.push(here);
+   for(const d of DIRECTIONS){
+     if(!(tile.mask&d.bit))continue;
+     const x=p.x+d.dx,y=p.y+d.dy;
+     const to=x<0||y<0||x>=size||y>=size?-1:id(x,y,size);
+     const other=to>=0?board[to]:null;
+     if(to<0||!other||(other.mask&d.opposite)===0||
+       other.kind==='empty'||other.kind==='wall'||other.kind==='block'){
+       if(!failed)failed={from:here,to,bit:d.bit};
+     }else if(!parents.has(to)){
+       parents.set(to,here);queue.push(to);
+     }
+   }
+ }
+ if(!failed){
+   // A disconnected second inlet/outlet can be unfinished without a leak
+   // on the first network. Visually show where the first connected flow stops.
+   failed={from:visited[visited.length-1]??source,to:-1,bit:0};
+ }
+ const flow=[];
+ for(let i=failed.from;i!==-1;i=parents.get(i)??-1)flow.push(i);
+ flow.reverse();
+ return {flow,leak:failed};
 }
 function scramble(solved,seed,steps){let best=null,bestScore=-1;
  for(let attempt=0;attempt<26;attempt++){
@@ -231,7 +275,8 @@ function rotatePuzzle(p,turns){
  if(!turns)return p;
  const size=p.size,rotate=board=>{
    const result=new Array(board.length);
-   board.forEach((tile,index)=>result[rotatedIndex(index,size,turns)]={...tile,mask:rotatedMask(tile.mask,turns)});
+   board.forEach((tile,index)=>result[rotatedIndex(index,size,turns)]={...tile,mask:rotatedMask(tile.mask,turns),
+     ...(Number.isInteger(tile.transportTarget)?{transportTarget:rotatedIndex(tile.transportTarget,size,turns)}:{})});
    return result;
  };
  return {...p,board:rotate(p.board),solvedBoard:rotate(p.solvedBoard),
@@ -315,17 +360,63 @@ function daily(day){
  const result={...p,mode:'daily',day,dailyVersion:1,timerMs:null};dailyCache.set(day,result);
  return {...result,board:clone(result.board),solvedBoard:clone(result.solvedBoard),solutionMoves:result.solutionMoves.map(m=>({...m}))};
 }
+// Fresh Expert Free Play uses densely-connected, serpentine networks instead
+// of the old ~11-cell strip. Both known solution and board remain reproducible.
+function expertRandom(seed){
+ const size=7;
+ let best=null;
+ for(let attempt=0;attempt<16;attempt++){
+   const designSeed=(seed+Math.imul(attempt,2654435761))>>>0;
+   const mode=designSeed%2?'weaveA':'weaveB';
+   try{
+     // Six movable blank blocks compete for the few true gaps. Almost all
+     // remaining pipes belong to a 29-31-cell working network.
+     const solvedBoard=network({size,mode,seed:designSeed,complexity:3,
+       fixedCount:2,walls:2,decoys:0,blocks:6,requireAllFlow:true});
+     const raw=scramble(solvedBoard,designSeed^0x4f4b1133,170);
+     // The marked essential elbow is deliberately transported from far
+     // across the grid. Reverse slides supply a valid complete solution.
+     const scrambled=stretchCorner(raw,mode==='weaveA'?id(1,1,size):id(5,0,size));
+     const solutionFlow=evaluate(solvedBoard).flow;
+     const needed=solutionFlow.filter(i=>solvedBoard[i].kind==='pipe'&&!solvedBoard[i].fixed);
+     const displaced=needed.filter(i=>scrambled.board[i].kind!=='pipe'||
+       scrambled.board[i].mask!==solvedBoard[i].mask||scrambled.board[i].fixed);
+     const target=solvedBoard.findIndex(t=>t.transportPiece);
+     const initial=scrambled.board.findIndex(t=>t.transportPiece);
+     const separation=Math.abs(at(target,size).x-at(initial,size).x)+
+       Math.abs(at(target,size).y-at(initial,size).y);
+     const score=3*displaced.length+separation;
+     const candidate={mode:'random',size,seed,timerMs:null,level:null,stage:null,
+       ...scrambled,solvedBoard,initialMoves:scrambled.solutionMoves.length,
+       networkType:mode,randomLayoutVersion:3,requireAllFlow:true,
+       difficultyMetrics:{flowCells:solutionFlow.length,requiredPipes:needed.length,
+         displacedPipes:displaced.length,transportDistance:separation,attempt}};
+     if(!best||score>best.score)best={puzzle:candidate,score};
+     if(displaced.length>=14&&separation>=8)
+       return rotatePuzzle(candidate,orientationForRandom(seed));
+   }catch(_){/* Retry with another deterministic authored layout. */}
+ }
+ // A scored fallback is retained for pathological seeds rather than leaving
+ // a blank board. Typical candidates pass the stricter thresholds immediately.
+ if(!best)throw Error('Unable to prepare Expert puzzle');
+ return rotatePuzzle(best.puzzle,orientationForRandom(seed));
+}
 function random(size,seed,legacy=false){if(![5,6,7].includes(size))throw Error('Unknown Random difficulty');
  seed=Number.isFinite(seed)?seed>>>0:((Date.now()^Math.floor(Math.random()*0xffffffff))>>>0);
+ // v1 is the server-owned ranked Daily generator. v2 remains available for
+ // previously saved Free Play boards. New Expert Free Play is version 3.
+ if(size===7&&legacy!==true&&legacy!==2)return expertRandom(seed);
  const variety=seed%6,mode=size===7?'loop':'path';
  const options={size,mode,seed,complexity:1+variety%3,fixedCount:size===5?0:size===6?1+variety%3:2+variety%4,
    walls:size===5?0:size===6?variety%3:1+variety%3,
    decoys:size===5?variety%3:size===6?2+variety%4:13+2*variety,
    blocks:size===7?1+variety%4:0};
  const solvedBoard=network(options),scrambled=scramble(solvedBoard,seed^0x4f4b1133,14+size*6+variety*6);
- const candidate={mode:'random',size,seed,timerMs:null,level:null,stage:null,...scrambled,solvedBoard,initialMoves:scrambled.solutionMoves.length,networkType:mode,randomLayoutVersion:legacy?1:2};
- return legacy?candidate:rotatePuzzle(candidate,orientationForRandom(seed));
+ const candidate={mode:'random',size,seed,timerMs:null,level:null,stage:null,...scrambled,solvedBoard,
+   initialMoves:scrambled.solutionMoves.length,networkType:mode,
+   randomLayoutVersion:legacy===true?1:legacy===2?2:3};
+ return legacy===true?candidate:rotatePuzzle(candidate,orientationForRandom(seed));
 }
 function validateBoard(b){const size=sizeOf(b);return !!size&&b.every(t=>t&&['empty','wall','block','pipe','source','sink'].includes(t.kind)&&Number.isInteger(t.mask)&&t.mask>=0&&t.mask<=15&&typeof t.fixed==='boolean'&&(t.kind==='pipe'||t.kind==='source'||t.kind==='sink'||t.mask===0))&&[1,2].includes(b.filter(t=>t.kind==='source').length)&&[1,2].includes(b.filter(t=>t.kind==='sink').length);}
-return Object.freeze({SIZE,MAX_LEVEL,PUZZLES_PER_STAGE,N,E,S,W,DIRECTIONS,STAGES,sizeOf,at,id,adjacent,direction,clone,rng,get,random,daily,hashSeed,stageOf,timerFor,moveLimitFor,move,canMove,legalMoves,evaluate,validateBoard,signature});
+return Object.freeze({SIZE,MAX_LEVEL,PUZZLES_PER_STAGE,N,E,S,W,DIRECTIONS,STAGES,sizeOf,at,id,adjacent,direction,clone,rng,get,random,daily,hashSeed,stageOf,timerFor,moveLimitFor,move,canMove,legalMoves,evaluate,traceLeak,validateBoard,signature});
 });
