@@ -242,3 +242,8 @@
 #pipeRescue:disabled{opacity:.4;}
 .pipeCreditReward,.dotDailyCreditReward{margin:9px 0 13px;padding:9px 12px;border-radius:10px;background:#314a40;color:#daffd9;font-size:13px;line-height:1.4;font-weight:800;}
 #pipeResult .pipeCreditReward{margin-bottom:10px;}
+
+/* v0.9.11: transport challenge has a distinct movable elbow and target. */
+.pipeTile.pipeTransport{border:2px solid #f1cb72;background:linear-gradient(135deg,#554a33,#273d4f);box-shadow:inset 0 0 9px #ffdb7e33;}
+.pipeTile.pipeTransport::after{content:'◆';position:absolute;top:2px;right:3px;font-size:10px;color:#ffdb84;text-shadow:0 1px 2px #0b1724;pointer-events:none;}
+.pipeTile.pipeTransportGoal:not(.pipeTransport){outline:2px dashed #e8ba6b;outline-offset:-3px;}

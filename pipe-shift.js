@@ -125,10 +125,11 @@ function buyPipeTime(){
  updateClock();render();saveCurrent();return true;
 }
 function saveCurrent(){if(!puzzle||!board||won)return;
- clockSync();progress.active[activeKey()]={board:e.clone(board),moves,elapsed,expired,started:!trialPending,catalogVersion:mode==='levels'?5:mode==='daily'||mode==='practice'?puzzle.dailyVersion:null,seed:puzzle.seed??null,
+ clockSync();progress.active[activeKey()]={board:e.clone(board),moves,elapsed,expired,started:!trialPending,catalogVersion:mode==='levels'?puzzle.catalogVersion:mode==='daily'||mode==='practice'?puzzle.dailyVersion:null,seed:puzzle.seed??null,
    trace:mode==='daily'?dailyTrace.map(x=>({...x})):null,
    extraTimeMs,extraTimeCount,attemptId,
    moveCapVersion:mode==='levels'?1:null,moveCapExempt:mode==='levels'&&legacyMoveCapExempt,failureReason,
+   randomLayoutVersion:mode==='random'?(puzzle.randomLayoutVersion||1):null,
    undo:undo.slice(-40).map(a=>({board:e.clone(a.board),moves:a.moves}))};save();
 }
 function clearFlow(){if(flowTimer!==null){clearTimeout(flowTimer);flowTimer=null;}}
@@ -295,11 +296,11 @@ function begin(p,kind,id,skipSave=false){
  won=false;expired=false;justClearedStage=false;selected=null;elapsed=0;moves=0;undo=[];trialPending=!!p.timerMs;
  extraTimeMs=0;extraTimeCount=0;attemptId=makeAttempt();creditReward=null;
  failureReason='time';legacyMoveCapExempt=false;
- moveLimit=kind==='levels'?e.moveLimitFor(id):null;
+ moveLimit=kind==='levels'?e.moveLimitFor(id,p.catalogVersion===5):null;
  hub.hidden=true;root.hidden=false;route('game');
  const key=activeKey(),stored=progress.active[key];
  if(stored&&e.validateBoard(stored.board)&&stored.board.length===p.size*p.size&&
-   (kind==='levels'?stored.catalogVersion===5:(kind==='daily'||kind==='practice')?stored.seed===p.seed&&stored.catalogVersion===p.dailyVersion:stored.seed===p.seed)&&Number.isInteger(stored.moves)&&stored.moves>=0&&stored.moves<100000){
+   (kind==='levels'?stored.catalogVersion===p.catalogVersion:(kind==='daily'||kind==='practice')?stored.seed===p.seed&&stored.catalogVersion===p.dailyVersion:stored.seed===p.seed)&&Number.isInteger(stored.moves)&&stored.moves>=0&&stored.moves<100000){
    board=e.clone(stored.board);moves=stored.moves;elapsed=Math.max(0,Number(stored.elapsed)||0);expired=!!stored.expired;
    extraTimeMs=Math.max(0,Math.min(30000,Number(stored.extraTimeMs)||0));
    extraTimeCount=Math.max(0,Math.min(2,Number(stored.extraTimeCount)||0));
@@ -315,7 +316,10 @@ function begin(p,kind,id,skipSave=false){
  }else board=e.clone(p.board);
  $('pipeGameName').textContent=kind==='levels'?`Puzzle ${id-e.stageOf(id).first+1}/${e.PUZZLES_PER_STAGE}`:kind==='daily'||kind==='practice'?'Daily Challenge':(p.size===5?'Beginner':p.size===6?'Advanced':'Expert');
  $('pipeDifficultyTag').textContent=kind==='levels'?`Level ${p.stage}`:kind==='daily'||kind==='practice'?dailyPractice?'Practice':p.day:'Free Play';
- $('pipeGridSize').textContent=`${p.size}×${p.size}`;$('pipeInstruction').textContent='';$('pipeNew').hidden=kind!=='random';
+ $('pipeGridSize').textContent=`${p.size}×${p.size}`;
+ $('pipeInstruction').textContent=p.board.some(t=>t.transportPiece)?
+   'Guide the gold-collared elbow to the bottom-right corner to complete the flow.':'';
+ $('pipeNew').hidden=kind!=='random';
  $('pipeBoard').style.setProperty('--pipe-size',p.size);$('pipeBoard').dataset.pipeGridSize=String(p.size);
  $('pipeTrialDescription').textContent=moveLimit!==null?`Finish within ${moveLimit} moves and ${Math.ceil(p.timerMs/1000)} seconds.`:'Beat the clock to restore the flow.';
  render();updateClock();if(kind==='daily')void syncDailyStart();
@@ -327,11 +331,16 @@ function begin(p,kind,id,skipSave=false){
  saveCurrent();
 }
 function startLevel(n){if(!Number.isInteger(n)||n<1||n>MAX||!canStartLevel(n))return;
- begin(e.get(n),'levels',n);
+ // Earlier in-progress v5 boards retain their original shape and valid
+ // solution. Fresh attempts and retries use the new, varied v6 layouts.
+ const legacy=progress.active[`level:${n}`]?.catalogVersion===5;
+ begin(e.get(n,undefined,legacy),'levels',n);
 }
 function startRandom(size,newPuzzle=false){if(![5,6,7].includes(size))return;
  const key=`random:${size}`,saved=progress.active[key],seed=!newPuzzle&&saved&&Number.isInteger(saved.seed)?saved.seed:freshRandomSeed();
- if(newPuzzle)delete progress.active[key];begin(e.random(size,seed),'random',null,newPuzzle);
+ const legacy=!newPuzzle&&!!saved&&saved.randomLayoutVersion!==2;
+ if(newPuzzle)delete progress.active[key];
+ begin(e.random(size,seed,legacy),'random',null,newPuzzle);
 }
 function svgPath(mask){const arms=e.DIRECTIONS.filter(d=>mask&d.bit),end=d=>({1:[50,0],2:[100,50],4:[50,100],8:[0,50]})[d.bit];
  if(arms.length===2){const [a,b]=arms.map(end);if(mask===(e.N|e.S)||mask===(e.E|e.W))return `M${a[0]} ${a[1]} L${b[0]} ${b[1]}`;
@@ -345,8 +354,9 @@ function render(flow=[]){if(!board)return;
  for(let i=0;i<board.length;i++){
    const t=board[i],b=document.createElement('button');b.type='button';b.dataset.cell=String(i);
    b.className='pipeTile '+(t.kind==='empty'?'pipeEmpty':t.kind==='wall'?'pipeWall':t.kind==='block'?'pipeBlankBlock':t.kind==='source'?'pipeSource':t.kind==='sink'?'pipeSink':'pipePiece')+
-     (t.fixed?' pipeFixed':'')+(i===selected?' pipeSelected':'')+(valid.includes(i)?' pipeValidDrop':'')+(flowMap.has(i)?' pipeFlowing':'');
-   b.setAttribute('aria-label',`Row ${Math.floor(i/size)+1}, column ${i%size+1}: ${t.kind==='empty'?'Empty space':t.kind==='wall'?'Fixed obstacle':t.kind==='block'?'Movable blank block':t.kind==='source'?'Inlet':t.kind==='sink'?'Outlet':t.fixed?'Fixed pipe':'Movable pipe'}`);
+     (t.fixed?' pipeFixed':'')+(t.transportPiece?' pipeTransport':'')+
+     (puzzle.solvedBoard?.[i]?.transportPiece?' pipeTransportGoal':'')+(i===selected?' pipeSelected':'')+(valid.includes(i)?' pipeValidDrop':'')+(flowMap.has(i)?' pipeFlowing':'');
+   b.setAttribute('aria-label',`Row ${Math.floor(i/size)+1}, column ${i%size+1}: ${t.transportPiece?'Gold-collared movable elbow':t.kind==='empty'?'Empty space':t.kind==='wall'?'Fixed obstacle':t.kind==='block'?'Movable blank block':t.kind==='source'?'Inlet':t.kind==='sink'?'Outlet':t.fixed?'Fixed pipe':'Movable pipe'}`);
    if(flowMap.has(i))b.style.setProperty('--flow-delay',`${flowMap.get(i)*.065}s`);
    if(t.mask){const ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg');svg.setAttribute('viewBox','0 0 100 100');svg.setAttribute('aria-hidden','true');
      for(const name of ['pipeTube','pipeChannel','pipeWater']){const path=document.createElementNS(ns,'path');path.setAttribute('d',svgPath(t.mask));path.setAttribute('class',name);svg.append(path);}b.append(svg);
@@ -532,6 +542,7 @@ function setDragVisual(p,ev){
  p.ghost.classList.toggle('pipeDragInvalid',!valid);
 }
 grid.addEventListener('pointerdown',ev=>{
+ if(ev.pointerType==='touch'&&ev.clientX<=28)return; // reserve narrow edge swipe
  const cell=ev.target.closest('[data-cell]');
  if(!cell||section!=='game'||won||expired||trialPending||ev.isPrimary===false)return;
  const from=Number(cell.dataset.cell),tile=board?.[from];
@@ -567,28 +578,33 @@ grid.addEventListener('pointerup',ev=>{
 grid.addEventListener('pointercancel',cancelDrag);
 grid.addEventListener('lostpointercapture',cancelDrag);
 grid.addEventListener('contextmenu',ev=>ev.preventDefault());grid.addEventListener('selectstart',ev=>ev.preventDefault());
-// Consistent hierarchy navigation on iOS PWA: left-edge rightward swipe.
-// Register in document capture so nested buttons and overlays cannot swallow
-// the touch sequence. Never steal touch from the sliding board or controls.
+// One consistent left-edge back gesture for all Pipe Shift pages. Keep
+// the sliding grid and direct gameplay controls reserved for puzzle input.
+// Gesture recognition requires a deliberate horizontal swipe, not a tap.
 let edge=null;
 document.addEventListener('touchstart',ev=>{
- edge=null;if(root.hidden||ev.touches.length!==1||!root.contains(ev.target))return;
- if(ev.target.closest('#pipeBoard,.pipeControls,input,select,textarea'))return;
- const t=ev.touches[0];if(t.clientX>92&&t.clientX<115)return;
- edge={id:t.identifier,x:t.clientX,y:t.clientY,fromLeft:t.clientX<=92,ready:false};
+ edge=null;
+ if(root.hidden||ev.touches.length!==1||!root.contains(ev.target))return;
+ const t=ev.touches[0];
+ if(t.clientX>90||ev.target.closest('.pipeControls,#pipeExtraTime,input,select,textarea'))return;
+ if(ev.target.closest('#pipeBoard')&&t.clientX>28)return;
+ edge={id:t.identifier,x:t.clientX,y:t.clientY,ready:false};
 },{capture:true,passive:true});
 document.addEventListener('touchmove',ev=>{
  if(!edge)return;
  if(ev.touches.length!==1){edge=null;return;}
  const t=ev.touches[0],dx=t.clientX-edge.x,dy=t.clientY-edge.y;
- if(Math.abs(dy)>45&&Math.abs(dy)>Math.abs(dx)){edge=null;return;}
- if((edge.fromLeft?dx>18:dx< -18)&&Math.abs(dx)>Math.abs(dy)*1.6){edge.ready=true;if(ev.cancelable)ev.preventDefault();}
+ if(Math.abs(dy)>55&&Math.abs(dy)>Math.abs(dx)){edge=null;return;}
+ if(dx>22&&Math.abs(dx)>Math.abs(dy)*1.5){
+   edge.ready=true;if(ev.cancelable)ev.preventDefault();
+ }
 },{capture:true,passive:false});
 document.addEventListener('touchend',ev=>{
- if(!edge)return;const start=edge;edge=null;
+ if(!edge)return;
+ const start=edge;edge=null;
  const t=Array.from(ev.changedTouches).find(p=>p.identifier===start.id);if(!t)return;
  const dx=t.clientX-start.x,dy=t.clientY-start.y;
- if((start.fromLeft?dx>=68:dx<=-95)&&Math.abs(dy)<65&&Math.abs(dx)>Math.abs(dy)*1.5){
+ if(start.ready&&dx>=75&&Math.abs(dy)<65&&dx>Math.abs(dy)*1.5){
    back();if(ev.cancelable)ev.preventDefault();
  }
 },{capture:true,passive:false});
