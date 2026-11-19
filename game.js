@@ -259,7 +259,7 @@
   function updateHome() {
     const solved=dailySolved();
     $('solvedTag').hidden = !solved;
-    $('dailyStartText').textContent = '11×11 · '+(solved?'View today’s stats':
+    $('dailyStartText').textContent = '11×11 · '+(solved?'View today’s result':
       savedGame('daily',11) ? 'Continue today’s puzzle' : 'Play today’s puzzle');
     $('dotMenuWallet').textContent=`◉ ${walletBalance()}`;
     $('freeStartText').textContent = 'Dot Trails';
@@ -442,6 +442,19 @@
       statBox('Daily average',reports.daily.count?statsUtil.fmt(reports.daily.averageMs):'—'),
       statBox('Daily best',reports.daily.count?statsUtil.fmt(reports.daily.bestMs):'—')
     );
+    // Local completion and server verification are separate states. The
+    // Daily tile only means a puzzle was completed on this device.
+    const currentDaily=dailyRecord(),dailyStatus=$('todayDailyStatus');
+    dailyStatus.hidden=!currentDaily;
+    if(currentDaily){
+      const score=`Today’s Dot Trails: ${fmtSeconds(currentDaily.elapsedMs)} · ${currentDaily.moves} moves.`;
+      const online=currentDaily.verified?
+        currentDaily.assisted?' Verified, but assisted; excluded from the leaderboard.':' Verified online for the leaderboard.':
+        currentDaily.sync==='review'?' Saved on this device; awaiting online review.':
+        currentDaily.sync==='expired'?' Saved on this device; online verification has expired.':
+        ' Saved on this device; not verified for the leaderboard.';
+      dailyStatus.textContent=score+online;
+    }
     $('communityDay').textContent='· '+today();
     renderCommunityPage();
   }
@@ -451,7 +464,11 @@
     const total=Number(lastCommunity.total||0);
     const title=document.createElement('p');title.textContent=total===1?'1 unassisted player today':`${total} unassisted players today`;
     box.append(title);
-    if(!total){const info=document.createElement('p');info.textContent='No unassisted ranked completions yet.';box.append(info);}
+    if(!total){
+      const info=document.createElement('p');
+      info.textContent='No verified, unassisted leaderboard results for today yet. This does not affect locally saved completions.';
+      box.append(info);
+    }
     const mine=dailyRecord();
     if(mine?.assisted){const m=document.createElement('p');m.textContent=`Your assisted result: ${fmtSeconds(mine.serverElapsedMs||mine.elapsedMs)} · ${mine.serverMoves??mine.moves} moves. Hints exclude this result from the leaderboard, but it remains in your personal stats.`;box.append(m);}
     if(!total)return;
