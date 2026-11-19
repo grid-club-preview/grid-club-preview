@@ -447,6 +447,154 @@ function puzzleInstruction(p){
  return p.solvedBoard?.some(t=>t.transportPiece)?
    'Move the gold-marked pipe to the outlined square, then complete the flow.':'';
 }
+// Paid solution hints use the solved board already generated in the puzzle.
+// The player chooses the area before the wallet is charged; the live board
+// is never modified by a hint. Ranked Daily is deliberately excluded.
+const PIPE_HINTS=Object.freeze({
+ square:{cost:10,ledger:'pipe-hint-square',title:'One square'},
+ area:{cost:25,ledger:'pipe-hint-area',title:'3×3 solution area'},
+ full:{cost:75,ledger:'pipe-hint-full',title:'Full solution'}
+});
+const hintsAvailable=()=>['random','levels'].includes(mode)&&
+ !!puzzle?.solvedBoard&&!won&&!expired&&!trialPending&&!dailyStartPending;
+function refreshHintControls(){
+ const modeAllows=['random','levels'].includes(mode);
+ $('pipeHint').hidden=!modeAllows;
+ $('pipeHint').disabled=!hintsAvailable()||hintPreviewActive;
+ if(!modeAllows){$('pipeHintMenu').hidden=true;return;}
+ const balance=creditBalance();
+ $('pipeHintBalance').textContent=`◉ ${balance} available`;
+ for(const kind of ['square','area','full']){
+   $('pipeHint'+kind.charAt(0).toUpperCase()+kind.slice(1)).disabled=
+     !hintsAvailable()||hintPreviewActive||balance<PIPE_HINTS[kind].cost;
+ }
+}
+function hintMessage(message){
+ const note=$('pipeHintStatus');
+ note.hidden=!message;note.textContent=message||'';
+}
+function closeHintMenu(){
+ hintSelection=null;$('pipeHintMenu').hidden=true;
+ $('pipeBoard').classList.remove('pipeHintChoosing');
+ hintMessage('');
+}
+function openHintMenu(){
+ if(!hintsAvailable()||hintPreviewActive)return;
+ if(!$('pipeHintMenu').hidden){closeHintMenu();return;}
+ selected=null;$('pipeHintMenu').hidden=false;
+ $('pipeBoard').classList.remove('pipeHintChoosing');
+ hintSelection=null;
+ $('pipeHintNote').textContent=
+   'Choose a reveal. For one square or 3×3, pick its location before credits are charged. Previews last five seconds.';
+ refreshHintControls();render();
+}
+function chooseHint(kind){
+ if(!hintsAvailable()||!PIPE_HINTS[kind]||hintPreviewActive)return;
+ if(creditBalance()<PIPE_HINTS[kind].cost){
+   hintMessage('Not enough Club Credits for this hint.');return;
+ }
+ if(kind==='full'){purchaseHint(kind,null);return;}
+ hintSelection=kind;selected=null;
+ $('pipeHintMenu').hidden=true;
+ $('pipeBoard').classList.add('pipeHintChoosing');
+ hintMessage(kind==='square'?
+   'Tap the square whose solved position you want to see (10 ◉).':
+   'Tap the centre of a 3×3 solution area (25 ◉).');
+ render();
+}
+function applySelectedHint(index){
+ if(!hintSelection||!Number.isInteger(index)||index<0||index>=board.length)return;
+ purchaseHint(hintSelection,index);
+}
+function hintCell(tile){
+ const cell=document.createElement('div');
+ cell.className='pipeTile '+(tile.kind==='empty'?'pipeEmpty':tile.kind==='wall'?'pipeWall':
+   tile.kind==='block'?'pipeBlankBlock':tile.kind==='source'?'pipeSource':
+   tile.kind==='sink'?'pipeSink':'pipePiece')+(tile.fixed?' pipeFixed':'');
+ if(tile.mask){
+   const ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg');
+   svg.setAttribute('viewBox','0 0 100 100');svg.setAttribute('aria-hidden','true');
+   for(const type of ['pipeTube','pipeChannel']){
+     const path=document.createElementNS(ns,'path');
+     path.setAttribute('class',type);path.setAttribute('d',svgPath(tile.mask));svg.append(path);
+   }
+   cell.append(svg);
+ }
+ if(tile.kind==='block'){
+   const dot=document.createElement('span');dot.className='pipeBlockGrip';
+   dot.textContent='•';cell.append(dot);
+ }
+ if(tile.kind==='source'||tile.kind==='sink'){
+   const label=document.createElement('span');label.className='pipeTerminal';
+   label.textContent=tile.kind==='source'?'IN':'OUT';cell.append(label);
+ }
+ if(tile.fixed&&tile.kind==='pipe'){
+   const mark=document.createElement('span');mark.className='pipeFixedMark';
+   mark.textContent='•';cell.append(mark);
+ }
+ if(tile.transportPiece){
+   cell.classList.add('pipeTransport');
+   const mark=document.createElement('span');mark.className='pipeHintGold';
+   mark.textContent='◆';cell.append(mark);
+ }
+ return cell;
+}
+function hintIndices(kind,center,size){
+ if(kind==='full')return new Set(Array.from({length:size*size},(_,i)=>i));
+ if(kind==='square')return new Set([center]);
+ const x=center%size,y=Math.floor(center/size);
+ const left=Math.min(Math.max(0,x-1),size-3);
+ const top=Math.min(Math.max(0,y-1),size-3);
+ const result=new Set();
+ for(let dy=0;dy<3;dy++)for(let dx=0;dx<3;dx++)
+   result.add((top+dy)*size+left+dx);
+ return result;
+}
+function showHintPreview(kind,center){
+ const grid=$('pipeHintGrid'),size=puzzle.size,indices=hintIndices(kind,center,size);
+ grid.replaceChildren();grid.style.setProperty('--pipe-size',size);
+ for(let i=0;i<puzzle.solvedBoard.length;i++){
+   const cell=indices.has(i)?hintCell(puzzle.solvedBoard[i]):
+     document.createElement('div');
+   if(!indices.has(i))cell.className='pipeHintMasked';
+   grid.append(cell);
+ }
+ $('pipeHintPreviewTitle').textContent=PIPE_HINTS[kind].title;
+ $('pipeHintPreview').hidden=false;
+ $('pipeHintPreview').setAttribute('aria-label',
+   `${PIPE_HINTS[kind].title}, visible for five seconds`);
+ hintPreviewActive=true;hintPreviewUntil=performance.now()+5000;
+ const update=()=>{
+   const remain=Math.max(0,Math.ceil((hintPreviewUntil-performance.now())/1000));
+   $('pipeHintSeconds').textContent=`${remain}s`;
+   if(remain<=0)closeHintPreview();
+ };
+ update();
+ hintPreviewInterval=setInterval(update,100);
+}
+function closeHintPreview(resume=true){
+ if(hintPreviewInterval!==null){clearInterval(hintPreviewInterval);hintPreviewInterval=null;}
+ const wasActive=hintPreviewActive;
+ hintPreviewActive=false;hintPreviewUntil=0;
+ $('pipeHintPreview').hidden=true;
+ $('pipeHintGrid').replaceChildren();
+ if(wasActive&&resume&&section==='game'&&!won&&!expired&&!trialPending&&!document.hidden)
+   startTicker();
+ if(wasActive&&board&&section==='game')render();
+}
+function purchaseHint(kind,center){
+ if(!hintsAvailable()||hintPreviewActive||!PIPE_HINTS[kind])return false;
+ clockSync();
+ if(timeBudget()&&elapsed>=timeBudget()){timeout();closeHintMenu();return false;}
+ const hint=PIPE_HINTS[kind];
+ if(!credits?.spend(hint.cost,hint.ledger,attemptId)){
+   closeHintMenu();hintMessage('Could not spend Club Credits. Check your balance.');return false;
+ }
+ hintsUsed++;closeHintMenu();timerStop();
+ showHintPreview(kind,center);
+ render();saveCurrent();
+ return true;
+}
 function begin(p,kind,id,skipSave=false){
  if(!skipSave)saveCurrent();mode=kind;currentLevel=kind==='levels'?id:null;if(kind==='levels')stage=e.stageOf(id).id;dailyDay=(kind==='daily'||kind==='practice')?p.day:'';dailyPractice=kind==='practice';dailyTrace=[];currentSize=p.size;currentTier=p.freeTier||fallbackTier(p.size);puzzle=p;
  won=false;expired=false;justClearedStage=false;selected=null;elapsed=0;moves=0;undo=[];trialPending=!!p.timerMs;
