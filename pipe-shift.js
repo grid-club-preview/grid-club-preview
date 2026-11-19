@@ -5,7 +5,7 @@ const e=globalThis.PipeEngine;if(!e)return;
 const $=id=>document.getElementById(id),root=$('pipeShiftScreen'),hub=$('home');
 if(!root||!hub||!$('pipeShiftEntry'))return;
 const KEY='gridclub-pipeshift-progress-v1',BACKUP=KEY+'-v08-backup',MAX=e.MAX_LEVEL;
-const blank=()=>({version:2,levelCatalog:5,completed:{},best:{},active:{},randomBest:{},randomBestV3:{},randomBestByGoal:{all:{},any:{}},randomGoal:'all',randomCount:{},legacyArchived:{},legacyUnlockedStages:{},firstAttemptFailed:{},daily:{},moveStats:{random:{},levels:{count:0,total:0},daily:{count:0,total:0}}});
+const blank=()=>({version:2,levelCatalog:5,completed:{},best:{},active:{},randomBest:{},randomBestV3:{},randomBestV4:{},randomBestByGoal:{all:{},any:{}},randomGoal:'all',randomCount:{},legacyArchived:{},legacyUnlockedStages:{},firstAttemptFailed:{},daily:{},moveStats:{random:{},levels:{count:0,total:0},daily:{count:0,total:0}}});
 const oldToNew=id=>{const n=Number(id);return Number.isInteger(n)&&n>=1&&n<=30?Math.floor((n-1)/5)*7+(n-1)%5+1:null;};
 function remapLevels(items){const mapped={};for(const [id,value] of Object.entries(items||{})){const next=oldToNew(id);if(next!==null)mapped[next]=value;}return mapped;}
 let progress=blank(),section='menu',stage=1,mode='levels',currentLevel=null,currentSize=5,currentTier='beginner',puzzle=null;
@@ -24,7 +24,7 @@ const creditBalance=()=>credits?.balance()||0;
 const makeAttempt=()=>`pipe:${Date.now()}:${Math.random().toString(36).slice(2,12)}`;
 function goalBest(tier,goal){
  const recent=progress.randomBestByGoal?.[goal]?.[tier]?.moves;
- const previous=tier==='expert'&&goal==='all'?progress.randomBestV3?.[7]?.moves:
+ const previous=tier==='expert'&&goal==='all'?progress.randomBestV4?.[7]?.moves:
    // Old 7x7 Expert boards were far easier, even with an "any pipes"
    // objective. Do not present a historical 7-move best as competitive
    // with the new 29–31-pipe Expert generation.
@@ -38,6 +38,8 @@ function bestMoves(){
  if(mode!=='random')return null;
  if(currentTier==='expert'&&[1,2].includes(puzzle?.randomLayoutVersion))
    return progress.randomBest?.[7]?.moves??null;
+ if(currentTier==='expert'&&puzzle?.randomLayoutVersion===3)
+   return progress.randomBestV3?.[7]?.moves??null;
  return goalBest(currentTier,puzzle?.freeObjective||'all');
 }
 function refreshMoveInfo(){
@@ -670,7 +672,7 @@ function startRandom(tier,newPuzzle=false){
  let p;
  if(saved&&![5,6].includes(version)&&!newPuzzle){
    // Preserve the original v1, v2 and Expert v3 layouts for active saves.
-   const variant=version===1?true:version===2?2:false;
+   const variant=version===1?true:version===2?2:version===3?3:false;
    p={...e.random(size,seed,variant),freeObjective:goal,freeTier:tier};
  }else p=e.freePlay(size,seed,goal,tier);
  if(newPuzzle)delete progress.active[key];
