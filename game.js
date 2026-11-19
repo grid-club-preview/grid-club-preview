@@ -1075,9 +1075,11 @@
   // pointerdown. Cancelling the canvas touch default stops that browser gesture.
   // This is canvas-only, so page scrolling, buttons and swipe-back stay native.
   canvas.addEventListener('touchstart',event=>{
+    if(event.touches?.[0]?.clientX<=28)return; // reserve left-edge Back
     if(event.cancelable)event.preventDefault();
   },{passive:false});
   canvas.addEventListener('pointerdown',event=>{
+    if(event.pointerType==='touch'&&event.clientX<=28)return;
     event.preventDefault();
     if(mode==='level'&&remainingLevelMs()!==null&&remainingLevelMs()<=0){triggerTimeout();return;}
     if(!game||game.finishedAt||game.paused||rankedGateActive)return;
@@ -1263,9 +1265,10 @@
     const text=`🧩 Grid Club · Dot Trails\n${mode==='daily'?`Daily challenge ${today()}`:mode==='level'?`Level ${game.level.stage} puzzle ${game.level.step}`:`${label()} (${size}×${size})`} solved in ${game.moves} moves and ${fmtSeconds(core.elapsed(game))}${game.hints?' · Assisted':''}.`;
     try {if(navigator.share)await navigator.share({text});else if(navigator.clipboard){await navigator.clipboard.writeText(text);alert('Result copied!');}else prompt('Copy your result:',text);}catch(_){}
   };
-  // Left-edge swipe follows the same navigation targets as the visible Back
-  // controls, but never steals a drawing gesture or a modal interaction.
-  // In browser Safari the OS/browser's own back gesture may take precedence.
+  // Consistent left-edge swipe navigation on every Dot Trails screen.
+  // Swipe recognition runs in capture phase so buttons and cards do not
+  // absorb the gesture. A narrow 28px board-edge strip is reserved for Back;
+  // normal touches elsewhere on the canvas still draw paths.
   function gestureBack(){
     if(!$('pauseLayer').hidden||!$('timeUpLayer').hidden)return;
     if(!$('gameScreen').hidden){exitPuzzle();return;}
@@ -1281,32 +1284,33 @@
   document.addEventListener('touchstart',event=>{
     edgeSwipe=null;
     if(event.touches.length!==1)return;
-    // Pipe Shift has its own Back hierarchy and gesture handler.
-    const pipeScreen=$('pipeShiftScreen');
-    if(pipeScreen?.isConnected&&!pipeScreen.hidden)return;
-    const point=event.touches[0],target=event.target;
-    if(target?.closest?.('#board,.controls,.pauseLayer,button,input,select,textarea'))return;
-    if(target?.closest?.('.boardWrap')&&!target?.closest?.('.win'))return;
+    if(!$('pipeShiftScreen').hidden)return;
     if(!$('pauseLayer').hidden||!$('timeUpLayer').hidden)return;
-    edgeSwipe={x:point.clientX,y:point.clientY,id:point.identifier};
-  },{passive:true});
+    const point=event.touches[0],target=event.target;
+    if(point.clientX>90||target?.closest?.('input,select,textarea,.controls'))return;
+    if(target?.closest?.('#board,.boardWrap')&&point.clientX>28)return;
+    edgeSwipe={id:point.identifier,x:point.clientX,y:point.clientY,ready:false};
+  },{capture:true,passive:true});
   document.addEventListener('touchmove',event=>{
     if(!edgeSwipe)return;
     if(event.touches.length!==1){edgeSwipe=null;return;}
-    const point=event.touches[0];
-    if(Math.abs(point.clientY-edgeSwipe.y)>45&&Math.abs(point.clientY-edgeSwipe.y)>Math.abs(point.clientX-edgeSwipe.x))edgeSwipe=null;
-  },{passive:true});
-  document.addEventListener('touchcancel',()=>{edgeSwipe=null;},{passive:true});
+    const point=event.touches[0],dx=point.clientX-edgeSwipe.x,dy=point.clientY-edgeSwipe.y;
+    if(Math.abs(dy)>55&&Math.abs(dy)>Math.abs(dx)){edgeSwipe=null;return;}
+    if(dx>22&&dx>Math.abs(dy)*1.5){
+      edgeSwipe.ready=true;if(event.cancelable)event.preventDefault();
+    }
+  },{capture:true,passive:false});
+  document.addEventListener('touchcancel',()=>{edgeSwipe=null;},{capture:true,passive:true});
   document.addEventListener('touchend',event=>{
     const swipe=edgeSwipe;edgeSwipe=null;
     if(!swipe||!event.changedTouches?.length)return;
     const point=Array.from(event.changedTouches).find(p=>p.identifier===swipe.id);
     if(!point)return;
     const dx=point.clientX-swipe.x,dy=point.clientY-swipe.y;
-    const fromLeftEdge=swipe.x<=48&&dx>=80;
-    const swipeLeft=swipe.x>=105&&dx<=-105;
-    if((fromLeftEdge||swipeLeft)&&Math.abs(dy)<50&&Math.abs(dx)>Math.abs(dy)*1.7)gestureBack();
-  },{passive:true});
+    if(swipe.ready&&dx>=75&&Math.abs(dy)<65&&dx>Math.abs(dy)*1.5){
+      gestureBack();if(event.cancelable)event.preventDefault();
+    }
+  },{capture:true,passive:false});
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) onBackground(); else onForeground();
   });
