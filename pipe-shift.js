@@ -12,6 +12,13 @@ let progress=blank(),section='menu',stage=1,mode='levels',currentLevel=null,curr
 let board=null,moves=0,elapsed=0,undo=[],selected=null,won=false,expired=false,justClearedStage=false,trialPending=false;
 let timer=null,lastTick=null,flowTimer=null,pointerOrigin=null,ignoreClickUntil=0,nonce=0;
 let dailyDay='',dailyTrace=[],dailyPractice=false,dailyConnection='',dailySync=null,dailyLoading=null;
+let moveLimit=null,legacyMoveCapExempt=false,failureReason='time';
+function bestMoves(){return mode==='random'?progress.randomBest[currentSize]?.moves:mode==='levels'?progress.best[currentLevel]?.moves:null;}
+function refreshMoveInfo(){
+ const best=bestMoves(),show=mode==='random'||mode==='levels';
+ $('pipeBestBox').hidden=!show;
+ $('pipeBestMoves').textContent=Number.isInteger(best)?`${best} moves`:'—';
+}
 function read(){
  try{
    const raw=localStorage.getItem(KEY),v=JSON.parse(raw||'null');if(!v||!v.completed||!v.active)return blank();
@@ -75,6 +82,7 @@ function updateClock(){
 function saveCurrent(){if(!puzzle||!board||won)return;
  clockSync();progress.active[activeKey()]={board:e.clone(board),moves,elapsed,expired,started:!trialPending,catalogVersion:mode==='levels'?5:mode==='daily'||mode==='practice'?puzzle.dailyVersion:null,seed:puzzle.seed??null,
    trace:mode==='daily'?dailyTrace.map(x=>({...x})):null,
+   moveCapVersion:mode==='levels'?1:null,moveCapExempt:mode==='levels'&&legacyMoveCapExempt,failureReason,
    undo:undo.slice(-40).map(a=>({board:e.clone(a.board),moves:a.moves}))};save();
 }
 function clearFlow(){if(flowTimer!==null){clearTimeout(flowTimer);flowTimer=null;}}
@@ -85,7 +93,6 @@ function route(name){
 }
 function home(){cancelDrag();saveCurrent();route('menu');root.hidden=true;hub.hidden=false;}
 function menu(){saveCurrent();hub.hidden=true;root.hidden=false;route('menu');
- $('pipeDailyStatus').textContent=globalThis.GridClubDailyJourney?.summary()||'';
  $('pipeMainProgress').textContent=`${Object.keys(progress.completed).filter(n=>progress.completed[n]).length}/${MAX}`;
 }
 function statsMenu(){
@@ -114,8 +121,13 @@ function recordCompletion(kind,size,usedMoves){
 }
 function randomMenu(){saveCurrent();hub.hidden=true;root.hidden=false;route('random');
  for(const btn of $('pipeRandomChoices').querySelectorAll('[data-pipe-size]')){
-   const size=Number(btn.dataset.pipeSize),sub=btn.querySelector('small');
-   if(sub&&size===7)sub.textContent=progress.active[`random:${size}`]?'Continue or play new':'Split and rejoin the flow';
+   const size=Number(btn.dataset.pipeSize);
+   const text=btn.querySelector('.pipeChoiceCopy')||btn.querySelector('span:not(.pipeButtonIcon):not(.pipeChevron)');
+   let sub=text?.querySelector('small');
+   if(text&&!sub){sub=document.createElement('small');text.append(sub);}
+   const best=progress.randomBest[size]?.moves;
+   sub.textContent=(Number.isInteger(best)?`Personal best: ${best} moves`:'No completed puzzles yet')+
+     (progress.active[`random:${size}`]?' · Continue available':'');
  }
 }
 function stageUnlocked(id){if(id===1)return true;const previous=e.STAGES[id-2];return !!progress.completed[previous.last]||!!progress.legacyUnlockedStages?.[id];}
@@ -156,10 +168,6 @@ function dailyMenu(){
  $('pipeDailyDifficulty').textContent=`${p.size===5?'Beginner':p.size===6?'Advanced':'Expert'} · ${p.size}×${p.size}`;
  $('pipeDailyPlay').textContent=record?.completed?'Practice today’s puzzle':progress.active[`daily:${day}`]?'Continue today’s puzzle':'Play today’s puzzle';
  $('pipeDailyNote').textContent=record?.completed?`Your first result: ${record.moves} moves${record.verified?' · verified':record.sync==='review'?' · under review':' · saved locally'}`:'One ranked result per day. Fewest moves wins. No timer.';
- const next=globalThis.GridClubDailyJourney?.nextGame('pipeShift');
- $('pipeDailyLandingStatus').textContent=globalThis.GridClubDailyJourney?.summary()||'';
- $('pipeDailyLandingNext').hidden=!record?.completed||!next;
- $('pipeDailyLandingDone').hidden=!record?.completed||!!next;
  $('pipeDailyRank').textContent='';
  const list=$('pipeDailyEntries');list.replaceChildren();
  if(!rankedReady()){list.textContent='Leaderboard unavailable offline or until the backend update is installed.';return;}
@@ -238,11 +246,18 @@ function freshRandomSeed(){
 function begin(p,kind,id,skipSave=false){
  if(!skipSave)saveCurrent();mode=kind;currentLevel=kind==='levels'?id:null;if(kind==='levels')stage=e.stageOf(id).id;dailyDay=(kind==='daily'||kind==='practice')?p.day:'';dailyPractice=kind==='practice';dailyTrace=[];currentSize=p.size;puzzle=p;
  won=false;expired=false;justClearedStage=false;selected=null;elapsed=0;moves=0;undo=[];trialPending=!!p.timerMs;
+ failureReason='time';legacyMoveCapExempt=false;
+ moveLimit=kind==='levels'?e.moveLimitFor(id):null;
  hub.hidden=true;root.hidden=false;route('game');
  const key=activeKey(),stored=progress.active[key];
  if(stored&&e.validateBoard(stored.board)&&stored.board.length===p.size*p.size&&
    (kind==='levels'?stored.catalogVersion===5:(kind==='daily'||kind==='practice')?stored.seed===p.seed&&stored.catalogVersion===p.dailyVersion:stored.seed===p.seed)&&Number.isInteger(stored.moves)&&stored.moves>=0&&stored.moves<100000){
    board=e.clone(stored.board);moves=stored.moves;elapsed=Math.max(0,Number(stored.elapsed)||0);expired=!!stored.expired;
+   if(kind==='levels'&&moveLimit!==null){
+     legacyMoveCapExempt=stored.moveCapVersion!==1||!!stored.moveCapExempt;
+     if(legacyMoveCapExempt)moveLimit=null;
+   }
+   failureReason=stored.failureReason==='moves'?'moves':'time';
    trialPending=!!p.timerMs&&!expired&&!stored.started&&moves===0&&elapsed===0;
    undo=Array.isArray(stored.undo)?stored.undo.filter(a=>e.validateBoard(a.board)&&a.board.length===board.length&&Number.isInteger(a.moves)).slice(-40):[];
    if(kind==='daily')dailyTrace=Array.isArray(stored.trace)?stored.trace.slice(0,5000):[];
@@ -251,7 +266,13 @@ function begin(p,kind,id,skipSave=false){
  $('pipeDifficultyTag').textContent=kind==='levels'?`Level ${p.stage}`:kind==='daily'||kind==='practice'?dailyPractice?'Practice':p.day:'Free Play';
  $('pipeGridSize').textContent=`${p.size}×${p.size}`;$('pipeInstruction').textContent='';$('pipeNew').hidden=kind!=='random';
  $('pipeBoard').style.setProperty('--pipe-size',p.size);$('pipeBoard').dataset.pipeGridSize=String(p.size);
- render();updateClock();if(kind==='daily')void syncDailyStart();if(expired){$('pipeTimeout').hidden=false;}else if(p.timerMs&&elapsed>=p.timerMs)timeout();else if(trialPending){$('pipeTimeIntro').hidden=false;}else startTicker();saveCurrent();
+ render();updateClock();if(kind==='daily')void syncDailyStart();
+ if(expired){showFailure();$('pipeTimeout').hidden=false;}
+ else if(moveLimit!==null&&moves>=moveLimit)timeout('moves');
+ else if(p.timerMs&&elapsed>=p.timerMs)timeout('time');
+ else if(trialPending){$('pipeTimeIntro').hidden=false;}
+ else startTicker();
+ saveCurrent();
 }
 function startLevel(n){if(!Number.isInteger(n)||n<1||n>MAX||!canStartLevel(n))return;
  begin(e.get(n),'levels',n);
@@ -285,7 +306,9 @@ function render(flow=[]){if(!board)return;
    }
    container.append(b);
  }
- $('pipeMoves').textContent=String(moves);$('pipeUndo').disabled=won||expired||undo.length===0;$('pipeReset').disabled=won||expired||moves===0;
+ $('pipeMoves').textContent=moveLimit!==null?`${moves}/${moveLimit}`:String(moves);
+ refreshMoveInfo();
+ $('pipeUndo').disabled=won||expired||undo.length===0;$('pipeReset').disabled=won||expired||moves===0;
 }
 function slide(from,to){if(won||expired||trialPending||!e.canMove(board,from,to))return false;
  clockSync();if(puzzle.timerMs&&elapsed>=puzzle.timerMs){timeout();return false;}
@@ -299,7 +322,8 @@ function slide(from,to){if(won||expired||trialPending||!e.canMove(board,from,to)
      if(!progress.randomBest[currentSize]||moves<progress.randomBest[currentSize].moves)progress.randomBest[currentSize]={moves,elapsed};}
    else if(mode==='daily'&&!dailyPractice){progress.daily[dailyDay]={completed:true,moves,events:dailyTrace.map(x=>({...x})),sync:'pending',verified:false,day:dailyDay};}
    delete progress.active[activeKey()];save();if(mode==='daily'&&!dailyPractice)void submitDaily();render(check.flow);flowTimer=setTimeout(()=>{flowTimer=null;if(won&&section==='game')victory();},950);
- }else{render();saveCurrent();}
+ }else if(moveLimit!==null&&moves>=moveLimit){timeout('moves');}
+ else{render();saveCurrent();}
  return true;
 }
 function clickCell(i){if(section!=='game'||won||expired||trialPending||i<0||i>=board.length)return;
@@ -311,7 +335,16 @@ function clickCell(i){if(section!=='game'||won||expired||trialPending||i<0||i>=b
 }
 function undoMove(){if(won||expired||trialPending||!undo.length)return;clockSync();const last=undo.pop();board=e.clone(last.board);if(mode==='daily')dailyTrace.push({action:'undo'});selected=null;render();saveCurrent();}
 function reset(){if(won||expired||trialPending)return;clockSync();board=e.clone(puzzle.board);if(mode==='daily')dailyTrace.push({action:'reset'});undo=[];selected=null;render();saveCurrent();}
-function timeout(){if(won||expired)return;clockSync();expired=true;timerStop();selected=null;updateClock();render();$('pipeTimeout').hidden=false;saveCurrent();}
+function showFailure(){
+ const byMoves=failureReason==='moves';
+ $('pipeTimeoutTitle').textContent=byMoves?'Move limit reached!':"Time's up!";
+ $('pipeTimeoutMessage').textContent=byMoves?'The flow needs fewer moves. Try a different route.':'Try this puzzle again.';
+}
+function timeout(reason='time'){
+ if(won||expired)return;
+ clockSync();failureReason=reason;expired=true;timerStop();selected=null;
+ updateClock();render();showFailure();$('pipeTimeout').hidden=false;saveCurrent();
+}
 function retry(){delete progress.active[activeKey()];const fresh=mode==='levels'?e.get(currentLevel):e.random(currentSize,puzzle.seed);begin(fresh,mode,currentLevel,true);}
 function victory(){const phrases=globalThis.GridClubWinMessages?.pipeShift||{};const names=phrases.general?.length?phrases.general:['Flow restored!','Nicely connected.','Let it flow!','Pipes in perfect order.'];
  const celebration=$('pipeStageCelebration'),result=$('pipeResult');
@@ -336,7 +369,10 @@ function victory(){const phrases=globalThis.GridClubWinMessages?.pipeShift||{};c
    }
  }
  const todayCompleted=(mode==='daily'||mode==='practice')&&dailyDay===utcToday()&&!!progress.daily[dailyDay]?.completed;
- const nextDaily=todayCompleted?globalThis.GridClubDailyJourney?.nextGame('pipeShift'):null;
+ const journey=globalThis.GridClubDailyJourney;
+ const nextDaily=todayCompleted?journey?.nextGame('pipeShift'):null;
+ $('pipeDailyRemainingWin').hidden=!todayCompleted;
+ $('pipeDailyRemainingWin').textContent=todayCompleted?journey?.remainingLabel()||'':'';
  $('pipeDailyNextWin').hidden=!nextDaily;
  $('pipeDailyTomorrowWin').hidden=!todayCompleted||!!nextDaily;
  result.hidden=false;
@@ -347,7 +383,6 @@ $('pipeShiftEntry').onclick=menu;$('pipeHomeBack').onclick=home;$('pipeRandomEnt
 $('pipeLevelsEntry').onclick=stages;$('pipeDailyEntry').onclick=dailyMenu;$('pipeStatsEntry').onclick=statsMenu;$('pipeStatsBack').onclick=menu;$('pipeRandomBack').onclick=menu;$('pipeStagesBack').onclick=menu;
 $('pipeLevelsBack').onclick=stages;$('pipeGameBack').onclick=back;$('pipeDailyBack').onclick=menu;
 $('pipeDailyPlay').onclick=()=>startDaily();$('pipeDailyRefresh').onclick=()=>void refreshDailyLeaderboard();
-$('pipeDailyLandingNext').onclick=()=>globalThis.GridClubDailyJourney?.visitNext('pipeShift');
 $('pipeDailyNextWin').onclick=()=>globalThis.GridClubDailyJourney?.visitNext('pipeShift');
 $('pipeRandomChoices').addEventListener('click',ev=>{const b=ev.target.closest('[data-pipe-size]');if(b)startRandom(Number(b.dataset.pipeSize));});
 $('pipeResultNext').onclick=()=>mode==='random'?startRandom(currentSize,true):startLevel(currentLevel+1);
