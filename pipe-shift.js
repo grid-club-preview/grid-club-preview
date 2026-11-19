@@ -541,6 +541,7 @@ function setDragVisual(p,ev){
  p.ghost.classList.toggle('pipeDragInvalid',!valid);
 }
 grid.addEventListener('pointerdown',ev=>{
+ if(ev.pointerType==='touch'&&ev.clientX<=28)return; // reserve narrow edge swipe
  const cell=ev.target.closest('[data-cell]');
  if(!cell||section!=='game'||won||expired||trialPending||ev.isPrimary===false)return;
  const from=Number(cell.dataset.cell),tile=board?.[from];
@@ -584,7 +585,8 @@ document.addEventListener('touchstart',ev=>{
  edge=null;
  if(root.hidden||ev.touches.length!==1||!root.contains(ev.target))return;
  const t=ev.touches[0];
- if(t.clientX>90||ev.target.closest('#pipeBoard,.pipeControls,#pipeExtraTime,input,select,textarea'))return;
+ if(t.clientX>90||ev.target.closest('.pipeControls,#pipeExtraTime,input,select,textarea'))return;
+ if(ev.target.closest('#pipeBoard')&&t.clientX>28)return;
  edge={id:t.identifier,x:t.clientX,y:t.clientY,ready:false};
 },{capture:true,passive:true});
 document.addEventListener('touchmove',ev=>{
