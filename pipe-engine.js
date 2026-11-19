@@ -65,9 +65,23 @@ function weaveDesignB(){
  return {paths:[main,[[2,0],[2,1],[3,1],[4,1],[4,0]],[[2,2],[2,3],[3,3],[4,3],[4,2]]],
  sources:[[6,0]],sinks:[[0,6]]};
 }
+// New 7×7 Advanced Free Play: a multi-row network between the short
+// Apprentice path and the sprawling 29–31-cell Expert networks.
+function advancedFreeDesign(seed){
+ const main=[[0,1],[1,1],[2,1],[3,1],[4,1],[5,1],
+   [5,2],[5,3],[4,3],[3,3],[2,3],[1,3],
+   [1,4],[1,5],[2,5],[3,5],[4,5],[5,5],[6,5]];
+ const first=[[3,1],[3,2],[4,2],[4,1]];
+ const second=[[3,3],[3,4],[4,4],[4,3]];
+ const r=rng(seed^0x6a0fa842);
+ const flipX=r()>.5,flipY=r()>.5;
+ const transform=path=>path.map(([x,y])=>[flipX?6-x:x,flipY?6-y:y]);
+ return {paths:[main,first,second].map(transform),
+   sources:[transform([main[0]])[0]],sinks:[transform([main[main.length-1]])[0]]};
+}
 const DECORS=[N|S,E|W,N|E,E|S,S|W,W|N];
 function network({size,mode,seed,complexity=1,fixedCount=0,walls=0,decoys=0,blocks=0,requireAllFlow=false}){
- const graph=mode==='corner'?cornerTraverseDesign():mode==='weaveA'?weaveDesignA():mode==='weaveB'?weaveDesignB():mode==='loop'?loopDesign(seed):mode==='multiple'?multipleDesign(seed):mode==='double'?doubleDesign(seed):pathDesign(size,seed,complexity);
+ const graph=mode==='advancedFree'?advancedFreeDesign(seed):mode==='corner'?cornerTraverseDesign():mode==='weaveA'?weaveDesignA():mode==='weaveB'?weaveDesignB():mode==='loop'?loopDesign(seed):mode==='multiple'?multipleDesign(seed):mode==='double'?doubleDesign(seed):pathDesign(size,seed,complexity);
  const rand=rng(seed^0x87661ab5),board=Array.from({length:size*size},()=>({kind:'empty',mask:0,fixed:false})),ports=new Map();
  for(const path of graph.paths)for(let i=1;i<path.length;i++){
    const a=id(...path[i-1],size),b=id(...path[i],size),d=direction(a,b,size);
@@ -419,14 +433,44 @@ function random(size,seed,legacy=false){if(![5,6,7].includes(size))throw Error('
 }
 // Free Play alone offers two explicit win objectives. Ranked Daily and
 // numbered Level boards continue to use their own audited rules.
-function freePlay(size,seed,objective='all'){
- if(![5,6,7].includes(size)||!['all','any'].includes(objective))
+function advancedRandom(seed){
+ const size=7;
+ let best=null;
+ for(let attempt=0;attempt<14;attempt++){
+   const candidateSeed=(seed+Math.imul(attempt,2654435761))>>>0;
+   try{
+     const solvedBoard=network({size,mode:'advancedFree',seed:candidateSeed,
+       fixedCount:2,walls:2,decoys:2,blocks:3});
+     const scrambled=scramble(solvedBoard,candidateSeed^0x5137af83,85);
+     const flow=evaluate(solvedBoard).flow;
+     const needed=flow.filter(i=>solvedBoard[i].kind==='pipe'&&!solvedBoard[i].fixed);
+     const displaced=needed.filter(i=>scrambled.board[i].kind!=='pipe'||
+       scrambled.board[i].mask!==solvedBoard[i].mask||scrambled.board[i].fixed);
+     const candidate={mode:'random',size,seed,timerMs:null,level:null,stage:null,
+       ...scrambled,solvedBoard,networkType:'advancedFree',
+       randomLayoutVersion:6,difficultyMetrics:{
+         flowCells:flow.length,displacedPipes:displaced.length,
+         requiredPipes:needed.length,attempt
+       }};
+     if(!best||displaced.length>best.displaced)best={candidate,displaced:displaced.length};
+     if(flow.length>=21&&displaced.length>=10)
+       return rotatePuzzle(candidate,orientationForRandom(seed));
+   }catch(_){/* Try another reproducible seed. */}
+ }
+ if(!best)throw Error('Unable to create Advanced Free Play');
+ return rotatePuzzle(best.candidate,orientationForRandom(seed));
+}
+function freePlay(size,seed,objective='all',tier=size===5?'beginner':size===6?'apprentice':'expert'){
+ if(![5,6,7].includes(size)||!['all','any'].includes(objective)||
+   !['beginner','apprentice','advanced','expert'].includes(tier)||
+   (size===5&&tier!=='beginner')||(size===6&&tier!=='apprentice')||
+   (size===7&&!['advanced','expert'].includes(tier)))
    throw Error('Unknown Free Play goal');
- const original=random(size,seed,false);
+ const original=tier==='advanced'?advancedRandom(seed):random(size,seed,false);
  // Expert/All is exactly the original v3 challenge, including the distant
  // marked pipe, so existing results remain directly comparable.
- if(size===7&&objective==='all')
-   return {...original,freeObjective:'all'};
+ if(tier==='expert'&&objective==='all')
+   return {...original,freeObjective:'all',freeTier:tier};
  const board=clone(original.board),solvedBoard=clone(original.solvedBoard);
  for(const current of [board,solvedBoard])for(const tile of current){
    if(tile.kind==='source'){
@@ -447,8 +491,8 @@ function freePlay(size,seed,objective='all'){
      delete tile.transportTarget;
    }
  }
- const puzzle={...original,board,solvedBoard,freeObjective:objective,
-   requireAllFlow:objective==='all',randomLayoutVersion:5};
+ const puzzle={...original,board,solvedBoard,freeObjective:objective,freeTier:tier,
+   requireAllFlow:objective==='all',randomLayoutVersion:tier==='advanced'?6:5};
  if(!evaluate(solvedBoard).solved)throw Error('Free Play goal has no valid completion');
  return puzzle;
 }
