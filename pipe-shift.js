@@ -12,6 +12,7 @@ let progress=blank(),section='menu',stage=1,mode='levels',currentLevel=null,curr
 let board=null,moves=0,elapsed=0,undo=[],selected=null,won=false,expired=false,justClearedStage=false,trialPending=false;
 let timer=null,lastTick=null,flowTimer=null,pointerOrigin=null,ignoreClickUntil=0,nonce=0;
 let dailyDay='',dailyTrace=[],dailyPractice=false,dailyConnection='',dailySync=null,dailyLoading=null;
+let dailyServerAttemptId=null,dailyStartPending=false;
 let moveLimit=null,legacyMoveCapExempt=false,failureReason='time';
 let extraTimeMs=0,extraTimeCount=0,attemptId='',creditReward=null;
 const credits=globalThis.GridClubCredits;
@@ -127,6 +128,7 @@ function buyPipeTime(){
 function saveCurrent(){if(!puzzle||!board||won)return;
  clockSync();progress.active[activeKey()]={board:e.clone(board),moves,elapsed,expired,started:!trialPending,catalogVersion:mode==='levels'?puzzle.catalogVersion:mode==='daily'||mode==='practice'?puzzle.dailyVersion:null,seed:puzzle.seed??null,
    trace:mode==='daily'?dailyTrace.map(x=>({...x})):null,
+   serverAttemptId:mode==='daily'?dailyServerAttemptId:null,
    extraTimeMs,extraTimeCount,attemptId,
    moveCapVersion:mode==='levels'?1:null,moveCapExempt:mode==='levels'&&legacyMoveCapExempt,failureReason,
    randomLayoutVersion:mode==='random'?(puzzle.randomLayoutVersion||1):null,
@@ -328,6 +330,7 @@ function freshRandomSeed(){
 function begin(p,kind,id,skipSave=false){
  if(!skipSave)saveCurrent();mode=kind;currentLevel=kind==='levels'?id:null;if(kind==='levels')stage=e.stageOf(id).id;dailyDay=(kind==='daily'||kind==='practice')?p.day:'';dailyPractice=kind==='practice';dailyTrace=[];currentSize=p.size;puzzle=p;
  won=false;expired=false;justClearedStage=false;selected=null;elapsed=0;moves=0;undo=[];trialPending=!!p.timerMs;
+ dailyServerAttemptId=null;dailyStartPending=false;
  extraTimeMs=0;extraTimeCount=0;attemptId=makeAttempt();creditReward=null;
  failureReason='time';legacyMoveCapExempt=false;
  // Existing v6 attempts of redesigned puzzles 6 and 7 keep their original
@@ -349,7 +352,11 @@ function begin(p,kind,id,skipSave=false){
    failureReason=stored.failureReason==='moves'?'moves':'time';
    trialPending=!!p.timerMs&&!expired&&!stored.started&&moves===0&&elapsed===0;
    undo=Array.isArray(stored.undo)?stored.undo.filter(a=>e.validateBoard(a.board)&&a.board.length===board.length&&Number.isInteger(a.moves)).slice(-40):[];
-   if(kind==='daily')dailyTrace=Array.isArray(stored.trace)?stored.trace.slice(0,5000):[];
+   if(kind==='daily'){
+    dailyTrace=Array.isArray(stored.trace)?stored.trace.slice(0,5000):[];
+    dailyServerAttemptId=typeof stored.serverAttemptId==='string'&&stored.serverAttemptId?
+      stored.serverAttemptId:null;
+   }
  }else board=e.clone(p.board);
  $('pipeGameName').textContent=kind==='levels'?`Puzzle ${id-e.stageOf(id).first+1}/${e.PUZZLES_PER_STAGE}`:kind==='daily'||kind==='practice'?'Daily Challenge':(p.size===5?'Beginner':p.size===6?'Advanced':'Expert');
  $('pipeDifficultyTag').textContent=kind==='levels'?`Level ${p.stage}`:kind==='daily'||kind==='practice'?dailyPractice?'Practice':p.day:'Free Play';
@@ -417,7 +424,7 @@ function render(flow=[]){if(!board)return;
  refreshMoveInfo();refreshCreditControls();
  $('pipeUndo').disabled=won||expired||undo.length===0;$('pipeReset').disabled=won||expired||moves===0;
 }
-function slide(from,to){if(won||expired||trialPending||!e.canMove(board,from,to))return false;
+function slide(from,to){if(won||expired||trialPending||dailyStartPending||!e.canMove(board,from,to))return false;
  clockSync();if(timeBudget()&&elapsed>=timeBudget()){timeout();return false;}
  undo.push({board:e.clone(board),moves});if(undo.length>40)undo.shift();e.move(board,from,to);moves++;selected=null;
  if(mode==='daily')dailyTrace.push({action:'slide',from,to});
@@ -448,7 +455,9 @@ function slide(from,to){if(won||expired||trialPending||!e.canMove(board,from,to)
      if(!progress.randomBest[currentSize]||moves<progress.randomBest[currentSize].moves)
        progress.randomBest[currentSize]={moves,elapsed};
    }else if(mode==='daily'&&!dailyPractice){
-     progress.daily[dailyDay]={completed:true,moves,events:dailyTrace.map(x=>({...x})),sync:'pending',verified:false,day:dailyDay};
+     progress.daily[dailyDay]={completed:true,moves,events:dailyTrace.map(x=>({...x})),
+      sync:dailyServerAttemptId?'pending':'local',serverAttemptId:dailyServerAttemptId,
+      verified:false,day:dailyDay};
      const award=credits?.award('club:pipe:daily:'+dailyDay,10,'pipe-daily');
      creditReward.daily=award?.awarded||0;
      creditReward.saveFailed ||= !!award?.saveFailed;
@@ -461,15 +470,15 @@ function slide(from,to){if(won||expired||trialPending||!e.canMove(board,from,to)
  else{render();saveCurrent();}
  return true;
 }
-function clickCell(i){if(section!=='game'||won||expired||trialPending||i<0||i>=board.length)return;
+function clickCell(i){if(section!=='game'||won||expired||trialPending||dailyStartPending||i<0||i>=board.length)return;
  if(selected!==null&&board[i].kind==='empty'&&slide(selected,i))return;
  const t=board[i];if(!['pipe','block'].includes(t.kind)||t.fixed){selected=null;render();return;}
  const options=board.map((_,k)=>e.canMove(board,i,k)?k:-1).filter(n=>n>=0);
  if(options.length===1){slide(i,options[0]);return;}
  selected=selected===i?null:i;render();
 }
-function undoMove(){if(won||expired||trialPending||!undo.length)return;clockSync();const last=undo.pop();board=e.clone(last.board);if(mode==='daily')dailyTrace.push({action:'undo'});selected=null;render();saveCurrent();}
-function reset(){if(won||expired||trialPending)return;clockSync();board=e.clone(puzzle.board);if(mode==='daily')dailyTrace.push({action:'reset'});undo=[];selected=null;render();saveCurrent();}
+function undoMove(){if(won||expired||trialPending||dailyStartPending||!undo.length)return;clockSync();const last=undo.pop();board=e.clone(last.board);if(mode==='daily')dailyTrace.push({action:'undo'});selected=null;render();saveCurrent();}
+function reset(){if(won||expired||trialPending||dailyStartPending)return;clockSync();board=e.clone(puzzle.board);if(mode==='daily')dailyTrace.push({action:'reset'});undo=[];selected=null;render();saveCurrent();}
 function showFailure(){
  const byMoves=failureReason==='moves';
  $('pipeTimeoutTitle').textContent=byMoves?'Move limit reached!':"Time's up!";
