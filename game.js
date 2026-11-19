@@ -699,7 +699,7 @@
   async function startRankedAttempt(){
     if(!window.GridRanked?.configured||!navigator.onLine||!game||game.finishedAt||dailyStartDay!==today()){gateRanked(false);return;}
     const localAttemptId=game.attemptId, generation=++rankStartGeneration;
-    gateRanked(true,'Preparing today\'s verified timer…');
+    gateRanked(true,'Connecting you to today’s challenge…');
     try{
       const reply=await GridRanked.call('start',{day:dailyStartDay});
       if(generation!==rankStartGeneration||mode!=='daily'||!game||game.attemptId!==localAttemptId||game.finishedAt)return;
