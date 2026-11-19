@@ -304,7 +304,10 @@ function begin(p,kind,id,skipSave=false){
  won=false;expired=false;justClearedStage=false;selected=null;elapsed=0;moves=0;undo=[];trialPending=!!p.timerMs;
  extraTimeMs=0;extraTimeCount=0;attemptId=makeAttempt();creditReward=null;
  failureReason='time';legacyMoveCapExempt=false;
- moveLimit=kind==='levels'?e.moveLimitFor(id,p.catalogVersion===5):null;
+ // Existing v6 attempts of redesigned puzzles 6 and 7 keep their original
+ // move budgets and boards; fresh starts use the more demanding v7 layout.
+ const variant=p.catalogVersion===5?true:p.catalogVersion===6&&[27,28].includes(id)?6:false;
+ moveLimit=kind==='levels'?e.moveLimitFor(id,variant):null;
  hub.hidden=true;root.hidden=false;route('game');
  const key=activeKey(),stored=progress.active[key];
  if(stored&&e.validateBoard(stored.board)&&stored.board.length===p.size*p.size&&
@@ -325,8 +328,9 @@ function begin(p,kind,id,skipSave=false){
  $('pipeGameName').textContent=kind==='levels'?`Puzzle ${id-e.stageOf(id).first+1}/${e.PUZZLES_PER_STAGE}`:kind==='daily'||kind==='practice'?'Daily Challenge':(p.size===5?'Beginner':p.size===6?'Advanced':'Expert');
  $('pipeDifficultyTag').textContent=kind==='levels'?`Level ${p.stage}`:kind==='daily'||kind==='practice'?dailyPractice?'Practice':p.day:'Free Play';
  $('pipeGridSize').textContent=`${p.size}×${p.size}`;
- $('pipeInstruction').textContent=p.board.some(t=>t.transportPiece)?
-   'Guide the gold-collared elbow to the bottom-right corner to complete the flow.':'';
+ const transportTarget=p.solvedBoard.findIndex(t=>t.transportPiece);
+ $('pipeInstruction').textContent=transportTarget>=0?
+   'Move the gold-collared elbow to the outlined square, then complete the flow.':'';
  $('pipeNew').hidden=kind!=='random';
  $('pipeBoard').style.setProperty('--pipe-size',p.size);$('pipeBoard').dataset.pipeGridSize=String(p.size);
  $('pipeTrialDescription').textContent=moveLimit!==null?`Finish within ${moveLimit} moves and ${Math.ceil(p.timerMs/1000)} seconds.`:'Beat the clock to restore the flow.';
@@ -339,10 +343,17 @@ function begin(p,kind,id,skipSave=false){
  saveCurrent();
 }
 function startLevel(n){if(!Number.isInteger(n)||n<1||n>MAX||!canStartLevel(n))return;
- // Earlier in-progress v5 boards retain their original shape and valid
- // solution. Fresh attempts and retries use the new, varied v6 layouts.
- const legacy=progress.active[`level:${n}`]?.catalogVersion===5;
- begin(e.get(n,undefined,legacy),'levels',n);
+ // Preserve meaningful attempts from earlier board versions. For the two
+ // newly redesigned puzzles, an untouched old board is safely replaced
+ // without consuming a first attempt or taking away paid time.
+ const slot=`level:${n}`,stored=progress.active[slot];
+ if([27,28].includes(n)&&stored?.catalogVersion===6&&
+   Number(stored.moves||0)===0&&Number(stored.extraTimeCount||0)===0){
+   delete progress.active[slot];save();
+ }
+ const savedVersion=progress.active[slot]?.catalogVersion;
+ const variant=savedVersion===5?true:savedVersion===6&&[27,28].includes(n)?6:false;
+ begin(e.get(n,undefined,variant),'levels',n);
 }
 function startRandom(size,newPuzzle=false){if(![5,6,7].includes(size))return;
  const key=`random:${size}`,saved=progress.active[key],seed=!newPuzzle&&saved&&Number.isInteger(saved.seed)?saved.seed:freshRandomSeed();

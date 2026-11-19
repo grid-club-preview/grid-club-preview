@@ -50,9 +50,24 @@ function cornerTraverseDesign(){
   const loop=[[2,0],[2,1],[3,1],[4,1],[4,0]];
   return {paths:[main,loop],sources:[[0,0]],sinks:[[5,6]]};
 }
+
+function weaveDesignA(){
+ const main=[[0,1],[1,1],[2,1],[3,1],[4,1],[5,1],[6,1],
+ [6,2],[6,3],[5,3],[4,3],[3,3],[2,3],[1,3],[0,3],
+ [0,4],[0,5],[1,5],[2,5],[3,5],[4,5],[5,5],[6,5]];
+ return {paths:[main,[[2,1],[2,2],[3,2],[4,2],[4,1]],[[2,3],[2,4],[3,4],[4,4],[4,3]]],
+ sources:[[0,1]],sinks:[[6,5]]};
+}
+function weaveDesignB(){
+ const main=[[6,0],[5,0],[4,0],[3,0],[2,0],[1,0],[0,0],
+ [0,1],[0,2],[1,2],[2,2],[3,2],[4,2],[5,2],[6,2],
+ [6,3],[6,4],[5,4],[4,4],[3,4],[2,4],[1,4],[0,4],[0,5],[0,6]];
+ return {paths:[main,[[2,0],[2,1],[3,1],[4,1],[4,0]],[[2,2],[2,3],[3,3],[4,3],[4,2]]],
+ sources:[[6,0]],sinks:[[0,6]]};
+}
 const DECORS=[N|S,E|W,N|E,E|S,S|W,W|N];
 function network({size,mode,seed,complexity=1,fixedCount=0,walls=0,decoys=0,blocks=0}){
- const graph=mode==='corner'?cornerTraverseDesign():mode==='loop'?loopDesign(seed):mode==='multiple'?multipleDesign(seed):mode==='double'?doubleDesign(seed):pathDesign(size,seed,complexity);
+ const graph=mode==='corner'?cornerTraverseDesign():mode==='weaveA'?weaveDesignA():mode==='weaveB'?weaveDesignB():mode==='loop'?loopDesign(seed):mode==='multiple'?multipleDesign(seed):mode==='double'?doubleDesign(seed):pathDesign(size,seed,complexity);
  const rand=rng(seed^0x87661ab5),board=Array.from({length:size*size},()=>({kind:'empty',mask:0,fixed:false})),ports=new Map();
  for(const path of graph.paths)for(let i=1;i<path.length;i++){
    const a=id(...path[i-1],size),b=id(...path[i],size),d=direction(a,b,size);
@@ -65,10 +80,12 @@ function network({size,mode,seed,complexity=1,fixedCount=0,walls=0,decoys=0,bloc
    if(kind!=='pipe'&&degrees!==1)throw Error('Terminal is not an endpoint');
    board[index]={kind,mask,fixed:kind!=='pipe'};
  }
- if(mode==='corner'){
-   const corner=id(6,6,size);
-   if(board[corner].kind!=='pipe')throw Error('No bottom-corner elbow');
-   board[corner].transportPiece=true;
+ if(['corner','weaveA','weaveB'].includes(mode)){
+   const target=mode==='weaveA'?id(5,5,size):mode==='weaveB'?id(0,5,size):id(6,6,size);
+   if(board[target].kind!=='pipe')throw Error('Missing target elbow');
+   board[target].transportPiece=true;
+   // Do not change the shape of previously saved v6 corner puzzles.
+   if(mode!=='corner')board[target].transportTarget=target;
  }
  const candidates=shuffle([...ports.keys()].filter(i=>board[i].kind==='pipe'&&!board[i].transportPiece),rand);
  for(const i of candidates.slice(0,fixedCount))board[i].fixed=true;
@@ -104,7 +121,9 @@ function evaluate(board){const size=sizeOf(board);if(!size)return {solved:false,
  const branches=[...visited].filter(i=>DIRECTIONS.filter(d=>board[i].mask&d.bit).length===3).length;
  const degreeSum=[...visited].reduce((n,i)=>n+DIRECTIONS.filter(d=>board[i].mask&d.bit).length,0);
  const special=board.findIndex(tile=>tile.transportPiece===true);
- return {solved:leaks===0&&reachedOutlet&&sourcesReached&&(special<0||special===board.length-1),leaks,reachedOutlet,sourcesReached,flow:[...visited],branches,cycles:degreeSum/2-visited.size+1,sources:sources.length,sinks:sinks.length};
+ const target=special<0?-1:(board[special].transportTarget??board.length-1);
+ const transportReady=special<0||(special===target&&visited.has(special));
+ return {solved:leaks===0&&reachedOutlet&&sourcesReached&&transportReady,leaks,reachedOutlet,sourcesReached,flow:[...visited],branches,cycles:degreeSum/2-visited.size+1,sources:sources.length,sinks:sinks.length};
 }
 function scramble(solved,seed,steps){let best=null,bestScore=-1;
  for(let attempt=0;attempt<26;attempt++){
@@ -224,27 +243,33 @@ const cache=new Map();
 const FIXED_SEEDS=Object.freeze({1:3074878952,2:4088790921,3:3074894406,4:3074902133,5:4088814102,6:1434386060,7:1434393787,8:420497272,9:420504999,10:3074948495,11:3074956222,12:420528180,13:3074971676,14:420543634,15:3074987130,16:3074994857,17:420566815,18:4088914553,19:1434486511,20:3462302722,21:3075033492,22:3075041219,23:420613177,24:420620904,25:420628631,26:3075072127,27:3075079854,28:420651812,29:420659539,30:420667266}); // Audited 2026-11-18; freeze for this catalogue.
 const EXTRA_SEEDS=Object.freeze({6:3074917587,7:4088829556,13:420535907,14:2835629075,20:4088930007,21:3075033492,27:1434548327,28:1434556054,34:1434602416,35:1434610143,41:4089092274,42:4089100001}); // Additional audited puzzle seeds.
 function get(n,seedOverride,legacy=false){if(!Number.isInteger(n)||n<1||n>MAX_LEVEL)return null;
- const override=Number.isInteger(seedOverride),key=override?`trial:${n}:${seedOverride}:${legacy}`:legacy?`legacy:${n}`:n;
+ const version=legacy===true?5:legacy===6?6:(n===27||n===28?7:6);
+ const override=Number.isInteger(seedOverride),key=override?`trial:${n}:${seedOverride}:v${version}`:`v${version}:${n}`;
  if(!cache.has(key)){
    const s=stageOf(n),k=n-s.first,originalId=k<5?(s.id-1)*5+k+1:null;
    const seed=(override?seedOverride:(FIXED_SEEDS[originalId]??EXTRA_SEEDS[n]))>>>0;
    // A solved, leak-free network is constructed first, with dense pipe decoys
    // and unmistakable fixed metal plates, then scrambled by legal slides.
    // Previous completions are preserved; unfinished v0.9.2 boards are restarted.
-   const options={size:s.size,mode:!legacy&&n===26?'corner':s.mode,seed,
+   const mode=version>=7&&n===27?'weaveA':version>=7&&n===28?'weaveB':version>=6&&n===26?'corner':s.mode;
+   const options={size:s.size,mode,seed,
      complexity:1+Math.floor(k/2),
      fixedCount:s.id===1?Math.floor(k/2):s.id===2?Math.min(7,2+k):Math.min(7,s.id-1+Math.floor(k/2)),
      walls:s.id===1?1+Math.floor(k/2):s.id===2?2+Math.floor(k/2):Math.min(7,2+Math.floor(k/2)+Math.floor((s.id-3)/2)),
      decoys:s.id===1?7+k:s.id===2?9+2*k:18+2*k+Math.max(0,s.id-3),
      blocks:s.id<=2?0:s.id===3?(k>=2?1+Math.floor((k-2)/2):0):2+(s.id-4)+Math.floor(k/2)};
-   if(!legacy&&n===26){options.fixedCount=2;options.walls=2;options.decoys=8;options.blocks=1;}
+   if(version>=6&&n===26){options.fixedCount=2;options.walls=2;options.decoys=8;options.blocks=1;}
+   if(version>=7&&(n===27||n===28)){options.fixedCount=2;options.walls=2;options.decoys=6;options.blocks=3;}
    const solvedBoard=network(options);
    const raw=scramble(solvedBoard,seed^0x123acdca,20+s.id*6+k*7);
-   const scrambled=!legacy&&n===26?stretchCorner(raw,8):raw;
+   const scrambled=version>=6&&n===26?stretchCorner(raw,8):
+     version>=7&&n===27?stretchCorner(raw,id(1,1,s.size)):
+     version>=7&&n===28?stretchCorner(raw,id(5,0,s.size)):raw;
    let candidate={level:n,stage:s.id,size:s.size,mode:'levels',networkType:options.mode,timerMs:timerFor(n),...scrambled,solvedBoard,initialMoves:scrambled.solutionMoves.length,
      fixedPipes:solvedBoard.filter(t=>t.kind==='pipe'&&t.fixed).length,walls:solvedBoard.filter(t=>t.kind==='wall').length,
-     catalogVersion:legacy?5:6};
-   if(!legacy&&n!==26)candidate=rotatePuzzle(candidate,orientationForLevel(n));
+     catalogVersion:version};
+   if(version>=6&&n!==26&&(version<7||![27,28].includes(n)))
+     candidate=rotatePuzzle(candidate,orientationForLevel(n));
    cache.set(key,candidate);
  }
  const p=cache.get(key);return {...p,board:clone(p.board),solvedBoard:clone(p.solvedBoard),solutionMoves:p.solutionMoves.map(m=>({...m}))};
