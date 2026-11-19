@@ -417,6 +417,34 @@ function random(size,seed,legacy=false){if(![5,6,7].includes(size))throw Error('
    randomLayoutVersion:legacy===true?1:legacy===2?2:3};
  return legacy===true?candidate:rotatePuzzle(candidate,orientationForRandom(seed));
 }
+// Free Play alone offers two explicit win objectives. Ranked Daily and
+// numbered Level boards continue to use their own audited rules.
+function freePlay(size,seed,objective='all'){
+ if(![5,6,7].includes(size)||!['all','any'].includes(objective))
+   throw Error('Unknown Free Play goal');
+ const original=random(size,seed,false);
+ // Expert/All is exactly the original v3 challenge, including the distant
+ // marked pipe, so existing results remain directly comparable.
+ if(size===7&&objective==='all')
+   return {...original,freeObjective:'all'};
+ const board=clone(original.board),solvedBoard=clone(original.solvedBoard);
+ for(const current of [board,solvedBoard])for(const tile of current){
+   if(tile.kind==='source'){
+     if(objective==='all')tile.requireAllFlow=true;
+     else delete tile.requireAllFlow;
+   }
+   // In "Use any pipes", connecting IN to OUT without leaking is the entire
+   // objective: no secretly compulsory marked piece or target location.
+   if(objective==='any'){
+     delete tile.transportPiece;
+     delete tile.transportTarget;
+   }
+ }
+ const puzzle={...original,board,solvedBoard,freeObjective:objective,
+   requireAllFlow:objective==='all',randomLayoutVersion:5};
+ if(!evaluate(solvedBoard).solved)throw Error('Free Play goal has no valid completion');
+ return puzzle;
+}
 function validateBoard(b){const size=sizeOf(b);return !!size&&b.every(t=>t&&['empty','wall','block','pipe','source','sink'].includes(t.kind)&&Number.isInteger(t.mask)&&t.mask>=0&&t.mask<=15&&typeof t.fixed==='boolean'&&(t.kind==='pipe'||t.kind==='source'||t.kind==='sink'||t.mask===0))&&[1,2].includes(b.filter(t=>t.kind==='source').length)&&[1,2].includes(b.filter(t=>t.kind==='sink').length);}
-return Object.freeze({SIZE,MAX_LEVEL,PUZZLES_PER_STAGE,N,E,S,W,DIRECTIONS,STAGES,sizeOf,at,id,adjacent,direction,clone,rng,get,random,daily,hashSeed,stageOf,timerFor,moveLimitFor,move,canMove,legalMoves,evaluate,traceLeak,validateBoard,signature});
+return Object.freeze({SIZE,MAX_LEVEL,PUZZLES_PER_STAGE,N,E,S,W,DIRECTIONS,STAGES,sizeOf,at,id,adjacent,direction,clone,rng,get,random,freePlay,daily,hashSeed,stageOf,timerFor,moveLimitFor,move,canMove,legalMoves,evaluate,traceLeak,validateBoard,signature});
 });
