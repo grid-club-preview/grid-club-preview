@@ -12,7 +12,7 @@
   <link rel="icon" href="./icons/icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
   <title>Grid Club · Dot Trails &amp; Pipe Shift</title>
-  <link rel="stylesheet" href="pipe-shift.css?v=0.9.4">
+  <link rel="stylesheet" href="pipe-shift.css?v=0.9.5">
   <style>
     :root { color-scheme: dark; --bg:#0e1424; --surface:#1a243a; --tile:#253147; --muted:#9daabe; --mint:#7be3d4; --purple:#a178ff; }
     * { box-sizing: border-box; }
@@ -294,7 +294,7 @@
 <body>
   <main class="shell">
     <section id="home">
-      <header><div><div class="eyebrow">GRID CLUB</div><h1>A little puzzle break.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.4</span></div></header>
+      <header><div><div class="eyebrow">GRID CLUB</div><h1>A little puzzle break.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.5</span></div></header>
       <details class="backendCheck" aria-label="Leaderboard connection diagnostics">
         <summary class="backendCheckTitle">Connection diagnostics (beta)</summary>
         <p id="backendCheckMessage" role="status" aria-live="polite">Checking configuration…</p>
@@ -333,10 +333,14 @@
       <div id="pipe-menu">
         <div class="pipeHeader"><button class="back" id="pipeHomeBack" aria-label="Back to Grid Club">‹</button>
           <div><div class="eyebrow">GRID CLUB</div><h2>Pipe Shift</h2></div>
-          <span class="pipeHeaderMeta" id="pipeMainProgress">0/30</span>
+          <span class="pipeHeaderMeta" id="pipeMainProgress">0/42</span>
         </div>
+        <button type="button" class="pipeButton pipeDailyFeature" id="pipeDailyEntry">
+          <span class="pipeButtonIcon" aria-hidden="true">◷</span>
+          <span><strong>Today's Daily Challenge</strong><small>One puzzle worldwide · fewest moves wins</small><small class="dailyJourneyStatus" id="pipeDailyStatus"></small></span><span class="pipeChevron">›</span>
+        </button>
         <div class="pipeCard pipeHero" aria-hidden="true">
-          <svg width="170" height="93" viewBox="0 0 170 93" fill="none" style="max-width:100%">
+          <svg width="133" height="73" viewBox="0 0 170 93" fill="none" style="max-width:100%">
             <path d="M10 28H60V69H110V33H160" stroke="#17263b" stroke-width="27" stroke-linecap="round" stroke-linejoin="round"/>
             <path d="M10 28H60V69H110V33H160" stroke="#b5cfe1" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
             <path d="M10 28H60V69H110V33H160" stroke="#75d5fa" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="13 15"/>
@@ -347,13 +351,9 @@
           <span class="pipeButtonIcon" aria-hidden="true">⇄</span>
           <span><strong>Free Play</strong></span><span class="pipeChevron">›</span>
         </button>
-        <button type="button" class="pipeButton" id="pipeDailyEntry">
-          <span class="pipeButtonIcon" aria-hidden="true">◷</span>
-          <span><strong>Daily Challenge</strong><small>One puzzle worldwide · fewest moves wins</small></span><span class="pipeChevron">›</span>
-        </button>
         <button type="button" class="pipeButton" id="pipeLevelsEntry">
           <span class="pipeButtonIcon" aria-hidden="true">🏆</span>
-          <span><strong>Play Levels</strong><small>30 progressive puzzles</small></span><span class="pipeChevron">›</span>
+          <span><strong>Play Levels</strong><small>42 progressive puzzles · 7 per level</small></span><span class="pipeChevron">›</span>
         </button>
         <button type="button" class="pipeButton" id="pipeStatsEntry">
           <span class="pipeButtonIcon" aria-hidden="true">▥</span>
@@ -370,7 +370,10 @@
           <p>Fix the flow using as few moves as possible.</p>
           <p id="pipeDailyNote">One ranked result per day. No timer.</p>
           <button id="pipeDailyPlay" type="button" class="pipeButton pipeDailyAction">Play today’s puzzle</button>
+          <p id="pipeDailyLandingStatus" class="dailyJourneyStatus"></p>
         </div>
+        <button type="button" id="pipeDailyLandingNext" class="dailyJourneyNext" hidden>Next Daily Challenge &gt;</button>
+        <p id="pipeDailyLandingDone" class="dailyJourneyDone" hidden>More Daily Challenges tomorrow</p>
         <div class="pipeDailyBoard">
           <div class="pipeDailyBoardHeader"><strong>Global leaderboard</strong><button id="pipeDailyRefresh" type="button">Refresh</button></div>
           <div id="pipeDailyRank" class="pipeDailyRank" aria-live="polite"></div>
@@ -400,7 +403,7 @@
       <div id="pipe-stages" hidden>
         <div class="pipeHeader"><button class="back" id="pipeStagesBack" aria-label="Back to Pipe Shift">‹</button>
           <div><div class="eyebrow">PIPE SHIFT</div><h2>Play Levels</h2></div>
-          <span class="pipeHeaderMeta" id="pipeCompletedCount">0/30</span>
+          <span class="pipeHeaderMeta" id="pipeCompletedCount">0/42</span>
         </div>
         <div id="pipeStageList" class="pipeStageList"></div>
       </div>
@@ -408,7 +411,7 @@
         <div class="pipeHeader"><button class="back" id="pipeLevelsBack" aria-label="Back to Levels">‹</button>
           <div><div class="eyebrow">PIPE SHIFT · LEVELS</div><h2 id="pipeStageTitle">Level 1</h2></div>
         </div>
-        <div class="pipeProgressRow"><span id="pipeStageDescription">Beginner · 5×5</span><strong id="pipeStageCount">0/5</strong></div>
+        <div class="pipeProgressRow"><span id="pipeStageDescription">Beginner · 5×5</span><strong id="pipeStageCount">0/7</strong></div>
         <div id="pipeLevelList" class="pipeLevelList" aria-label="Pipe Shift puzzles"></div>
       </div>
       <div id="pipe-game" hidden>
@@ -433,6 +436,8 @@
                   <strong id="pipeStageHeading" class="pipeStageHeading">Level complete!</strong>
                 </div>
                 <button type="button" id="pipeResultNext">Next puzzle →</button>
+                <button type="button" id="pipeDailyNextWin" class="dailyJourneyNext" hidden>Next Daily Challenge &gt;</button>
+                <p id="pipeDailyTomorrowWin" class="dailyJourneyDone" hidden>More Daily Challenges tomorrow</p>
                 <button type="button" class="pipeSecondary" id="pipeResultLevels">Back to Levels</button>
               </div>
             </div>
@@ -483,7 +488,10 @@
       <div class="panel hero dotDailyCard">
         <div class="eyebrow">◷ &nbsp; TODAY'S CHALLENGE <span id="solvedTag" style="float:right" hidden>✓ SOLVED</span></div>
         <p>11×11 · Fill every square</p>
+        <p id="dotDailyStatus" class="dailyJourneyStatus"></p>
         <button class="primary" id="dailyStart"><span id="dailyStartText">Play today's puzzle</span><span>→</span></button>
+        <button type="button" id="dotDailyNextHome" class="dailyJourneyNext" hidden>Next Daily Challenge &gt;</button>
+        <p id="dotDailyTomorrowHome" class="dailyJourneyDone" hidden>More Daily Challenges tomorrow</p>
       </div>
       <button type="button" id="randomStart" class="playModeCard"><span class="modeIcon" aria-hidden="true">⤨</span><span class="modeCopy"><strong>Free Play</strong><small>Choose a difficulty</small></span><span class="modeArrow" aria-hidden="true">›</span></button>
       <button type="button" id="levelsStart" class="playModeCard levelsModeCard"><span class="modeIcon" aria-hidden="true">🏆</span><span class="modeCopy"><strong>Play Levels</strong><small id="levelsSubtitle">Complete levels · Earn credits</small></span><span class="modeArrow" aria-hidden="true">›</span></button>
@@ -540,6 +548,8 @@
             <div class="resultStatus" id="resultStatus" hidden aria-live="polite"></div>
             <button type="button" id="resultStatsLink" class="winStatsLink">Result added to your stats <span aria-hidden="true">→</span></button>
             <button id="next">Next puzzle</button>
+            <button type="button" id="dotDailyNextWin" class="dailyJourneyNext" hidden>Next Daily Challenge &gt;</button>
+            <p id="dotDailyTomorrowWin" class="dailyJourneyDone" hidden>More Daily Challenges tomorrow</p>
             <button type="button" id="winToLevels" class="secondary" hidden>Return to Levels overview</button>
             <div class="winDifficultyActions" id="winDifficultyActions">
               <button type="button" id="winEasier" class="difficultyShift">← Easier</button>
@@ -579,9 +589,10 @@
   <script src="puzzle.js?v=0.7.0"></script>
   <script src="levels.js?v=0.7.0"></script>
   <script src="win-messages.js?v=0.9.4"></script>
-  <script src="game.js?v=0.9.4"></script>
-  <script src="pipe-engine.js?v=0.9.4"></script>
-  <script src="pipe-shift.js?v=0.9.4"></script>
+  <script src="daily-journey.js?v=0.9.5"></script>
+  <script src="game.js?v=0.9.5"></script>
+  <script src="pipe-engine.js?v=0.9.5"></script>
+  <script src="pipe-shift.js?v=0.9.5"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol === 'https:') {
       addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
