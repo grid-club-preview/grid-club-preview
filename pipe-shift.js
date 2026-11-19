@@ -154,7 +154,7 @@ function stageMenu(id){const s=e.STAGES.find(x=>x.id===id);if(!s||!stageUnlocked
    const b=document.createElement('button');b.className='pipeLevel';b.disabled=!enabled;b.dataset.complete=String(completed);
    const left=document.createElement('span'),label=document.createElement('strong'),detail=document.createElement('small');
    label.textContent=`Puzzle ${n-s.first+1}`;
-   detail.textContent=completed?`Best: ${progress.best[n]?.moves??'—'} moves`:active?'Continue puzzle':e.timerFor(n)?'Time trial':'Untimed';
+   detail.textContent=completed?`Best: ${progress.best[n]?.moves??'—'} moves`:active?'Continue puzzle':e.timerFor(n)?'Time & move trial':'Untimed';
    left.append(label,detail);const mark=document.createElement('span');mark.className='pipeTag';mark.textContent=completed?'✓':enabled?'›':'🔒';
    b.append(left,mark);b.onclick=()=>startLevel(n);list.append(b);
  }
