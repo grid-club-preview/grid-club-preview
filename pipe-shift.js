@@ -744,7 +744,7 @@ function slide(from,to){
    if(mode==='levels'){
      const first=!progress.completed[currentLevel],group=e.stageOf(currentLevel);
      progress.completed[currentLevel]=true;
-     if(!progress.best[currentLevel]||moves<progress.best[currentLevel].moves)
+     if(hintsUsed===0&&(!progress.best[currentLevel]||moves<progress.best[currentLevel].moves))
        progress.best[currentLevel]={moves,elapsed,when:new Date().toISOString()};
      if(first&&!progress.firstAttemptFailed?.[currentLevel]){
        const award=credits?.award('club:pipe:level:'+currentLevel,2,'pipe-level');
@@ -762,7 +762,7 @@ function slide(from,to){
      progress.randomCount[currentTier]=(progress.randomCount[currentTier]||0)+1;
      const objective=puzzle.freeObjective==='all'?'all':'any';
      const bests=(progress.randomBestByGoal ||= {all:{},any:{}})[objective] ||= {};
-     if(!bests[currentTier]||moves<bests[currentTier].moves)
+     if(hintsUsed===0&&(!bests[currentTier]||moves<bests[currentTier].moves))
        bests[currentTier]={moves,elapsed};
    }else if(mode==='daily'&&!dailyPractice){
      progress.daily[dailyDay]={completed:true,moves,events:dailyTrace.map(x=>({...x})),
@@ -857,6 +857,8 @@ function victory(){const phrases=globalThis.GridClubWinMessages?.pipeShift||{};c
      celebration.hidden=false;
    }
  }
+ if(hintsUsed>0)$('pipeResultMessage').textContent+=
+   ` · Assisted (${hintsUsed} hint${hintsUsed===1?'':'s'})`;
  const todayCompleted=(mode==='daily'||mode==='practice')&&dailyDay===utcToday()&&!!progress.daily[dailyDay]?.completed;
  const journey=globalThis.GridClubDailyJourney;
  const nextDaily=todayCompleted?journey?.nextGame('pipeShift'):null;
@@ -884,6 +886,12 @@ $('pipeRescue').onclick=buyPipeTime;
 $('pipeExtraTime').onclick=buyPipeTime;
 $('pipeTimeoutBack').onclick=()=>mode==='random'?randomMenu():stageMenu(stage);
 $('pipeUndo').onclick=undoMove;$('pipeReset').onclick=reset;$('pipeNew').onclick=()=>startRandom(currentTier,true);
+$('pipeHint').onclick=openHintMenu;
+$('pipeHintSquare').onclick=()=>chooseHint('square');
+$('pipeHintArea').onclick=()=>chooseHint('area');
+$('pipeHintFull').onclick=()=>chooseHint('full');
+$('pipeHintCancel').onclick=closeHintMenu;
+$('pipeHintClose').onclick=()=>closeHintPreview();
 const grid=$('pipeBoard');
 grid.addEventListener('click',ev=>{if(performance.now()<ignoreClickUntil)return;const b=ev.target.closest('[data-cell]');if(b)clickCell(Number(b.dataset.cell));});
 // Press and drag a pipe (or solid blank block) along a clear straight run.
@@ -997,8 +1005,14 @@ document.addEventListener('touchend',ev=>{
 },{capture:true,passive:false});
 document.addEventListener('touchcancel',()=>edge=null,{capture:true,passive:true});
 window.addEventListener('online',()=>{void submitDaily();if(section==='daily')void refreshDailyLeaderboard();});
-window.addEventListener('pagehide',()=>{cancelDrag();saveCurrent();timerStop();});
-document.addEventListener('visibilitychange',()=>{if(document.hidden){saveCurrent();timerStop();cancelDrag();}else if(section==='game'&&!won&&!expired&&!trialPending)startTicker();});
+window.addEventListener('pagehide',()=>{
+ cancelDrag();closeHintPreview(false);saveCurrent();timerStop();
+});
+document.addEventListener('visibilitychange',()=>{
+ if(document.hidden){
+   closeHintPreview(false);saveCurrent();timerStop();cancelDrag();
+ }else if(section==='game'&&!won&&!expired&&!trialPending)startTicker();
+});
 progress=read();save();if(progress.daily?.[utcToday()]?.sync==='pending')void submitDaily();
 globalThis.PipeShiftApp={home,menu,dailyMenu,randomMenu,stages,levels:stages,start:startLevel,startLevel,startRandom,startDaily,back,readProgress:()=>JSON.parse(JSON.stringify(progress))};
 })();
