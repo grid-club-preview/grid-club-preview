@@ -402,8 +402,9 @@ function begin(p,kind,id,skipSave=false){
  $('pipeDifficultyTag').textContent=kind==='levels'?`Level ${p.stage}`:kind==='daily'||kind==='practice'?dailyPractice?'Practice':p.day:'Free Play';
  $('pipeGridSize').textContent=`${p.size}×${p.size}`;
  const transportTarget=p.solvedBoard.findIndex(t=>t.transportPiece);
- $('pipeInstruction').textContent=transportTarget>=0?
-   'Move the gold-collared elbow to the outlined square, then complete the flow.':'';
+ $('pipeInstruction').textContent=p.requireAllFlow?
+   'Connect every pipe to the flow. Move the gold-collared elbow to its outlined square.':
+   transportTarget>=0?'Move the gold-collared elbow to the outlined square, then complete the flow.':'';
  $('pipeNew').hidden=kind!=='random';
  $('pipeBoard').style.setProperty('--pipe-size',p.size);$('pipeBoard').dataset.pipeGridSize=String(p.size);
  $('pipeTrialDescription').textContent=moveLimit!==null?`Finish within ${moveLimit} moves and ${Math.ceil(p.timerMs/1000)} seconds.`:'Beat the clock to restore the flow.';
@@ -539,14 +540,15 @@ function timeout(reason='time'){
  if(won||expired)return;
  clockSync();failureReason=reason;expired=true;timerStop();selected=null;
  updateClock();saveCurrent();
- if(reason!=='time'||section!=='game'||document.hidden){
+ if(reason!=='time'||section!=='game'||document.hidden||
+    (typeof window.matchMedia==='function'&&window.matchMedia('(prefers-reduced-motion: reduce)').matches)){
    render();showFailure();$('pipeTimeout').hidden=false;return;
  }
  // Only trace the water connected to the inlet on the player's CURRENT
  // board. This never reveals the hidden correct route.
  const leak=e.traceLeak(board),segmentMs=140;
  const originalInstruction=$('pipeInstruction').textContent;
- $('pipeInstruction').textContent='Water pressure rising…';
+ $('pipeInstruction').textContent='Water flowing…';
  render(leak.flow,{...leak,segmentMs});
  clearFlow();
  const delay=Math.min(1900,Math.max(850,450+leak.flow.length*segmentMs));
