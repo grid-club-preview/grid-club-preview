@@ -266,6 +266,7 @@ function begin(p,kind,id,skipSave=false){
  $('pipeDifficultyTag').textContent=kind==='levels'?`Level ${p.stage}`:kind==='daily'||kind==='practice'?dailyPractice?'Practice':p.day:'Free Play';
  $('pipeGridSize').textContent=`${p.size}×${p.size}`;$('pipeInstruction').textContent='';$('pipeNew').hidden=kind!=='random';
  $('pipeBoard').style.setProperty('--pipe-size',p.size);$('pipeBoard').dataset.pipeGridSize=String(p.size);
+ $('pipeTrialDescription').textContent=moveLimit!==null?`Finish within ${moveLimit} moves and ${Math.ceil(p.timerMs/1000)} seconds.`:'Beat the clock to restore the flow.';
  render();updateClock();if(kind==='daily')void syncDailyStart();
  if(expired){showFailure();$('pipeTimeout').hidden=false;}
  else if(moveLimit!==null&&moves>=moveLimit)timeout('moves');
