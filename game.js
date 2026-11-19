@@ -246,7 +246,12 @@
     if(dirty)writeJSON(STATS_KEY,stats);
   }
   function updateHome() {
-    $('solvedTag').hidden = !dailySolved();
+    const solved=dailySolved(),journey=globalThis.GridClubDailyJourney;
+    $('solvedTag').hidden = !solved;
+    $('dotDailyStatus').textContent=journey?.summary()||'';
+    const nextDaily=solved?journey?.nextGame('dotTrails'):null;
+    $('dotDailyNextHome').hidden=!nextDaily;
+    $('dotDailyTomorrowHome').hidden=!solved||!!nextDaily;
     $('dailyStartText').textContent = dailySolved() ? 'View today’s stats' :
       savedGame('daily',11) ? 'Continue today’s puzzle' : 'Play today’s puzzle';
     $('freeStartText').textContent = 'Dot Trails';
@@ -317,6 +322,10 @@
     $('winToLevels').hidden = mode!=='level';
     $('winToLevels').textContent='Return to Levels overview';
     $('win').dataset.stage = mode==='level'?String(game.level.stage):'';
+    const dailyComplete=mode==='daily'&&result.date===today()&&dailySolved();
+    const nextDaily=dailyComplete?globalThis.GridClubDailyJourney?.nextGame('dotTrails'):null;
+    $('dotDailyNextWin').hidden=!nextDaily;
+    $('dotDailyTomorrowWin').hidden=!dailyComplete||!!nextDaily;
     $('winDifficultyActions').hidden = mode !== 'free';
     $('winToRandom').hidden = mode !== 'free';
     $('winEasier').disabled = size === 5;
@@ -1124,6 +1133,8 @@
   };
   refreshBackendCheck();
   $('dailyStart').onclick=()=>start('daily');
+  $('dotDailyNextHome').onclick=()=>globalThis.GridClubDailyJourney?.visitNext('dotTrails');
+  $('dotDailyNextWin').onclick=()=>globalThis.GridClubDailyJourney?.visitNext('dotTrails');
   $('levelsStart').onclick=()=>showLevelBrowser();
   $('randomStart').onclick=showRandomScreen;
   $('randomBack').onclick=showDifficultyScreen;
@@ -1278,4 +1289,5 @@
     if(game&&!$('gameScreen').hidden){render();if(!game.paused&&!game.finishedAt)persist();}
     if(!document.hidden && !($('statsScreen').hidden))renderStatsPage();
   },1000);
+  globalThis.GridDotTrailsApp={openDaily:()=>start('daily'),home:returnHome};
 })();
