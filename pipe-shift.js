@@ -198,16 +198,22 @@ function menu(){saveCurrent();hub.hidden=true;root.hidden=false;route('menu');
 function statsMenu(){
  saveCurrent();hub.hidden=true;root.hidden=false;route('stats');
  const completed=Object.keys(progress.completed).filter(n=>progress.completed[n]).length;
- const random=[5,6,7].reduce((n,size)=>n+(progress.randomCount[size]||0),0);
+ const random=Object.values(progress.randomCount||{}).reduce((n,value)=>n+(Number(value)||0),0);
  const s=progress.moveStats||{},records=[s.levels,s.daily,...Object.values(s.random||{})].filter(Boolean);
  const sum=records.reduce((a,v)=>a+(Number(v.total)||0),0);
  const count=records.reduce((a,v)=>a+(Number(v.count)||0),0);
  $('pipeStatsCompleted').textContent=String(completed+random);
  $('pipeStatsAverage').textContent=count?(sum/count).toFixed(1):'—';
  const list=$('pipeStatsDetails');list.replaceChildren();
- for(const [label,size] of [['Beginner',5],['Advanced',6],['Expert',7],['Levels',0],['Daily Challenge',-1]]){
-   const record=size===-1?s.daily:size?(s.random||{})[size]:s.levels;
-   const played=size===-1?Object.keys(progress.daily||{}).filter(d=>progress.daily[d]?.completed).length:size?(progress.randomCount[size]||0):completed;
+ for(const [label,tier,previousSize] of [
+   ['Beginner','beginner',5],['Apprentice','apprentice',6],
+   ['Advanced','advanced',null],['Expert','expert',7],
+   ['Levels',null,null],['Daily Challenge','daily',null]
+ ]){
+   const record=tier==='daily'?s.daily:tier===null?s.levels:
+     (s.random||{})[tier]||(previousSize?(s.random||{})[previousSize]:null);
+   const played=tier==='daily'?Object.keys(progress.daily||{}).filter(d=>progress.daily[d]?.completed).length:
+     tier===null?completed:(progress.randomCount[tier]||0)+(previousSize?(progress.randomCount[previousSize]||0):0);
    const row=document.createElement('div');row.className='pipeStatRow';
    const title=document.createElement('strong');title.textContent=label;
    const detail=document.createElement('span');detail.textContent=`${played} completed · ${record?.count?(record.total/record.count).toFixed(1)+' avg. moves':'— avg. moves'}`;
