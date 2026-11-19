@@ -426,6 +426,18 @@
         <div class="pipeHeader"><button class="back" id="pipeRandomBack" aria-label="Back to Pipe Shift">‹</button>
           <div><div class="eyebrow">PIPE SHIFT</div><h2>Free Play</h2></div>
         </div>
+        <div class="pipeGoalPicker" role="group" aria-label="Free Play goal">
+          <div class="pipeGoalHeading">Choose your objective</div>
+          <div class="pipeGoalOptions">
+            <button type="button" id="pipeGoalAll" aria-pressed="true">
+              <strong>Use all pipes</strong><small>Every working pipe carries water</small>
+            </button>
+            <button type="button" id="pipeGoalAny" aria-pressed="false">
+              <strong>Use any pipes</strong><small>Connect IN to OUT, leaving others unused</small>
+            </button>
+          </div>
+          <p id="pipeGoalExplanation" class="pipeGoalExplanation" role="status">All working pipes must join the flow.</p>
+        </div>
         <div id="pipeRandomChoices" class="pipeChoices">
           <button type="button" class="pipeButton" data-pipe-size="5"><span class="pipeButtonIcon">5×5</span><span><strong>Beginner</strong></span><span class="pipeChevron">›</span></button>
           <button type="button" class="pipeButton" data-pipe-size="6"><span class="pipeButtonIcon">6×6</span><span><strong>Advanced</strong></span><span class="pipeChevron">›</span></button>
