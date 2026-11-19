@@ -10,9 +10,10 @@
  }
  function parse(raw){try{const x=JSON.parse(raw||'null');return valid(x)?x:null;}catch(_){return null;}}
  function load(){
-   const current=parse(localStorage.getItem(KEY));
-   const fallback=current||parse(localStorage.getItem(BACKUP));
-   return levels.normalize(fallback||levels.initial());
+   let stored=null;
+   try{stored=parse(localStorage.getItem(KEY))||parse(localStorage.getItem(BACKUP));}
+   catch(_){/* Private-mode storage can be unavailable: never interrupt a win. */}
+   return levels.normalize(stored||levels.initial());
  }
  function save(value){
    const json=JSON.stringify(levels.normalize(value));
