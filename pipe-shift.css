@@ -1,4 +1,4 @@
-/* Pipe Shift · Grid Club game two · v0.9.2 */
+/* Pipe Shift · Grid Club game two · v0.9.5 */
 #pipeShiftScreen{--pipe-blue:#6ac8ff;--pipe-border:#55768b;padding-top:7px;}
 #pipeShiftScreen button{-webkit-tap-highlight-color:transparent;}
 #pipeShiftScreen,#pipeShiftScreen *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}
@@ -178,3 +178,18 @@
 .pipeDailyRow{padding:11px 0;border-top:1px solid #3b4961;display:flex;align-items:center;justify-content:space-between;gap:12px;}
 .pipeDailyRow>strong{color:#c0f8ed;white-space:nowrap;font-variant-numeric:tabular-nums;}
 .pipeDailyYou{color:#9ae8d5;font-weight:850;}
+
+/* v0.9.5: Daily Challenge is the primary action on each landing page. */
+#pipe-menu .pipeDailyFeature{margin:5px 0 13px;padding:19px 16px;background:linear-gradient(120deg,#255653,#244560);border:1px solid #81ccb8;box-shadow:0 5px 20px #050d1b38;}
+.pipeDailyFeature .pipeButtonIcon{background:#356d66;border-color:#83d6bd;color:#c6fff2;}
+.pipeDailyFeature strong{color:#e8fff8;font-size:19px;}
+#pipe-menu .pipeHero{margin:0 0 12px;padding:11px 12px;min-height:0;}
+#pipe-menu .pipeHero svg{display:block;margin:auto;max-height:73px;}
+.dailyJourneyStatus{font-size:12px!important;line-height:1.5;color:#bce7dc!important;margin:8px 0 0!important;font-weight:650;}
+.dailyJourneyNext{display:block;width:100%;min-height:45px;margin:11px 0;padding:12px 15px;text-align:center;border:1px solid #83dcc4;border-radius:12px;background:linear-gradient(110deg,#76ddc7,#99e5e7);color:#153948;font-size:14px;font-weight:850;cursor:pointer;}
+.dailyJourneyNext:focus-visible{outline:3px solid #e3fff6;outline-offset:3px;}
+.dailyJourneyDone{margin:12px 0 4px;text-align:center;color:#bce7dc;font-size:13px;font-weight:750;line-height:1.5;}
+#pipeResult .dailyJourneyNext,#win .dailyJourneyNext{margin:12px 0 8px;}
+#pipeResult .dailyJourneyDone,#win .dailyJourneyDone{margin:12px 0;}
+#dotDailyNextHome{margin-top:12px;}
+@media(max-width:380px){.pipeDailyFeature strong{font-size:17px;}.pipeDailyFeature .pipeButtonIcon{width:43px;height:43px;}}
