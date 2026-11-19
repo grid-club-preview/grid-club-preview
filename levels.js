@@ -3694,6 +3694,12 @@ function spend(progress,amount,kind,attemptId){
  // No further extension may be bought once a rescue has been used.
  if(kind==='hint'){
    if(cost!==COST)return false;
+ }else if(kind==='pipe-hint-square'){
+   if(cost!==10)return false;
+ }else if(kind==='pipe-hint-area'){
+   if(cost!==25)return false;
+ }else if(kind==='pipe-hint-full'){
+   if(cost!==75)return false;
  }else if(kind==='extra-time'){
    if(cost!==COST||history['extra-time']>=2||history['extra-time-rescue'])return false;
  }else if(kind==='extra-time-rescue'){

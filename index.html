@@ -12,7 +12,7 @@
   <link rel="icon" href="./icons/icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
   <title>Grid Club · Dot Trails &amp; Pipe Shift</title>
-  <link rel="stylesheet" href="pipe-shift.css?v=0.9.19">
+  <link rel="stylesheet" href="pipe-shift.css?v=0.9.20">
   <style>
     :root { color-scheme: dark; --bg:#0e1424; --surface:#1a243a; --tile:#253147; --muted:#9daabe; --mint:#7be3d4; --purple:#a178ff; }
     * { box-sizing: border-box; }
@@ -330,7 +330,7 @@
 <body>
   <main class="shell">
     <section id="home">
-      <header><div><div class="eyebrow">GRID CLUB</div><h1>A little puzzle break.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.19</span></div></header>
+      <header><div><div class="eyebrow">GRID CLUB</div><h1>A little puzzle break.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.20</span></div></header>
       <details class="backendCheck" aria-label="Leaderboard connection diagnostics">
         <summary class="backendCheckTitle">Connection diagnostics (beta)</summary>
         <p id="backendCheckMessage" role="status" aria-live="polite">Checking configuration…</p>
@@ -475,6 +475,14 @@
           <p id="pipeWallet" class="pipeWalletStatus" hidden>◉ 0 Club Credits</p>
           <div class="pipeBoardHolder">
             <div id="pipeBoard" class="pipeBoard" role="group" aria-label="Pipe Shift sliding grid"></div>
+            <div id="pipeHintPreview" class="pipeHintPreview" hidden role="group" aria-label="Temporary solution preview">
+              <div id="pipeHintGrid" class="pipeHintGrid"></div>
+              <div class="pipeHintPreviewToolbar">
+                <strong id="pipeHintPreviewTitle">Solution preview</strong>
+                <span id="pipeHintSeconds">5s</span>
+                <button id="pipeHintClose" type="button" aria-label="Close solution preview">×</button>
+              </div>
+            </div>
             <div class="pipeResult" id="pipeResult" hidden role="dialog" aria-label="Puzzle complete">
               <div class="pipeResultInner"><div class="pipeVictoryIcon" aria-hidden="true">✦</div>
                 <h3 id="pipeResultTitle">Flow restored!</h3><p id="pipeResultMessage"></p>
@@ -513,8 +521,18 @@
           <div class="pipeControls">
             <button type="button" id="pipeUndo">↶ Undo</button>
             <button type="button" id="pipeReset">⟳ Reset</button>
+            <button type="button" id="pipeHint" class="pipeHintButton" hidden>✧ Hint</button>
             <button type="button" id="pipeNew" hidden>Next puzzle</button>
           </div>
+          <div id="pipeHintMenu" class="pipeHintMenu" hidden>
+            <div class="pipeHintMenuHeading"><strong>Solution hints</strong><span id="pipeHintBalance">◉ 0 available</span></div>
+            <button type="button" id="pipeHintSquare">One square <span>10 ◉</span></button>
+            <button type="button" id="pipeHintArea">3×3 area <span>25 ◉</span></button>
+            <button type="button" id="pipeHintFull">Full solution · 5 seconds <span>75 ◉</span></button>
+            <p id="pipeHintNote">Choose a hint. Individual and 3×3 hints let you pick the square to reveal.</p>
+            <button type="button" id="pipeHintCancel" class="pipeHintCancel">Cancel</button>
+          </div>
+          <p id="pipeHintStatus" class="pipeHintStatus" hidden role="status" aria-live="polite"></p>
           <button type="button" id="pipeExtraTime" class="pipeBoostButton" hidden>+15 seconds · 10 ◉</button>
           <p id="pipeBoostNote" class="pipeRescueNote" role="status" aria-live="polite"></p>
           <p id="pipeSaveNotice" class="pipeSaveNotice" hidden role="alert">Progress couldn't be saved.</p>
@@ -639,7 +657,7 @@
       </div>
       
       <div class="adSlot" id="adSlot" aria-hidden="true" hidden></div>
-      <footer>Grid Club · v0.9.19 beta</footer>
+      <footer>Grid Club · v0.9.20 beta</footer>
     </section>
   </main>
   <div class="pauseLayer" id="dotDailyCompleteLayer" hidden role="dialog" aria-modal="true" aria-labelledby="dotDailyCompleteTitle">
@@ -670,13 +688,13 @@
   <script src="ranked.js?v=0.7.0"></script>
   <script src="stats-utils.js?v=0.7.0"></script>
   <script src="puzzle.js?v=0.9.9"></script>
-  <script src="levels.js?v=0.9.11"></script>
+  <script src="levels.js?v=0.9.20"></script>
   <script src="win-messages.js?v=0.9.4"></script>
   <script src="daily-journey.js?v=0.9.9"></script>
   <script src="club-credits.js?v=0.9.11"></script>
   <script src="game.js?v=0.9.15"></script>
-  <script src="pipe-engine.js?v=0.9.19"></script>
-  <script src="pipe-shift.js?v=0.9.19"></script>
+  <script src="pipe-engine.js?v=0.9.20"></script>
+  <script src="pipe-shift.js?v=0.9.20"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol === 'https:') {
       addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));

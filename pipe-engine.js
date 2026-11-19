@@ -124,6 +124,25 @@ function legalMoves(board){const size=sizeOf(board);if(!size)return [];const res
  }return result;
 }
 function canMove(board,from,to){const size=sizeOf(board);return !!size&&adjacent(from,to,size)&&(board[from]?.kind==='pipe'||board[from]?.kind==='block')&&!board[from].fixed&&board[to]?.kind==='empty';}
+// A straight drag over empty cells is only a shortcut for consecutive
+// ordinary one-cell moves. It cannot cross occupied cells or turn corners.
+function straightSlidePath(board,from,to){
+ const size=sizeOf(board);
+ if(!size||!Number.isInteger(from)||!Number.isInteger(to)||
+   from<0||to<0||from>=board.length||to>=board.length||from===to)return [];
+ const start=at(from,size),end=at(to,size);
+ if(start.x!==end.x&&start.y!==end.y)return [];
+ if(!['pipe','block'].includes(board[from]?.kind)||board[from].fixed)return [];
+ const stride=start.x===end.x?(to>from?size:-size):(to>from?1:-1);
+ const path=[];
+ for(let here=from;here!==to;){
+   const next=here+stride;
+   if(next<0||next>=board.length||board[next]?.kind!=='empty')return [];
+   path.push({from:here,to:next});
+   here=next;
+ }
+ return path;
+}
 function move(board,from,to){if(!canMove(board,from,to))return false;[board[from],board[to]]=[board[to],board[from]];return true;}
 function evaluate(board){const size=sizeOf(board);if(!size)return {solved:false,flow:[],leaks:0};
  const sources=[],sinks=[];board.forEach((t,i)=>{if(t.kind==='source')sources.push(i);if(t.kind==='sink')sinks.push(i);});
@@ -504,5 +523,5 @@ function freePlay(size,seed,objective='all',tier=size===5?'beginner':size===6?'a
  return puzzle;
 }
 function validateBoard(b){const size=sizeOf(b);return !!size&&b.every(t=>t&&['empty','wall','block','pipe','source','sink'].includes(t.kind)&&Number.isInteger(t.mask)&&t.mask>=0&&t.mask<=15&&typeof t.fixed==='boolean'&&(t.kind==='pipe'||t.kind==='source'||t.kind==='sink'||t.mask===0))&&[1,2].includes(b.filter(t=>t.kind==='source').length)&&[1,2].includes(b.filter(t=>t.kind==='sink').length);}
-return Object.freeze({SIZE,MAX_LEVEL,PUZZLES_PER_STAGE,N,E,S,W,DIRECTIONS,STAGES,sizeOf,at,id,adjacent,direction,clone,rng,get,random,freePlay,daily,hashSeed,stageOf,timerFor,moveLimitFor,move,canMove,legalMoves,evaluate,traceLeak,validateBoard,signature});
+return Object.freeze({SIZE,MAX_LEVEL,PUZZLES_PER_STAGE,N,E,S,W,DIRECTIONS,STAGES,sizeOf,at,id,adjacent,direction,clone,rng,get,random,freePlay,daily,hashSeed,stageOf,timerFor,moveLimitFor,move,canMove,straightSlidePath,legalMoves,evaluate,traceLeak,validateBoard,signature});
 });
