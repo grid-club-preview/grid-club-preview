@@ -363,6 +363,7 @@
     $('gameScreen').hidden = page !== 'game';
     $('statsScreen').hidden = page !== 'stats';
     $('levelsScreen').hidden = page !== 'levels';
+    $('dotDailyCompleteLayer').hidden=true;
     // Leaving a result permanently closes its overlay. Stats never navigates back to it.
     if (page !== 'game') {
       $('win').classList.remove('show','levelUp');
@@ -608,10 +609,31 @@
     showPage('choose');
     updateDifficultyMenu();
   }
+  function showDailyCompleteDialog(){
+    // The saved Daily is a local achievement, regardless of online verification.
+    if(!dailySolved())return;
+    if($('difficultyScreen').hidden)showDifficultyScreen();
+    const result=dailyRecord();
+    const journey=globalThis.GridClubDailyJourney;
+    const next=journey?.nextGame('dotTrails');
+    $('dotDailyCompleteInfo').textContent=result?
+      `${fmtSeconds(result.elapsedMs)} · ${result.moves} moves · ${result.verified?'Verified online':'Saved on this device'}`:
+      'Today’s puzzle is already complete on this device.';
+    $('dotDailyCompleteRemaining').textContent=journey?.remainingLabel()||'';
+    $('dotDailyCompleteRemaining').hidden=!journey;
+    $('dotDailyCompleteNext').hidden=!next;
+    $('dotDailyCompleteTomorrow').hidden=!!next;
+    $('dotDailyCompleteLayer').hidden=false;
+    $('dotDailyCompleteStats').focus({preventScroll:true});
+  }
+  function dismissDailyCompleteDialog(){
+    $('dotDailyCompleteLayer').hidden=true;
+    $('dailyStart').focus({preventScroll:true});
+  }
   function start(nextMode, chosenSize) {
+    // Completion opens choices rather than taking the player to Stats.
+    if(nextMode==='daily' && dailySolved()) { showDailyCompleteDialog(); return; }
     if (!$('gameScreen').hidden && !game?.finishedAt) suspendSilently();
-    // Previously completed Daily Challenges lead to stats, not an old result screen.
-    if(nextMode==='daily' && dailySolved()) { showStatsScreen(); return; }
     mode = nextMode;
     if(mode==='daily')dailyStartDay=today();
     size = mode === 'daily' ? 11 : (core.SIZES.includes(chosenSize) ? chosenSize : loadDifficulty());
@@ -1211,6 +1233,10 @@
   };
   refreshBackendCheck();
   $('dailyStart').onclick=()=>start('daily');
+  $('dotDailyCompleteStats').onclick=showStatsScreen;
+  $('dotDailyCompleteNext').onclick=()=>globalThis.GridClubDailyJourney?.visitNext('dotTrails');
+  $('dotDailyCompleteFree').onclick=showRandomScreen;
+  $('dotDailyCompleteClose').onclick=dismissDailyCompleteDialog;
   $('dotDailyNextWin').onclick=()=>globalThis.GridClubDailyJourney?.visitNext('dotTrails');
   $('levelsStart').onclick=()=>showLevelBrowser();
   $('randomStart').onclick=showRandomScreen;
@@ -1308,6 +1334,7 @@
   // absorb the gesture. A narrow 28px board-edge strip is reserved for Back;
   // normal touches elsewhere on the canvas still draw paths.
   function gestureBack(){
+    if(!$('dotDailyCompleteLayer').hidden){dismissDailyCompleteDialog();return;}
     if(!$('pauseLayer').hidden||!$('timeUpLayer').hidden)return;
     if(!$('gameScreen').hidden){exitPuzzle();return;}
     if(!$('statsScreen').hidden){showDifficultyScreen();return;}
