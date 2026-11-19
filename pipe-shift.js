@@ -24,7 +24,9 @@ const makeAttempt=()=>`pipe:${Date.now()}:${Math.random().toString(36).slice(2,1
 function goalBest(tier,goal){
  const recent=progress.randomBestByGoal?.[goal]?.[tier]?.moves;
  const previous=tier==='expert'&&goal==='all'?progress.randomBestV3?.[7]?.moves:
-   tier==='expert'&&goal==='any'?progress.randomBest?.[7]?.moves:
+   // Old 7x7 Expert boards were far easier, even with an "any pipes"
+   // objective. Do not present a historical 7-move best as competitive
+   // with the new 29–31-pipe Expert generation.
    tier==='apprentice'&&goal==='any'?progress.randomBest?.[6]?.moves:
    tier==='beginner'&&goal==='any'?progress.randomBest?.[5]?.moves:null;
  const values=[recent,previous].filter(Number.isInteger);
@@ -33,6 +35,8 @@ function goalBest(tier,goal){
 function bestMoves(){
  if(mode==='levels')return progress.best[currentLevel]?.moves??null;
  if(mode!=='random')return null;
+ if(currentTier==='expert'&&[1,2].includes(puzzle?.randomLayoutVersion))
+   return progress.randomBest?.[7]?.moves??null;
  return goalBest(currentTier,puzzle?.freeObjective||'all');
 }
 function refreshMoveInfo(){
