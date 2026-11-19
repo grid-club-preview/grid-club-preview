@@ -204,7 +204,18 @@
     // A past day's puzzle should not be shown as today's challenge.
     if (!restored || (forMode === 'daily' && stored.savedDay !== today())) return null;
     if(forMode==='daily')restored.dailyDay=stored.savedDay;
-    if(forMode==='level'){restored.extraTimeMs=Number(stored.extraTimeMs||0);restored.extraTimeCount=Number(stored.extraTimeCount||0);}
+    if(forMode==='level'){
+      restored.extraTimeMs=Number(stored.extraTimeMs||0);
+      restored.extraTimeCount=Number(stored.extraTimeCount||0);
+      // v0.9.8: previously untimed first puzzles are now time trials.
+      // If the player has an unfinished saved board, preserve all their paths
+      // and award the full new countdown on first return, rather than counting
+      // time played under the old rules against them.
+      const openingSeconds=levelCore.get(forId)?.limitSec;
+      if(restored.level.limitMs==null && Number.isFinite(openingSeconds)){
+        restored.level.limitMs=core.elapsed(restored)+openingSeconds*1000;
+      }
+    }
     return restored;
   }
   function persist() {
@@ -463,7 +474,7 @@
       const items=levelCore.stageItems(selectedStage),first=items[0];
       detail.dataset.stage=String(selectedStage);
       $('stageHeading').textContent=`Level ${selectedStage} · ${labels[first.size]}`;
-      $('stageSubheading').textContent=items.some(item=>item.blocked?.length)?'Puzzle 1 untimed · Puzzles 2–5 timed · ■ Blocked squares':'Puzzle 1 untimed · Puzzles 2–5 timed';
+      $('stageSubheading').textContent='All five puzzles timed · Puzzle 1 has a generous countdown'+(items.some(item=>item.blocked?.length)?' · ■ Blocked squares':'');
       const list=$('stagePuzzles');list.replaceChildren();
       for(const item of items){
         const btn=document.createElement('button');btn.type='button';btn.className='stagePuzzle';
