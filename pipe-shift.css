@@ -289,3 +289,30 @@
 .pipeTile.pipeDry:not(.pipeSelected){outline:2px solid #efa363;outline-offset:-3px;z-index:1;}
 .pipeTile.pipeDry:not(.pipeSelected)::before{content:'○';position:absolute;top:1px;left:3px;
   z-index:3;font-size:13px;line-height:1;color:#ffbe89;text-shadow:0 0 4px #161b23;pointer-events:none;}
+
+/* v0.9.19: choose the Free Play win condition and show it above the board. */
+.pipeGoalPicker{margin:10px 0 17px;padding:13px;border:1px solid #3a526c;
+  border-radius:17px;background:#18273c;}
+.pipeGoalHeading{color:#cddbe9;font-size:12px;font-weight:800;
+  letter-spacing:.3px;margin:0 0 10px;}
+.pipeGoalOptions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;}
+.pipeGoalOptions button{display:flex;flex-direction:column;align-items:flex-start;
+  gap:5px;min-width:0;text-align:left;padding:12px 11px;
+  background:#23364c;color:#e0eaf6;border:1px solid #496078;
+  border-radius:13px;line-height:1.35;}
+.pipeGoalOptions button[aria-pressed="true"]{background:#254c49;
+  border-color:#85d6b9;box-shadow:inset 0 0 0 1px #72cead60;}
+.pipeGoalOptions strong{font-size:14px;}
+.pipeGoalOptions small{font-size:11px;color:#b2c4d5;font-weight:550;}
+.pipeGoalOptions button[aria-pressed="true"] small{color:#c1efe0;}
+.pipeGoalOptions button:focus-visible{outline:2px solid #cdf8ea;outline-offset:3px;}
+.pipeGoalExplanation{font-size:12px;line-height:1.45;color:#b6c7d8;
+  margin:11px 2px 0;}
+.pipeObjectiveTag{display:flex;align-items:center;gap:8px;width:fit-content;
+  margin:8px 0 -7px 1px;padding:7px 12px;border:1px solid #658e9a;
+  border-radius:999px;background:#1e4148;color:#c7dadb;font-size:12px;
+  font-weight:650;line-height:1.35;}
+.pipeObjectiveTag strong{color:#a6f2d9;font-size:13px;font-weight:850;}
+.pipeObjectiveTag[hidden]{display:none;}
+@media(max-width:355px){.pipeGoalOptions button{padding:10px 8px;}
+  .pipeGoalOptions strong{font-size:12px;}}
