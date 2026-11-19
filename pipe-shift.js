@@ -400,11 +400,14 @@ const rankedTime=ms=>{
  return String(Math.floor(seconds/60)).padStart(2,'0')+':'+
    String(seconds%60).padStart(2,'0')+'.'+String(tenths%10);
 };
+const pipeRankMedal=rank=>({1:'🥇',2:'🥈',3:'🥉'})[Number(rank)]||'';
 function appendRankedRow(parent,rank,name,moves,ms,isYou){
  const row=document.createElement('div');row.className='pipeDailyRow';
  if(isYou)row.classList.add('pipeDailyYou');
+ if(Number(rank)>=1&&Number(rank)<=3)row.classList.add('pipeDailyPodium');
  const left=document.createElement('span'),right=document.createElement('strong');
- left.textContent=`${rank}. ${isYou?'You':name}`;
+ const medal=pipeRankMedal(rank);
+ left.textContent=`${rank}. ${medal?medal+' ':''}${isYou?'You':name}`;
  right.textContent=`${moves} moves${rankedTime(ms)?' · '+rankedTime(ms):''}`;
  row.append(left,right);parent.append(row);
 }
