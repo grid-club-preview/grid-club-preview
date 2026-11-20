@@ -1,16 +1,16 @@
-/* Grid Club v0.9.21 · updated cache key + stats module */
-const CACHE='gridclub-pwa-v0.9.21';
+/* Grid Club v0.9.22 · updated cache key + stats module */
+const CACHE='gridclub-pwa-v0.9.22';
 const APP_FILES=[
   './','./index.html',
   './puzzle.js?v=0.9.9',
   './levels.js?v=0.9.20',
   './win-messages.js?v=0.9.5',
-  './daily-journey.js?v=0.9.9',
+  './daily-journey.js?v=0.9.22',
   './club-credits.js?v=0.9.11',
-  './game.js?v=0.9.15',
-  './pipe-shift.css?v=0.9.20',
-  './pipe-engine.js?v=0.9.20',
-  './pipe-shift.js?v=0.9.21',
+  './game.js?v=0.9.22',
+  './pipe-shift.css?v=0.9.22',
+  './pipe-engine.js?v=0.9.22',
+  './pipe-shift.js?v=0.9.22',
   './stats-utils.js?v=0.7.0',
   './ranked.js?v=0.7.0',
   './backend-config.js?v=0.7.0',
