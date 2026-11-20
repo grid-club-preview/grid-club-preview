@@ -935,7 +935,7 @@ function victory(){const phrases=globalThis.GridClubWinMessages?.pipeShift||{};c
  const todayCompleted=(mode==='daily'||mode==='practice')&&dailyDay===utcToday()&&!!progress.daily[dailyDay]?.completed;
  const journey=globalThis.GridClubDailyJourney;
  const nextDaily=todayCompleted?journey?.nextGame('pipeShift'):null;
- $('pipeDailyRemainingWin').hidden=!todayCompleted;
+ $('pipeDailyRemainingWin').hidden=!todayCompleted||!nextDaily;
  $('pipeDailyRemainingWin').textContent=todayCompleted?journey?.remainingLabel()||'':'';
  $('pipeDailyNextWin').hidden=!nextDaily;
  $('pipeDailyTomorrowWin').hidden=!todayCompleted||!!nextDaily;
