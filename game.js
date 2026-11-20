@@ -330,7 +330,7 @@
     $('incomplete').hidden = true; $('hintStatus').hidden = true;
     $('modeTitle').textContent = mode === 'daily' ? `Daily challenge · ${dailyStartDay}` : mode==='level'?`Level ${game.level.stage} · Puzzle ${game.level.step}/5`:`${label()} · ${size}×${size}`;
     $('boardTitle').textContent = mode === 'daily' ? 'Daily Dot Trails' : mode==='level'?`Dot Trails · ${labels[size]}`:`Dot Trails · ${label()}`;
-    $('next').textContent = mode === 'daily' ? 'Try Free Play' : mode==='level' && levelId===75 ? 'See your Levels →' : mode==='level' ? `Continue Level ${game.level.stage+(game.level.step===5?1:0)} →` : 'Next puzzle';
+    $('next').textContent = mode === 'daily' ? 'Continue in Free Play' : mode==='level' && levelId===75 ? 'See your Levels →' : mode==='level' ? `Continue Level ${game.level.stage+(game.level.step===5?1:0)} →` : 'Next puzzle';
     $('returnWinHome').hidden = mode !== 'daily';
     $('winToLevels').hidden = mode!=='level';
     $('winToLevels').textContent='Return to Levels overview';
@@ -620,7 +620,7 @@
       `${fmtSeconds(result.elapsedMs)} · ${result.moves} moves · ${result.verified?'Verified online':'Saved on this device'}`:
       'Today’s puzzle is already complete on this device.';
     $('dotDailyCompleteRemaining').textContent=journey?.remainingLabel()||'';
-    $('dotDailyCompleteRemaining').hidden=!journey;
+    $('dotDailyCompleteRemaining').hidden=!journey||!next;
     $('dotDailyCompleteNext').hidden=!next;
     $('dotDailyCompleteTomorrow').hidden=!!next;
     $('dotDailyCompleteLayer').hidden=false;
@@ -855,7 +855,7 @@
       serverElapsedMs:reply.elapsedMs,serverMoves:reply.moves});
     if(mode==='daily'&&!$('gameScreen').hidden&&game?.attemptId===result.attemptId){
       $('resultStatus').hidden=false;
-      $('resultStatus').textContent=reply.verified?(result.assisted?'Your result is verified and saved. Using hints excludes it from the leaderboard, but here are your stats.':'Verified! Your unassisted result is on the community leaderboard.'):'Your result is saved and awaiting a fair-play review.';
+      $('resultStatus').textContent=reply.verified?(result.assisted?'Your result is saved, but using hints excludes it from the leaderboard.':'Verified! Your unassisted result is on the community leaderboard.'):'Your result is saved and awaiting a fair-play review.';
       $('winMessage').textContent=`Daily Challenge · ${fmtSeconds(reply.elapsedMs)} ranked time · ${reply.moves} moves`;
     }
   }
@@ -897,7 +897,7 @@
     if(mode!=='daily'||!result)return;
     const status=$('resultStatus');
     if(result.date!==today()){status.textContent='This Daily Challenge has ended. Your achievement is saved locally, but the leaderboard is closed.';return;}
-    if(result.verified){status.textContent=result.assisted?'Your assisted result was saved to your stats, not the leaderboard.':'Verified result saved on the unassisted leaderboard.';await refreshLeaderboard(result);return;}
+    if(result.verified){status.textContent=result.assisted?'Your result is saved, but using hints excludes it from the leaderboard.':'Verified result saved on the unassisted leaderboard.';await refreshLeaderboard(result);return;}
     if(result.sync==='review'){status.textContent='This result is awaiting a fair-play review.';await refreshLeaderboard(result);return;}
     if(!navigator.onLine){status.textContent="You're offline, but your achievement is saved. We'll try to submit it when you're online, if today's challenge is still active.";return;}
     if(!window.GridRanked?.configured){status.textContent='Achievement saved on this device. Community rankings will appear once the backend is connected.';return;}
@@ -979,7 +979,7 @@
     const dailyComplete=mode==='daily'&&result.date===today()&&dailySolved();
     const journey=globalThis.GridClubDailyJourney;
     const nextDaily=dailyComplete?journey?.nextGame('dotTrails'):null;
-    $('dotDailyRemainingWin').hidden=!dailyComplete;
+    $('dotDailyRemainingWin').hidden=!dailyComplete||!nextDaily;
     $('dotDailyRemainingWin').textContent=dailyComplete?journey?.remainingLabel()||'':'';
     $('dotDailyNextWin').hidden=!nextDaily;
     $('dotDailyTomorrowWin').hidden=!dailyComplete||!!nextDaily;

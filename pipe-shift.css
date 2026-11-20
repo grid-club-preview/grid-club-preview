@@ -1,5 +1,5 @@
 /* Pipe Shift · Grid Club game two · v0.9.5 */
-#pipeShiftScreen{--pipe-blue:#6ac8ff;--pipe-border:#55768b;padding-top:7px;}
+#pipeShiftScreen{--pipe-blue:#6ac8ff;--pipe-border:#55768b;padding-top:7px;touch-action:pan-y;}
 #pipeShiftScreen button{-webkit-tap-highlight-color:transparent;}
 #pipeShiftScreen,#pipeShiftScreen *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}
 .pipeHeader{display:flex;align-items:center;gap:13px;margin-bottom:22px;}
@@ -308,12 +308,21 @@
 .pipeGoalOptions button:focus-visible{outline:2px solid #cdf8ea;outline-offset:3px;}
 .pipeGoalExplanation{font-size:12px;line-height:1.45;color:#b6c7d8;
   margin:11px 2px 0;}
-.pipeObjectiveTag{display:flex;align-items:center;gap:8px;width:fit-content;
+.pipeObjectiveTag{display:flex;align-items:center;gap:8px;width:fit-content;position:relative;
   margin:8px 0 -7px 1px;padding:7px 12px;border:1px solid #658e9a;
   border-radius:999px;background:#1e4148;color:#c7dadb;font-size:12px;
   font-weight:650;line-height:1.35;}
 .pipeObjectiveTag strong{color:#a6f2d9;font-size:13px;font-weight:850;}
 .pipeObjectiveTag[hidden]{display:none;}
+.pipeObjectiveInfo{display:grid;place-items:center;flex:none;width:24px;height:24px;padding:0;
+  border:1px solid #82b2b7;border-radius:999px;background:#294f58;
+  color:#c3f6eb;font-size:15px;font-weight:800;line-height:1;}
+.pipeObjectiveInfo:focus-visible{outline:2px solid #fff;outline-offset:3px;}
+.pipeObjectiveHelp{position:absolute;top:calc(100% + 8px);left:0;z-index:12;
+  width:min(315px,80vw);margin:0;padding:12px 14px;border-radius:12px;
+  background:#294456;border:1px solid #87b7c1;box-shadow:0 8px 24px #0009;
+  color:#e1f0f5;font-size:12px;line-height:1.45;font-weight:550;}
+.pipeObjectiveHelp[hidden]{display:none;}
 @media(max-width:355px){.pipeGoalOptions button{padding:10px 8px;}
   .pipeGoalOptions strong{font-size:12px;}}
 
@@ -338,13 +347,16 @@
 .pipeBoard.pipeHintChoosing .pipeTile{cursor:crosshair;}
 .pipeBoard.pipeHintChoosing .pipeTile:not(.pipeWall){outline:1px solid #e9c17480;outline-offset:-2px;}
 .pipeHintPreview{position:absolute;inset:0;z-index:7;width:100%;max-width:490px;
-  aspect-ratio:1;left:50%;transform:translateX(-50%);background:#162236;
-  overflow:hidden;border-radius:16px;border:3px solid #eac985;
-  box-shadow:0 0 0 2px #131c2c,0 12px 35px #0009;}
+  aspect-ratio:1;left:50%;transform:translateX(-50%);background:transparent;
+  overflow:hidden;border-radius:16px;border:3px solid transparent;
+  box-shadow:none;pointer-events:none;}
 .pipeHintGrid{display:grid;width:100%;height:100%;grid-template-columns:
-  repeat(var(--pipe-size,5),minmax(0,1fr));gap:3px;background:#283d51;}
+  repeat(var(--pipe-size,5),minmax(0,1fr));gap:3px;background:transparent;}
 .pipeHintGrid .pipeTile{border-radius:3px;pointer-events:none;}
-.pipeHintMasked{background:#152638;border:1px solid #263950;border-radius:3px;}
+.pipeHintMasked{background:#0d192b93;border:1px solid #34445830;border-radius:3px;}
+.pipeHintGrid .pipeHintRevealed{outline:3px solid #f3ca53;outline-offset:-3px;
+  box-shadow:inset 0 0 0 1px #ffe793,0 0 10px #ffe38250;z-index:1;}
+.pipeHintPreview[data-kind="full"] .pipeHintRevealed{outline:0;box-shadow:none;}
 .pipeHintPreviewToolbar{position:absolute;top:5px;left:5px;right:5px;display:flex;align-items:center;
   justify-content:flex-end;gap:9px;pointer-events:none;}
 .pipeHintPreviewToolbar strong,.pipeHintPreviewToolbar span{background:#142636eb;

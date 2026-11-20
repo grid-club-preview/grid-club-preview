@@ -188,6 +188,7 @@ function clearFlow(){if(flowTimer!==null){clearTimeout(flowTimer);flowTimer=null
 function route(name){
  clearFlow();timerStop();closeHintPreview(false);hintSelection=null;
  $('pipeHintMenu').hidden=true;$('pipeHintStatus').hidden=true;
+ $('pipeObjectiveHelp').hidden=true;$('pipeObjectiveInfo').setAttribute('aria-expanded','false');
  $('pipeBoard').classList.remove('pipeHintChoosing');section=name;
  for(const n of ['menu','random','stages','levels','game','stats','daily'])$('pipe-'+n).hidden=n!==name;
  $('pipeResult').hidden=true;$('pipeTimeout').hidden=true;$('pipeTimeIntro').hidden=true;selected=null;cancelDrag();
@@ -486,9 +487,9 @@ function puzzleInstruction(p){
 // The player chooses the area before the wallet is charged; the live board
 // is never modified by a hint. Ranked Daily is deliberately excluded.
 const PIPE_HINTS=Object.freeze({
- square:{cost:10,ledger:'pipe-hint-square',title:'One square'},
- area:{cost:25,ledger:'pipe-hint-area',title:'3×3 solution area'},
- full:{cost:75,ledger:'pipe-hint-full',title:'Full solution'}
+ square:{cost:5,ledger:'pipe-hint-square',title:'One square'},
+ area:{cost:10,ledger:'pipe-hint-area',title:'Three squares'},
+ full:{cost:25,ledger:'pipe-hint-full',title:'Full solution'}
 });
 const hintsAvailable=()=>['random','levels'].includes(mode)&&
  !!puzzle?.solvedBoard&&!won&&!expired&&!trialPending&&!dailyStartPending;
@@ -519,8 +520,7 @@ function openHintMenu(){
  selected=null;$('pipeHintMenu').hidden=false;
  $('pipeBoard').classList.remove('pipeHintChoosing');
  hintSelection=null;
- $('pipeHintNote').textContent=
-   'Choose a reveal, then pick the square or 3×3 area before credits are charged. Previews last five seconds; timed clocks pause. Assisted wins count as completed, but do not set unassisted personal bests.';
+ $('pipeHintNote').textContent='Hints pause the timer for 5 seconds. Using a hint prevents a new personal best.';
  refreshHintControls();render();
 }
 function chooseHint(kind){
@@ -533,8 +533,8 @@ function chooseHint(kind){
  $('pipeHintMenu').hidden=true;
  $('pipeBoard').classList.add('pipeHintChoosing');
  hintMessage(kind==='square'?
-   'Tap the square whose solved position you want to see (10 ◉).':
-   'Tap the centre of a 3×3 solution area (25 ◉).');
+   'Tap the square to reveal (5 ◉).':
+   'Tap near the three solution squares you want to reveal (10 ◉).');
  render();
 }
 function applySelectedHint(index){
@@ -574,27 +574,48 @@ function hintCell(tile){
  }
  return cell;
 }
+// Three positions near the tapped square, favouring connected working pipes.
 function hintIndices(kind,center,size){
  if(kind==='full')return new Set(Array.from({length:size*size},(_,i)=>i));
  if(kind==='square')return new Set([center]);
- const x=center%size,y=Math.floor(center/size);
- const left=Math.min(Math.max(0,x-1),size-3);
- const top=Math.min(Math.max(0,y-1),size-3);
- const result=new Set();
- for(let dy=0;dy<3;dy++)for(let dx=0;dx<3;dx++)
-   result.add((top+dy)*size+left+dx);
- return result;
+ const solved=puzzle.solvedBoard;
+ const distance=i=>Math.abs(i%size-center%size)+Math.abs(Math.floor(i/size)-Math.floor(center/size));
+ const candidates=solved.flatMap((tile,i)=>tile.kind==='pipe'&&!tile.decoy?[i]:[])
+   .sort((a,b)=>distance(a)-distance(b)||a-b);
+ if(!candidates.length)return new Set([center]);
+ const result=[],seen=new Set(),queue=[candidates[0]];
+ while(queue.length&&result.length<3){
+   const at=queue.shift();
+   if(seen.has(at))continue;
+   seen.add(at);
+   const tile=solved[at];
+   if(tile.kind!=='pipe'||tile.decoy)continue;
+   result.push(at);
+   const x=at%size,y=Math.floor(at/size);
+   for(const d of e.DIRECTIONS){
+     const xx=x+d.dx,yy=y+d.dy;
+     if(xx<0||yy<0||xx>=size||yy>=size)continue;
+     const next=yy*size+xx,neighbour=solved[next];
+     if((tile.mask&d.bit)&&(neighbour.mask&d.opposite)&&neighbour.kind==='pipe'&&!neighbour.decoy&&!seen.has(next))
+       queue.push(next);
+   }
+ }
+ for(const at of candidates){
+   if(result.length===3)break;
+   if(!result.includes(at))result.push(at);
+ }
+ return new Set(result);
 }
 function showHintPreview(kind,center){
  const grid=$('pipeHintGrid'),size=puzzle.size,indices=hintIndices(kind,center,size);
  grid.replaceChildren();grid.style.setProperty('--pipe-size',size);
  for(let i=0;i<puzzle.solvedBoard.length;i++){
-   const cell=indices.has(i)?hintCell(puzzle.solvedBoard[i]):
-     document.createElement('div');
-   if(!indices.has(i))cell.className='pipeHintMasked';
+   const cell=indices.has(i)?hintCell(puzzle.solvedBoard[i]):document.createElement('div');
+   cell.classList.add(indices.has(i)?'pipeHintRevealed':'pipeHintMasked');
    grid.append(cell);
  }
  $('pipeHintPreviewTitle').textContent=PIPE_HINTS[kind].title;
+ $('pipeHintPreview').dataset.kind=kind;
  $('pipeHintPreview').hidden=false;
  $('pipeHintPreview').setAttribute('aria-label',
    `${PIPE_HINTS[kind].title}, visible for five seconds`);
@@ -612,6 +633,7 @@ function closeHintPreview(resume=true){
  const wasActive=hintPreviewActive;
  hintPreviewActive=false;hintPreviewUntil=0;
  $('pipeHintPreview').hidden=true;
+ delete $('pipeHintPreview').dataset.kind;
  $('pipeHintGrid').replaceChildren();
  if(wasActive&&resume&&section==='game'&&!won&&!expired&&!trialPending&&!document.hidden)
    startTicker();
@@ -667,8 +689,13 @@ function begin(p,kind,id,skipSave=false){
  $('pipeDifficultyTag').textContent=kind==='levels'? `Level ${p.stage}`:
    kind==='daily'||kind==='practice'?(dailyPractice?'Practice':p.day):'Free Play';
  $('pipeObjectiveTag').hidden=kind!=='random';
- if(kind==='random')$('pipeObjectiveLabel').textContent=
-   p.freeObjective==='all'?'Use all pipes':'Use any pipes';
+ $('pipeObjectiveHelp').hidden=true;
+ $('pipeObjectiveInfo').setAttribute('aria-expanded','false');
+ if(kind==='random'){
+   $('pipeObjectiveLabel').textContent=p.freeObjective==='all'?'Use all pipes':'Use any pipes';
+   $('pipeObjectiveHelp').textContent=puzzleInstruction(p);
+ }
+ $('pipeInstruction').hidden=kind==='random';
  $('pipeGridSize').textContent=`${p.size}×${p.size}`;
  $('pipeInstruction').textContent=puzzleInstruction(p);
  $('pipeNew').hidden=kind!=='random';
@@ -908,7 +935,7 @@ function victory(){const phrases=globalThis.GridClubWinMessages?.pipeShift||{};c
  const todayCompleted=(mode==='daily'||mode==='practice')&&dailyDay===utcToday()&&!!progress.daily[dailyDay]?.completed;
  const journey=globalThis.GridClubDailyJourney;
  const nextDaily=todayCompleted?journey?.nextGame('pipeShift'):null;
- $('pipeDailyRemainingWin').hidden=!todayCompleted;
+ $('pipeDailyRemainingWin').hidden=!todayCompleted||!nextDaily;
  $('pipeDailyRemainingWin').textContent=todayCompleted?journey?.remainingLabel()||'':'';
  $('pipeDailyNextWin').hidden=!nextDaily;
  $('pipeDailyTomorrowWin').hidden=!todayCompleted||!!nextDaily;
@@ -932,6 +959,11 @@ $('pipeRescue').onclick=buyPipeTime;
 $('pipeExtraTime').onclick=buyPipeTime;
 $('pipeTimeoutBack').onclick=()=>mode==='random'?randomMenu():stageMenu(stage);
 $('pipeUndo').onclick=undoMove;$('pipeReset').onclick=reset;$('pipeNew').onclick=()=>startRandom(currentTier,true);
+$('pipeObjectiveInfo').onclick=()=>{
+ if(mode!=='random'||section!=='game')return;
+ const help=$('pipeObjectiveHelp'),show=help.hidden;
+ help.hidden=!show;$('pipeObjectiveInfo').setAttribute('aria-expanded',String(show));
+};
 $('pipeHint').onclick=openHintMenu;
 $('pipeHintSquare').onclick=()=>chooseHint('square');
 $('pipeHintArea').onclick=()=>chooseHint('area');
@@ -1019,16 +1051,25 @@ grid.addEventListener('pointerup',ev=>{
 grid.addEventListener('pointercancel',cancelDrag);
 grid.addEventListener('lostpointercapture',cancelDrag);
 grid.addEventListener('contextmenu',ev=>ev.preventDefault());grid.addEventListener('selectstart',ev=>ev.preventDefault());
-// One consistent left-edge back gesture for all Pipe Shift pages. Keep
-// the sliding grid and direct gameplay controls reserved for puzzle input.
-// Gesture recognition requires a deliberate horizontal swipe, not a tap.
-let edge=null;
+// Match Dot Trails edge swipes, with a Pointer Events fallback for iOS PWAs.
+let edge=null,pointerEdge=null,lastEdgeBack=0;
+function swipeAllowed(target,x){
+ if(root.hidden||x>100)return false;
+ if(target?.closest?.('.pipeControls,#pipeExtraTime,input,select,textarea'))return false;
+ if(target?.closest?.('#pipeBoard,.pipeBoardHolder')&&x>28)return false;
+ return true;
+}
+function finishEdgeBack(dx,dy,ready,ev){
+ if(!ready||dx<75||Math.abs(dy)>=65||dx<=Math.abs(dy)*1.5)return;
+ if(performance.now()-lastEdgeBack<650)return;
+ lastEdgeBack=performance.now();back();
+ if(ev.cancelable)ev.preventDefault();
+}
 document.addEventListener('touchstart',ev=>{
  edge=null;
- if(root.hidden||ev.touches.length!==1||!root.contains(ev.target))return;
+ if(ev.touches.length!==1)return;
  const t=ev.touches[0];
- if(t.clientX>90||ev.target.closest('.pipeControls,#pipeExtraTime,input,select,textarea'))return;
- if(ev.target.closest('#pipeBoard')&&t.clientX>28)return;
+ if(!swipeAllowed(ev.target,t.clientX))return;
  edge={id:t.identifier,x:t.clientX,y:t.clientY,ready:false};
 },{capture:true,passive:true});
 document.addEventListener('touchmove',ev=>{
@@ -1036,20 +1077,29 @@ document.addEventListener('touchmove',ev=>{
  if(ev.touches.length!==1){edge=null;return;}
  const t=ev.touches[0],dx=t.clientX-edge.x,dy=t.clientY-edge.y;
  if(Math.abs(dy)>55&&Math.abs(dy)>Math.abs(dx)){edge=null;return;}
- if(dx>22&&Math.abs(dx)>Math.abs(dy)*1.5){
+ if(dx>22&&dx>Math.abs(dy)*1.5){
    edge.ready=true;if(ev.cancelable)ev.preventDefault();
  }
 },{capture:true,passive:false});
 document.addEventListener('touchend',ev=>{
- if(!edge)return;
  const start=edge;edge=null;
+ if(!start||!ev.changedTouches?.length)return;
  const t=Array.from(ev.changedTouches).find(p=>p.identifier===start.id);if(!t)return;
- const dx=t.clientX-start.x,dy=t.clientY-start.y;
- if(start.ready&&dx>=75&&Math.abs(dy)<65&&dx>Math.abs(dy)*1.5){
-   back();if(ev.cancelable)ev.preventDefault();
- }
+ finishEdgeBack(t.clientX-start.x,t.clientY-start.y,start.ready,ev);
 },{capture:true,passive:false});
-document.addEventListener('touchcancel',()=>edge=null,{capture:true,passive:true});
+document.addEventListener('touchcancel',()=>{edge=null;},{capture:true,passive:true});
+document.addEventListener('pointerdown',ev=>{
+ pointerEdge=null;
+ if(ev.pointerType!=='touch'||ev.isPrimary===false||!swipeAllowed(ev.target,ev.clientX))return;
+ pointerEdge={id:ev.pointerId,x:ev.clientX,y:ev.clientY};
+},{capture:true,passive:true});
+document.addEventListener('pointerup',ev=>{
+ const start=pointerEdge;pointerEdge=null;
+ if(!start||start.id!==ev.pointerId)return;
+ const dx=ev.clientX-start.x,dy=ev.clientY-start.y;
+ finishEdgeBack(dx,dy,dx>22&&dx>Math.abs(dy)*1.5,ev);
+},{capture:true,passive:false});
+document.addEventListener('pointercancel',()=>{pointerEdge=null;},{capture:true,passive:true});
 window.addEventListener('online',()=>{void submitDaily();if(section==='daily')void refreshDailyLeaderboard();});
 window.addEventListener('pagehide',()=>{
  cancelDrag();closeHintPreview(false);saveCurrent();timerStop();
