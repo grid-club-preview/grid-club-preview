@@ -17,7 +17,7 @@
    return rotated.find(id=>!s.completed[id])||null;
  }
  function remaining(){const s=status();return Math.max(0,s.total-s.count);}
- function remainingLabel(){return `Daily Challenges remaining: ${remaining()}`;}
+ function remainingLabel(){const n=remaining();return n?`Daily Challenges remaining: ${n}`:'All Daily Challenges complete, more tomorrow';}
  function summary(){
    const s=status();
    return `${s.count}/${s.total} complete today · Dot Trails ${s.completed.dotTrails?'✓':'○'} · Pipe Shift ${s.completed.pipeShift?'✓':'○'}`;
