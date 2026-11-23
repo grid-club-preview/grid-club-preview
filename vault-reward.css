@@ -39,3 +39,6 @@
 @keyframes vaultFly{0%{transform:translate(0,0) scale(1);opacity:1;}75%{opacity:1;}
  100%{transform:translate(var(--vault-dx),var(--vault-dy)) scale(.25);opacity:0;}}
 @media(prefers-reduced-motion:reduce){.vaultFlyingCoin{display:none;}}
+
+/* Keep long level-up messages and the vault accessible on short iPhones. */
+#pipeResult .pipeResultInner{max-height:78vh;max-height:78dvh;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;}
