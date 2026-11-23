@@ -1,16 +1,24 @@
 /* Grid Club Pipe Shift v0.9.5 · reproducible challenges and shortcut-audited levels */
 (function(root,factory){const api=factory();if(typeof module!=='undefined'&&module.exports)module.exports=api;if(root)root.PipeEngine=api;})(typeof globalThis!=='undefined'?globalThis:this,function(){
 'use strict';
-const N=1,E=2,S=4,W=8,SIZE=5,MAX_LEVEL=42,PUZZLES_PER_STAGE=7;
+const N=1,E=2,S=4,W=8,SIZE=5,MAX_LEVEL=42;
 const DIRECTIONS=[{bit:N,dx:0,dy:-1,opposite:S},{bit:E,dx:1,dy:0,opposite:W},{bit:S,dx:0,dy:1,opposite:N},{bit:W,dx:-1,dy:0,opposite:E}];
+// Deterministic stage counts are intentionally concealed in the UI until each
+// level is completed: 5, 6, 7, 7, 8 and 9 stages.
 const STAGES=[
- {id:1,name:'Beginner',size:5,first:1,last:7,mode:'path'},
- {id:2,name:'Advanced',size:6,first:8,last:14,mode:'path'},
- {id:3,name:'Expert',size:7,first:15,last:21,mode:'path'},
- {id:4,name:'Expert · Branches',size:7,first:22,last:28,mode:'loop'},
- {id:5,name:'Expert · Multiple terminals',size:7,first:29,last:35,mode:'multiple'},
- {id:6,name:'Expert · Full network',size:7,first:36,last:42,mode:'double'}
+ {id:1,name:'Beginner',size:5,first:1,last:5,mode:'path'},
+ {id:2,name:'Advanced',size:6,first:6,last:11,mode:'path'},
+ {id:3,name:'Expert',size:7,first:12,last:18,mode:'path'},
+ {id:4,name:'Expert · Branches',size:7,first:19,last:25,mode:'loop'},
+ {id:5,name:'Expert · Multiple terminals',size:7,first:26,last:33,mode:'multiple'},
+ {id:6,name:'Expert · Full network',size:7,first:34,last:42,mode:'double'}
 ];
+const stageCount=stage=>stage.last-stage.first+1;
+const objectiveForLevel=(stage,position)=>stage.id===1?'any':
+ stage.id===2?(position<3?'any':'all'):
+ stage.id===3?(position===0||position===2?'any':'all'):
+ stage.id===4?(position===0?'any':'all'):
+ stage.id===5?(position===0?'any':'all'):'all';
 const sizeOf=b=>Array.isArray(b)&&[5,6,7].includes(Math.sqrt(b.length))?Math.sqrt(b.length):0;
 const id=(x,y,s=5)=>x+y*s,at=(i,s=5)=>({x:i%s,y:Math.floor(i/s)});
 const clone=b=>b.map(x=>({...x}));
@@ -278,19 +286,17 @@ function stretchCorner(scrambled,desired=8){
 function signature(board){return board.map(t=>`${t.kind[0]}${t.mask}${t.fixed?'f':''}`).join('|');}
 const LEGACY=[{"level":1,"size":5,"board":[{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"source","mask":2,"fixed":true},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":10,"fixed":false},{"kind":"pipe","mask":10,"fixed":false},{"kind":"sink","mask":8,"fixed":true},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":10,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false}],"solvedBoard":[{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"source","mask":2,"fixed":true},{"kind":"pipe","mask":10,"fixed":false},{"kind":"pipe","mask":10,"fixed":false},{"kind":"pipe","mask":10,"fixed":false},{"kind":"sink","mask":8,"fixed":true},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false}],"solutionMoves":[{"from":12,"to":11},{"from":17,"to":12}],"initialMoves":2,"displacement":2,"fixedPipes":0,"walls":0},{"level":2,"size":5,"board":[{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":6,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":12,"fixed":false,"decoy":true},{"kind":"pipe","mask":10,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"source","mask":2,"fixed":true},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":9,"fixed":false},{"kind":"pipe","mask":12,"fixed":false},{"kind":"sink","mask":8,"fixed":true},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":3,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false}],"solvedBoard":[{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":12,"fixed":false,"decoy":true},{"kind":"pipe","mask":6,"fixed":false},{"kind":"pipe","mask":10,"fixed":false},{"kind":"pipe","mask":12,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"source","mask":2,"fixed":true},{"kind":"pipe","mask":9,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":3,"fixed":false},{"kind":"sink","mask":8,"fixed":true},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false}],"solutionMoves":[{"from":13,"to":8},{"from":12,"to":11},{"from":6,"to":5},{"from":1,"to":6},{"from":18,"to":13}],"initialMoves":5,"displacement":8,"fixedPipes":0,"walls":0},{"level":3,"size":5,"board":[{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":12,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"source","mask":2,"fixed":true},{"kind":"pipe","mask":3,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"sink","mask":8,"fixed":true},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":10,"fixed":false},{"kind":"pipe","mask":6,"fixed":false},{"kind":"pipe","mask":12,"fixed":false,"decoy":true},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":9,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":3,"fixed":false,"decoy":true},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"wall","mask":0,"fixed":true},{"kind":"empty","mask":0,"fixed":false}],"solvedBoard":[{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"source","mask":2,"fixed":true},{"kind":"pipe","mask":12,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":6,"fixed":false},{"kind":"sink","mask":8,"fixed":true},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":3,"fixed":false},{"kind":"pipe","mask":10,"fixed":false},{"kind":"pipe","mask":9,"fixed":false},{"kind":"pipe","mask":12,"fixed":false,"decoy":true},{"kind":"pipe","mask":3,"fixed":false,"decoy":true},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"wall","mask":0,"fixed":true},{"kind":"empty","mask":0,"fixed":false}],"solutionMoves":[{"from":12,"to":7},{"from":17,"to":18},{"from":13,"to":8},{"from":6,"to":11},{"from":18,"to":13},{"from":7,"to":12},{"from":1,"to":6},{"from":20,"to":15}],"initialMoves":8,"displacement":8,"fixedPipes":0,"walls":1},{"level":4,"size":5,"board":[{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":6,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":3,"fixed":false,"decoy":true},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":9,"fixed":false},{"kind":"pipe","mask":12,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":6,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":3,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"sink","mask":8,"fixed":true},{"kind":"source","mask":2,"fixed":true},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":9,"fixed":false},{"kind":"pipe","mask":9,"fixed":false,"decoy":true},{"kind":"empty","mask":0,"fixed":false},{"kind":"wall","mask":0,"fixed":true}],"solvedBoard":[{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":3,"fixed":false,"decoy":true},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":6,"fixed":false},{"kind":"pipe","mask":12,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":6,"fixed":false},{"kind":"pipe","mask":9,"fixed":false},{"kind":"pipe","mask":3,"fixed":false},{"kind":"sink","mask":8,"fixed":true},{"kind":"source","mask":2,"fixed":true},{"kind":"pipe","mask":9,"fixed":false},{"kind":"pipe","mask":9,"fixed":false,"decoy":true},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"wall","mask":0,"fixed":true}],"solutionMoves":[{"from":21,"to":16},{"from":1,"to":2},{"from":4,"to":3},{"from":12,"to":13},{"from":10,"to":11},{"from":2,"to":1},{"from":7,"to":12},{"from":22,"to":17},{"from":1,"to":6},{"from":3,"to":2},{"from":6,"to":7}],"initialMoves":11,"displacement":12,"fixedPipes":0,"walls":1},{"level":5,"size":5,"board":[{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":5,"fixed":false,"decoy":true},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":9,"fixed":false,"decoy":true},{"kind":"pipe","mask":12,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"sink","mask":8,"fixed":true},{"kind":"source","mask":2,"fixed":true},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":5,"fixed":false},{"kind":"pipe","mask":6,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":3,"fixed":false},{"kind":"pipe","mask":10,"fixed":true},{"kind":"pipe","mask":9,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":9,"fixed":false,"decoy":true},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"wall","mask":0,"fixed":true}],"solvedBoard":[{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":5,"fixed":false,"decoy":true},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":9,"fixed":false,"decoy":true},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":6,"fixed":false},{"kind":"sink","mask":8,"fixed":true},{"kind":"source","mask":2,"fixed":true},{"kind":"pipe","mask":12,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":5,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":3,"fixed":false},{"kind":"pipe","mask":10,"fixed":true},{"kind":"pipe","mask":9,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":9,"fixed":false,"decoy":true},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"wall","mask":0,"fixed":true}],"solutionMoves":[{"from":16,"to":11},{"from":13,"to":8},{"from":5,"to":0},{"from":12,"to":13},{"from":6,"to":7},{"from":11,"to":16},{"from":21,"to":22},{"from":16,"to":21},{"from":0,"to":5},{"from":13,"to":12},{"from":21,"to":16},{"from":7,"to":6},{"from":12,"to":13},{"from":22,"to":21},{"from":6,"to":11}],"initialMoves":15,"displacement":5,"fixedPipes":1,"walls":1}]; // exact first five boards from shipped v0.8.0
 const stageOf=n=>STAGES.find(s=>n>=s.first&&n<=s.last)||null;
-function timerFor(n){const s=stageOf(n);if(!s)return null;const at=n-s.first;
- // The last two puzzles of the highest campaign stages are endurance
- // challenges: no clock or move cap. Keep their existing audited boards.
- if(s.id>=5&&at>=5)return null;
+function timerFor(n){
+ const stage=stageOf(n);if(!stage)return null;
+ const at=n-stage.first,count=stageCount(stage);
+ if(stage.id>=5&&at>=count-2)return null; // true endurance finales
  if(at<3)return null;
- // Two dense, board-spanning stage-4 puzzles need more than the old 3-minute
- // budget. They were authored after the original stage-wide clock table.
- if(n===27)return 360000;
- if(n===28)return 390000;
- // Challenge clock begins after the pre-trial prompt; Level 3 is calibrated to user testing.
- const base=[70,115,125,165,210,245][s.id-1];
- const finaleReduction=[18,20,22,25,30,35][s.id-1];
- return (at===4?base-finaleReduction:at===5?base+20:at===6?base+10:base)*1000;}
+ if(stage.id===4&&at===count-2)return 360000;
+ if(stage.id===4&&at===count-1)return 390000;
+ const base=[70,115,125,165,285,355][stage.id-1];
+ const finaleReduction=[18,20,22,25,20,20][stage.id-1];
+ return (at===4?base-finaleReduction:at>=5?base+15:base)*1000;
+}
 // A move budget applies only to timed numbered Levels, never Free Play or Daily.
  // It is calibrated from the catalogue's known legal solution route, with room
  // for exploration. The last legal move is allowed to solve the board.
@@ -328,40 +334,100 @@ function rotatePuzzle(p,turns){
 }
 const orientationForLevel=n=>[1,3,1,0,3,2][n%6];
 const orientationForRandom=seed=>[0,1,3,1,3,2][(seed>>>12)%6];
+// Higher campaign stages are scrambled by moving essential pieces, not just
+// by wandering the spare blocks around the board. Each candidate remains
+// reversible, with an exact legal solution route.
+function campaignScramble(solved,seed,steps,attempts=15){
+ let best=null,bestScore=-Infinity;
+ const working=solved.filter(t=>t.kind==='pipe'&&!t.decoy).length;
+ const solvedFlow=evaluate(solved).flow.length;
+ for(let attempt=0;attempt<attempts;attempt++){
+   const board=clone(solved),random=rng(seed+Math.imul(attempt+1,2654435761)),history=[];
+   let prior=null;
+   for(let step=0;step<steps;step++){
+     const all=legalMoves(board);
+     const legal=all.filter(m=>!prior||m.from!==prior.to||m.to!==prior.from);
+     const options=legal.length?legal:all;
+     if(!options.length)break;
+     const weights=options.map(m=>{
+       const tile=board[m.from],original=solved[m.from];
+       return tile.kind==='pipe'&&!tile.decoy?(original.kind==='pipe'&&original.mask===tile.mask?9:6):1;
+     });
+     const sum=weights.reduce((x,y)=>x+y,0);
+     let pick=random()*sum,index=0;
+     for(;index<options.length-1;index++){pick-=weights[index];if(pick<0)break;}
+     const chosen=options[index];move(board,chosen.from,chosen.to);
+     history.push(chosen);prior=chosen;
+   }
+   if(evaluate(board).solved)continue;
+   const essentialWrong=solved.reduce((n,t,i)=>n+(
+     t.kind==='pipe'&&!t.decoy&&
+     (board[i].kind!=='pipe'||board[i].mask!==t.mask)?1:0),0);
+   const changed=board.reduce((n,t,i)=>n+(
+     t.kind!==solved[i].kind||t.mask!==solved[i].mask?1:0),0);
+   const connected=evaluate(board).flow.length;
+   const score=essentialWrong*8+changed*1.3-connected*1.8;
+   if(score>bestScore){
+     bestScore=score;
+     best={board,solutionMoves:history.slice().reverse().map(m=>({from:m.to,to:m.from})),
+       initialMoves:history.length,displacement:changed,
+       difficultyMetrics:{essentialWrong,working,initialConnected:connected,solvedFlow}};
+   }
+   if(essentialWrong>=Math.min(working-2,Math.ceil(working*.74))&&connected<=solvedFlow*.4)break;
+ }
+ if(!best)throw Error('Unable to scramble campaign stage');
+ return best;
+}
 const cache=new Map();
 const FIXED_SEEDS=Object.freeze({1:3074878952,2:4088790921,3:3074894406,4:3074902133,5:4088814102,6:1434386060,7:1434393787,8:420497272,9:420504999,10:3074948495,11:3074956222,12:420528180,13:3074971676,14:420543634,15:3074987130,16:3074994857,17:420566815,18:4088914553,19:1434486511,20:3462302722,21:3075033492,22:3075041219,23:420613177,24:420620904,25:420628631,26:3075072127,27:3075079854,28:420651812,29:420659539,30:420667266}); // Audited 2026-11-18; freeze for this catalogue.
 const EXTRA_SEEDS=Object.freeze({6:3074917587,7:4088829556,13:420535907,14:2835629075,20:4088930007,21:3075033492,27:1434548327,28:1434556054,34:1434602416,35:1434610143,41:4089092274,42:4089100001}); // Additional audited puzzle seeds.
-function get(n,seedOverride,legacy=false){if(!Number.isInteger(n)||n<1||n>MAX_LEVEL)return null;
- const version=legacy===true?5:legacy===6?6:(n===27||n===28?7:6);
- const override=Number.isInteger(seedOverride),key=override?`trial:${n}:${seedOverride}:v${version}`:`v${version}:${n}`;
+function get(n,seedOverride,legacy=false){
+ if(!Number.isInteger(n)||n<1||n>MAX_LEVEL)return null;
+ const stage=stageOf(n),k=n-stage.first,version=8;
+ const override=Number.isInteger(seedOverride);
+ const seed=(override?seedOverride:hashSeed(`gridclub-campaign-v8:${stage.id}:${k}`))>>>0;
+ const key=`v${version}:${n}:${seed}`;
  if(!cache.has(key)){
-   const s=stageOf(n),k=n-s.first,originalId=k<5?(s.id-1)*5+k+1:null;
-   const seed=(override?seedOverride:(FIXED_SEEDS[originalId]??EXTRA_SEEDS[n]))>>>0;
-   // A solved, leak-free network is constructed first, with dense pipe decoys
-   // and unmistakable fixed metal plates, then scrambled by legal slides.
-   // Previous completions are preserved; unfinished v0.9.2 boards are restarted.
-   const mode=version>=7&&n===27?'weaveA':version>=7&&n===28?'weaveB':version>=6&&n===26?'corner':s.mode;
-   const options={size:s.size,mode,seed,
-     complexity:1+Math.floor(k/2),
-     fixedCount:s.id===1?Math.floor(k/2):s.id===2?Math.min(7,2+k):Math.min(7,s.id-1+Math.floor(k/2)),
-     walls:s.id===1?1+Math.floor(k/2):s.id===2?2+Math.floor(k/2):Math.min(7,2+Math.floor(k/2)+Math.floor((s.id-3)/2)),
-     decoys:s.id===1?7+k:s.id===2?9+2*k:18+2*k+Math.max(0,s.id-3),
-     blocks:s.id<=2?0:s.id===3?(k>=2?1+Math.floor((k-2)/2):0):2+(s.id-4)+Math.floor(k/2)};
-   if(version>=6&&n===26){options.fixedCount=2;options.walls=2;options.decoys=8;options.blocks=1;}
-   if(version>=7&&(n===27||n===28)){options.fixedCount=2;options.walls=2;options.decoys=6;options.blocks=3;}
+   const endurance=stage.id>=5&&k>=stageCount(stage)-2;
+   const dense=(stage.id===4&&k>=stageCount(stage)-2)||
+     (stage.id===5&&k>=6)||(stage.id===6&&k>=5);
+   const mode=dense?(k%2?'weaveA':'weaveB'):
+     stage.id>=5?'double':stage.mode;
+   const objective=objectiveForLevel(stage,k);
+   const all=objective==='all';
+   const options={size:stage.size,mode,seed,complexity:1+Math.floor(k/2),
+     fixedCount:dense?2:stage.id>=4?Math.min(3,1+Math.floor(k/2)):Math.min(5,Math.floor(k/2)),
+     walls:dense?2:stage.id>=4?2:Math.min(3,1+Math.floor(k/2)),
+     decoys:dense?0:stage.id<=2?5+k:stage.id===3?9+k:6,
+     blocks:dense?5:stage.id<=2?0:stage.id===3?1:2};
    const solvedBoard=network(options);
-   const raw=scramble(solvedBoard,seed^0x123acdca,20+s.id*6+k*7);
-   const scrambled=version>=6&&n===26?stretchCorner(raw,8):
-     version>=7&&n===27?stretchCorner(raw,id(1,1,s.size)):
-     version>=7&&n===28?stretchCorner(raw,id(5,0,s.size)):raw;
-   let candidate={level:n,stage:s.id,size:s.size,mode:'levels',networkType:options.mode,timerMs:timerFor(n),...scrambled,solvedBoard,initialMoves:scrambled.solutionMoves.length,
-     fixedPipes:solvedBoard.filter(t=>t.kind==='pipe'&&t.fixed).length,walls:solvedBoard.filter(t=>t.kind==='wall').length,
-     catalogVersion:version};
-   if(version>=6&&n!==26&&(version<7||![27,28].includes(n)))
-     candidate=rotatePuzzle(candidate,orientationForLevel(n));
+   if(all)for(const tile of solvedBoard){
+     if(tile.kind==='source')tile.requireAllFlow=true;
+     // All visible pipes are essential. Former decoys become blank movable
+     // blocks so there are no secretly optional pipes in an all-pipes goal.
+     if(tile.kind==='pipe'&&tile.decoy){
+       tile.kind='block';tile.mask=0;tile.fixed=false;delete tile.decoy;
+     }
+   }
+   const steps=stage.id<=2?25+stage.id*8+k*10:
+     stage.id===3?60+k*12:
+     stage.id===4?85+k*13:
+     dense?(endurance?250:175):105+k*15;
+   const scrambled=stage.id>=3?
+     campaignScramble(solvedBoard,seed^0x123acdca,steps,dense?18:15):
+     scramble(solvedBoard,seed^0x123acdca,steps);
+   let candidate={level:n,stage:stage.id,size:stage.size,mode:'levels',
+     networkType:options.mode,freeObjective:objective,requireAllFlow:all,
+     timerMs:timerFor(n),...scrambled,solvedBoard,
+     initialMoves:scrambled.solutionMoves.length,
+     fixedPipes:solvedBoard.filter(t=>t.kind==='pipe'&&t.fixed).length,
+     walls:solvedBoard.filter(t=>t.kind==='wall').length,catalogVersion:version};
+   candidate=rotatePuzzle(candidate,orientationForLevel(n));
+   if(!evaluate(candidate.solvedBoard).solved)throw Error('Campaign solution is invalid');
    cache.set(key,candidate);
  }
- const p=cache.get(key);return {...p,board:clone(p.board),solvedBoard:clone(p.solvedBoard),solutionMoves:p.solutionMoves.map(m=>({...m}))};
+ const p=cache.get(key);return {...p,board:clone(p.board),solvedBoard:clone(p.solvedBoard),
+   solutionMoves:p.solutionMoves.map(m=>({...m}))};
 }
 // All players receive the same UTC-dated board. Keep this versioned seed
 // independent of the numbered Level catalogue for server-side replay.
@@ -527,5 +593,5 @@ function freePlay(size,seed,objective='all',tier=size===5?'beginner':size===6?'a
  return puzzle;
 }
 function validateBoard(b){const size=sizeOf(b);return !!size&&b.every(t=>t&&['empty','wall','block','pipe','source','sink'].includes(t.kind)&&Number.isInteger(t.mask)&&t.mask>=0&&t.mask<=15&&typeof t.fixed==='boolean'&&(t.kind==='pipe'||t.kind==='source'||t.kind==='sink'||t.mask===0))&&[1,2].includes(b.filter(t=>t.kind==='source').length)&&[1,2].includes(b.filter(t=>t.kind==='sink').length);}
-return Object.freeze({SIZE,MAX_LEVEL,PUZZLES_PER_STAGE,N,E,S,W,DIRECTIONS,STAGES,sizeOf,at,id,adjacent,direction,clone,rng,get,random,freePlay,daily,hashSeed,stageOf,timerFor,moveLimitFor,move,canMove,straightSlidePath,legalMoves,evaluate,traceLeak,validateBoard,signature});
+return Object.freeze({SIZE,MAX_LEVEL,N,E,S,W,DIRECTIONS,STAGES,stageCount,objectiveForLevel,sizeOf,at,id,adjacent,direction,clone,rng,get,random,freePlay,daily,hashSeed,stageOf,timerFor,moveLimitFor,move,canMove,straightSlidePath,legalMoves,evaluate,traceLeak,validateBoard,signature});
 });
