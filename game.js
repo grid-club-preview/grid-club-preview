@@ -957,6 +957,19 @@
         balance.hidden=false;
       }
     }
+    // Credits have already been written to the shared ledger. The vault is
+    // an optional visual transfer, never a condition for receiving rewards.
+    const vaultEarned=mode==='level'?Math.max(0,Number(levelReward?.earned||0)+Number(levelReward?.stageBonus||0)):
+      mode==='daily'?Math.max(0,Number(result.dailyCredits||0)):0;
+    const vaultError=mode==='level'?!!levelReward?.saveFailed:!!result.dailyCreditSaveFailed;
+    globalThis.GridClubVault?.show('dotVaultReward',{
+      earned:vaultError?0:vaultEarned,balance:walletBalance(),
+      detail:mode==='level'&&levelReward?.stageBonus?`Includes +${levelReward.stageBonus} level bonus`:''
+    });
+    if(vaultEarned>0&&!vaultError){
+      $('levelReward').hidden=true;
+      $('dotDailyCreditReward').hidden=true;
+    }
     $('winDifficultyActions').hidden = mode !== 'free';
     $('winToRandom').hidden = mode !== 'free';
     $('winEasier').disabled = size === 5;
