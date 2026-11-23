@@ -5,7 +5,7 @@ const e=globalThis.PipeEngine;if(!e)return;
 const $=id=>document.getElementById(id),root=$('pipeShiftScreen'),hub=$('home');
 if(!root||!hub||!$('pipeShiftEntry'))return;
 const KEY='gridclub-pipeshift-progress-v1',BACKUP=KEY+'-v08-backup',MAX=e.MAX_LEVEL;
-const blank=()=>({version:2,levelCatalog:5,completed:{},best:{},active:{},randomBest:{},randomBestV3:{},randomBestV4:{},randomBestByGoal:{all:{},any:{}},randomGoal:'all',randomCount:{},legacyArchived:{},legacyUnlockedStages:{},firstAttemptFailed:{},daily:{},moveStats:{random:{},levels:{count:0,total:0},daily:{count:0,total:0}}});
+const blank=()=>({version:2,levelCatalog:6,completed:{},best:{},active:{},randomBest:{},randomBestV3:{},randomBestV4:{},randomBestByGoal:{all:{},any:{}},randomGoal:'all',randomCount:{},legacyArchived:{},legacyUnlockedStages:{},firstAttemptFailed:{},daily:{},moveStats:{random:{},levels:{count:0,total:0},daily:{count:0,total:0}}});
 const oldToNew=id=>{const n=Number(id);return Number.isInteger(n)&&n>=1&&n<=30?Math.floor((n-1)/5)*7+(n-1)%5+1:null;};
 function remapLevels(items){const mapped={};for(const [id,value] of Object.entries(items||{})){const next=oldToNew(id);if(next!==null)mapped[next]=value;}return mapped;}
 let progress=blank(),section='menu',stage=1,mode='levels',currentLevel=null,currentSize=5,currentTier='beginner',puzzle=null;
@@ -52,22 +52,15 @@ function read(){
    const raw=localStorage.getItem(KEY),v=JSON.parse(raw||'null');if(!v||!v.completed||!v.active)return blank();
    if(v.version===2){
      const next={...blank(),...v,moveStats:{...blank().moveStats,...(v.moveStats||{})}};
-     if(v.levelCatalog===4){
-       const oldCompleted=next.completed||{},unlocked={...(next.legacyUnlockedStages||{})};
-       for(let id=2;id<=e.STAGES.length;id++)if(oldCompleted[(id-1)*5])unlocked[id]=true;
-       next.completed=remapLevels(oldCompleted);next.best=remapLevels(next.best);
-       const active={};
-       for(const [key,value] of Object.entries(next.active||{})){
-         const match=/^level:(\d+)$/.exec(key);
-         if(!match){active[key]=value;continue;}
-         const mapped=oldToNew(match[1]);if(mapped!==null)active[`level:${mapped}`]={...value,catalogVersion:5};
-       }
-       next.active=active;next.legacyUnlockedStages=unlocked;next.levelCatalog=5;
-     }else if(v.levelCatalog!==5){
-       next.olderLevelBests={...(next.olderLevelBests||{}),v093:next.best||{}};
-       next.best={};
-       for(const key of Object.keys(next.active||{}))if(key.startsWith('level:'))delete next.active[key];
-       next.levelCatalog=5;
+     // The private-beta v8 campaign has different, hidden stage counts and
+     // different board goals. Reset ONLY campaign progress, preserving Free
+     // Play, Daily Challenges and the shared wallet.
+     if(v.levelCatalog!==6){
+       next.completed={};next.best={};next.firstAttemptFailed={};
+       next.legacyUnlockedStages={};
+       next.active=Object.fromEntries(Object.entries(next.active||{}).filter(([key])=>!key.startsWith('level:')));
+       next.moveStats.levels={count:0,total:0};
+       next.levelCatalog=6;
      }
      next.randomGoal=next.randomGoal==='any'?'any':'all';
      next.randomBestByGoal={all:{...(next.randomBestByGoal?.all||{})},
@@ -201,10 +194,9 @@ function menu(){saveCurrent();hub.hidden=true;root.hidden=false;route('menu');
  // Display the furthest unlocked, unfinished Level. This respects migrated
  // progress where a later level was unlocked before two new puzzles were added.
  const current=[...e.STAGES].reverse().find(s=>stageUnlocked(s.id)&&
-   Array.from({length:e.PUZZLES_PER_STAGE},(_,i)=>s.first+i).some(n=>!progress.completed[n]));
+   Array.from({length:e.stageCount(s)},(_,i)=>s.first+i).some(n=>!progress.completed[n]));
  $('pipeLevelsSummary').textContent=remaining?
-   `Level ${current?.id||1} · ${remaining} puzzle${remaining===1?'':'s'} remaining`:
-   'All 42 puzzles complete';
+   `Continue Level ${current?.id||1}`:'All levels complete';
 }
 function statsMenu(){
  saveCurrent();hub.hidden=true;root.hidden=false;route('stats');
@@ -270,28 +262,31 @@ function chooseRandomGoal(goal){
 function stageUnlocked(id){if(id===1)return true;const previous=e.STAGES[id-2];return !!progress.completed[previous.last]||!!progress.legacyUnlockedStages?.[id];}
 function canStartLevel(n){const group=e.stageOf(n);return !!group&&(n===1||!!progress.completed[n-1]||(n===group.first&&stageUnlocked(group.id)));}
 function stages(){saveCurrent();hub.hidden=true;root.hidden=false;route('stages');
- $('pipeCompletedCount').textContent=`${Object.keys(progress.completed).filter(n=>progress.completed[n]).length}/${MAX}`;
+ $('pipeCompletedCount').textContent=`${Object.values(progress.completed).filter(Boolean).length} stages complete`;
  const list=$('pipeStageList');list.replaceChildren();
- for(const s of e.STAGES){const count=Array.from({length:e.PUZZLES_PER_STAGE},(_,i)=>s.first+i).filter(n=>progress.completed[n]).length;
+ for(const s of e.STAGES){const count=Array.from({length:e.stageCount(s)},(_,i)=>s.first+i).filter(n=>progress.completed[n]).length;
    const enabled=stageUnlocked(s.id);const b=document.createElement('button');b.className='pipeStage';b.dataset.stage=s.id;
    b.disabled=!enabled;const number=document.createElement('span');number.className='pipeStageNum';number.textContent=s.id;
    const text=document.createElement('span');text.className='pipeStageContent';const strong=document.createElement('strong');strong.textContent=`Level ${s.id} · ${s.name}`;
-   const small=document.createElement('small');small.textContent=`${s.size}×${s.size} · ${count}/${e.PUZZLES_PER_STAGE} complete`;text.append(strong,small);
-   const arrow=document.createElement('span');arrow.className='pipeChevron';arrow.textContent=!enabled?'🔒':count===e.PUZZLES_PER_STAGE?'✓':'›';
+   const small=document.createElement('small');small.textContent=`${s.size}×${s.size} · ${count} stage${count===1?'':'s'} complete`;text.append(strong,small);
+   const arrow=document.createElement('span');arrow.className='pipeChevron';arrow.textContent=!enabled?'🔒':count===e.stageCount(s)?'✓':'›';
    b.append(number,text,arrow);b.onclick=()=>stageMenu(s.id);list.append(b);
  }
 }
 function stageMenu(id){const s=e.STAGES.find(x=>x.id===id);if(!s||!stageUnlocked(id))return;
  saveCurrent();stage=id;hub.hidden=true;root.hidden=false;route('levels');
  $('pipeStageTitle').textContent=`Level ${id}`;$('pipeStageDescription').textContent=`${s.name} · ${s.size}×${s.size}`;
- $('pipeStageCount').textContent=`${Array.from({length:e.PUZZLES_PER_STAGE},(_,i)=>s.first+i).filter(n=>progress.completed[n]).length}/${e.PUZZLES_PER_STAGE}`;
+ const stageDone=Array.from({length:e.stageCount(s)},(_,i)=>s.first+i).filter(n=>progress.completed[n]).length;
+ $('pipeStageCount').textContent=`${stageDone} stage${stageDone===1?'':'s'} complete`;
  const list=$('pipeLevelList');list.replaceChildren();
  for(let n=s.first;n<=s.last;n++){
-   const enabled=canStartLevel(n),completed=!!progress.completed[n],active=!!progress.active[`level:${n}`];
+   const enabled=canStartLevel(n),completed=!!progress.completed[n];
+   if(!enabled&&!completed)continue; // do not disclose future stage count
+   const active=!!progress.active[`level:${n}`];
    const b=document.createElement('button');b.className='pipeLevel';b.disabled=!enabled;b.dataset.complete=String(completed);
    const left=document.createElement('span'),label=document.createElement('strong'),detail=document.createElement('small');
-   label.textContent=`Puzzle ${n-s.first+1}`;
-   detail.textContent=completed?`Best: ${progress.best[n]?.moves??'—'} moves`:active?'Continue puzzle':e.timerFor(n)?'Time & move trial':'Untimed';
+   label.textContent=`Stage ${n-s.first+1}`;
+   detail.textContent=completed?`Best: ${progress.best[n]?.moves??'—'} moves`:active?'Continue stage':e.timerFor(n)?'Time & move trial':'Untimed';
    left.append(label,detail);const mark=document.createElement('span');mark.className='pipeTag';mark.textContent=completed?'✓':enabled?'›':'🔒';
    b.append(left,mark);b.onclick=()=>startLevel(n);list.append(b);
  }
@@ -660,8 +655,7 @@ function begin(p,kind,id,skipSave=false){
  failureReason='time';legacyMoveCapExempt=false;
  // Existing v6 attempts of redesigned puzzles 6 and 7 keep their original
  // move budgets and boards; fresh starts use the more demanding v7 layout.
- const variant=p.catalogVersion===5?true:p.catalogVersion===6&&[27,28].includes(id)?6:false;
- moveLimit=kind==='levels'?e.moveLimitFor(id,variant):null;
+ moveLimit=kind==='levels'?e.moveLimitFor(id):null;
  hub.hidden=true;root.hidden=false;route('game');
  const key=activeKey(),stored=progress.active[key];
  if(stored&&e.validateBoard(stored.board)&&stored.board.length===p.size*p.size&&
@@ -684,23 +678,24 @@ function begin(p,kind,id,skipSave=false){
       stored.serverAttemptId:null;
    }
  }else board=e.clone(p.board);
- $('pipeGameName').textContent=kind==='levels'?`Puzzle ${id-e.stageOf(id).first+1}/${e.PUZZLES_PER_STAGE}`:
+ $('pipeGameName').textContent=kind==='levels'?`Level ${p.stage}`:
    kind==='daily'||kind==='practice'?'Daily Challenge':currentTier.charAt(0).toUpperCase()+currentTier.slice(1);
- $('pipeDifficultyTag').textContent=kind==='levels'? `Level ${p.stage}`:
+ $('pipeDifficultyTag').textContent=kind==='levels'? `Stage ${id-e.stageOf(id).first+1}`:
    kind==='daily'||kind==='practice'?(dailyPractice?'Practice':p.day):'Free Play';
- $('pipeObjectiveTag').hidden=kind!=='random';
+ $('pipeObjectiveTag').hidden=kind!=='random'&&kind!=='levels';
  $('pipeObjectiveHelp').hidden=true;
  $('pipeObjectiveInfo').setAttribute('aria-expanded','false');
- if(kind==='random'){
-   $('pipeObjectiveLabel').textContent=p.freeObjective==='all'?'Use all pipes':'Use any pipes';
+ if(kind==='random'||kind==='levels'){
+   $('pipeObjectiveLabel').textContent=p.freeObjective==='all'?'Connect using all pipes':'Connect using any pipes';
    $('pipeObjectiveHelp').textContent=puzzleInstruction(p);
  }
- $('pipeInstruction').hidden=kind==='random';
+ $('pipeInstruction').hidden=kind==='random'||kind==='levels';
  $('pipeGridSize').textContent=`${p.size}×${p.size}`;
  $('pipeInstruction').textContent=puzzleInstruction(p);
  $('pipeNew').hidden=kind!=='random';
  $('pipeBoard').style.setProperty('--pipe-size',p.size);$('pipeBoard').dataset.pipeGridSize=String(p.size);
- $('pipeTrialDescription').textContent=moveLimit!==null?`Finish within ${moveLimit} moves and ${Math.ceil(p.timerMs/1000)} seconds.`:'Beat the clock to restore the flow.';
+ const goalText=p.freeObjective==='all'?'Connect using all pipes.':'Connect using any pipes.';
+ $('pipeTrialDescription').textContent=moveLimit!==null?`${goalText} Finish within ${moveLimit} moves and ${Math.ceil(p.timerMs/1000)} seconds.`:`${goalText} Beat the clock to restore the flow.`;
  render();updateClock();if(kind==='daily')void syncDailyStart();
  if(expired){showFailure();$('pipeTimeout').hidden=false;}
  else if(moveLimit!==null&&moves>=moveLimit)timeout('moves');
@@ -709,18 +704,9 @@ function begin(p,kind,id,skipSave=false){
  else startTicker();
  saveCurrent();
 }
-function startLevel(n){if(!Number.isInteger(n)||n<1||n>MAX||!canStartLevel(n))return;
- // Preserve meaningful attempts from earlier board versions. For the two
- // newly redesigned puzzles, an untouched old board is safely replaced
- // without consuming a first attempt or taking away paid time.
- const slot=`level:${n}`,stored=progress.active[slot];
- if([27,28].includes(n)&&stored?.catalogVersion===6&&
-   Number(stored.moves||0)===0&&Number(stored.extraTimeCount||0)===0){
-   delete progress.active[slot];save();
- }
- const savedVersion=progress.active[slot]?.catalogVersion;
- const variant=savedVersion===5?true:savedVersion===6&&[27,28].includes(n)?6:false;
- begin(e.get(n,undefined,variant),'levels',n);
+function startLevel(n){
+ if(!Number.isInteger(n)||n<1||n>MAX||!canStartLevel(n))return;
+ begin(e.get(n),'levels',n);
 }
 function startRandom(tier,newPuzzle=false){
  if(typeof tier==='number')tier=fallbackTier(tier); // legacy JS caller
@@ -820,14 +806,14 @@ function slide(from,to){
      if(hintsUsed===0&&(!progress.best[currentLevel]||moves<progress.best[currentLevel].moves))
        progress.best[currentLevel]={moves,elapsed,when:new Date().toISOString()};
      if(first&&!progress.firstAttemptFailed?.[currentLevel]){
-       const award=credits?.award('club:pipe:level:'+currentLevel,2,'pipe-level');
+       const award=credits?.award('club:pipe:v8:level:'+currentLevel,2,'pipe-level');
        creditReward.puzzle=award?.awarded||0;
        creditReward.saveFailed ||= !!award?.saveFailed;
      }
      justClearedStage=first&&currentLevel===group.last&&
-       Array.from({length:e.PUZZLES_PER_STAGE},(_,i)=>group.first+i).every(id=>!!progress.completed[id]);
+       Array.from({length:e.stageCount(group)},(_,i)=>group.first+i).every(id=>!!progress.completed[id]);
      if(justClearedStage){
-       const award=credits?.award('club:pipe:stage:'+group.id,5,'pipe-stage');
+       const award=credits?.award('club:pipe:v8:stage:'+group.id,5,'pipe-stage');
        creditReward.stage=award?.awarded||0;
        creditReward.saveFailed ||= !!award?.saveFailed;
      }
@@ -908,16 +894,16 @@ function victory(){const phrases=globalThis.GridClubWinMessages?.pipeShift||{};c
  result.classList.remove('pipeStageWin','pipeGrandFinale');
  celebration.hidden=true;
  const earned=(creditReward?.puzzle||0)+(creditReward?.stage||0)+(creditReward?.daily||0);
- $('pipeCreditReward').hidden=!earned&&!creditReward?.saveFailed;
- $('pipeCreditReward').textContent=creditReward?.saveFailed?
-   'Some credit rewards could not be saved.':
-   `+${earned} Club Credits${creditReward?.stage?` (includes +${creditReward.stage} level bonus)`:''} · Balance: ${creditBalance()} ◉`;
+ $('pipeCreditReward').hidden=!creditReward?.saveFailed;
+ $('pipeCreditReward').textContent=creditReward?.saveFailed?'Some credit rewards could not be saved.':'';
+ globalThis.GridClubVault?.show('pipeVaultReward',{earned,balance:creditBalance(),
+   detail:creditReward?.stage?`Includes +${creditReward.stage} level bonus`:''});
  $('pipeResultTitle').textContent=names[(moves+(currentLevel||0))%names.length];
  if(mode==='random'){$('pipeResultMessage').textContent=`${moves} moves`;$('pipeResultNext').hidden=false;$('pipeResultNext').textContent='Next puzzle →';$('pipeResultLevels').textContent='Back to Free Play';}
  else if(mode==='daily'||mode==='practice'){$('pipeResultMessage').textContent=`${moves} moves · ${dailyDay}${dailyPractice?' · practice':''}`;$('pipeResultNext').hidden=true;$('pipeResultLevels').textContent='Daily leaderboard';}
  else{
    const s=e.stageOf(currentLevel),last=currentLevel===MAX;
-   $('pipeResultMessage').textContent=`Level ${s.id} · Puzzle ${currentLevel-s.first+1}/${e.PUZZLES_PER_STAGE} · ${moves} moves`;
+   $('pipeResultMessage').textContent=`Level ${s.id} · Stage ${currentLevel-s.first+1} · ${moves} moves`;
    $('pipeResultNext').hidden=last;$('pipeResultNext').textContent=currentLevel===s.last?'Next Level →':'Continue Level →';$('pipeResultLevels').textContent='Levels overview';
    if(justClearedStage){
      const badges=['◉','◆','✦','⌁','✺','♛'];
@@ -960,7 +946,7 @@ $('pipeExtraTime').onclick=buyPipeTime;
 $('pipeTimeoutBack').onclick=()=>mode==='random'?randomMenu():stageMenu(stage);
 $('pipeUndo').onclick=undoMove;$('pipeReset').onclick=reset;$('pipeNew').onclick=()=>startRandom(currentTier,true);
 $('pipeObjectiveInfo').onclick=()=>{
- if(mode!=='random'||section!=='game')return;
+ if(!['random','levels'].includes(mode)||section!=='game')return;
  const help=$('pipeObjectiveHelp'),show=help.hidden;
  help.hidden=!show;$('pipeObjectiveInfo').setAttribute('aria-expanded',String(show));
 };
