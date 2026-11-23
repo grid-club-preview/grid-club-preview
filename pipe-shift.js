@@ -96,7 +96,7 @@ function read(){
      }
      for(let n=6;n<=10;n++)if(v.completed[n]||v.best?.[n]||v.active?.[n])next.legacyArchived[n]={completed:!!v.completed[n],best:v.best?.[n]||null};
      next.olderLevelBests={v08:{...(next.best||{})}};
-     next.best={};next.active={};next.levelCatalog=5;
+     next.best={};next.active={};next.levelCatalog=6;
      return next;
    }
  }catch(_){}
