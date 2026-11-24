@@ -17,6 +17,7 @@ assert(!stats.includes('Global leaderboard'),'Public leaderboard must not appear
 assert(!stats.includes('communitySummary'),'Public community stats must be separate');
 assert(game.includes('showPage(\'daily\');renderDailyPage()'));
 assert(game.includes("mode==='practice'?null:savedGame(mode,size)"));
+assert(game.includes("{daily:mode==='daily'||mode==='practice'}"),'Practice must reproduce the exact Daily puzzle');
 assert(game.includes("if(mode==='practice')return true; // Daily practice never overwrites ranked progress."));
 assert(game.includes("if(mode==='practice')return {attemptId:game.attemptId"));
 assert(game.includes("globalThis.GridDotTrailsApp={openDaily:showDailyScreen"));
