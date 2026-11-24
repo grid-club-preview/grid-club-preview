@@ -302,26 +302,31 @@ function timerFor(n){
  if(n===4)return 55000; // Level 1 Stage 4: player-tested ~25 seconds
  if(n===5)return 45000; // Level 1 Stage 5: quick routing trial
  if(n===9)return 80000; // Level 2 Stage 4: player-tested 21 moves
+ // Keep short-route trials brisk. Later dense networks retain larger clocks.
+ const tuned={10:75000,11:80000,18:105000,23:85000,29:200000,30:170000,31:140000};
+ if(Object.hasOwn(tuned,n))return tuned[n];
  if(stage.id===4&&at===count-2)return 360000;
  if(stage.id===4&&at===count-1)return 390000;
  const base=[70,115,125,165,285,355][stage.id-1];
  const finaleReduction=[18,20,22,25,20,20][stage.id-1];
  return (at===4?base-finaleReduction:at>=5?base+15:base)*1000;
 }
-// A move budget applies only to timed numbered Levels, never Free Play or Daily.
- // It is calibrated from the catalogue's known legal solution route, with room
- // for exploration. The last legal move is allowed to solve the board.
-function moveLimitFor(n,legacy=false){
- const stage=stageOf(n);
- if(!stage||timerFor(n)===null)return null;
- // Player-tested shortcuts are actual legal wins under their published goal.
- // Scramble reversal is a reproducible fallback route, NOT a shortest solution.
- // 24/9/21 moves have been observed respectively for these three stages.
- const testedCaps={4:50,5:30,9:30};
- if(Object.hasOwn(testedCaps,n))return testedCaps[n];
- const baseline=get(n,undefined,legacy).solutionMoves.length;
- const multiplier=[2.0,1.85,1.7,1.6,1.5,1.45][stage.id-1];
- return Math.ceil(baseline*multiplier/5)*5;
+// All 20 timed stages have audited, reproducible LEGAL winning routes.
+// Short routes come from the objective-aware development solver. Where that
+// bounded search could not improve the route, the reversible generator path
+// remains the guarantee and is allowed with a modest margin. These are NOT
+// claims of optimality. Each cap is validated in regression tests.
+const MOVE_CAPS_V9=Object.freeze({
+ 4:40,5:25,
+ 9:30,10:35,11:30,
+ 15:45,16:55,17:140,18:40,
+ 22:145,23:25,24:170,25:185,
+ 29:65,30:55,31:40,
+ 37:170,38:185,39:200,40:200
+});
+function moveLimitFor(n){
+ if(!stageOf(n)||timerFor(n)===null)return null;
+ return MOVE_CAPS_V9[n]??null;
 }
 // Rotate an already audited board and its entire solution route together.
 // This changes orientation without changing scramble difficulty or validity.
@@ -606,5 +611,5 @@ function freePlay(size,seed,objective='all',tier=size===5?'beginner':size===6?'a
  return puzzle;
 }
 function validateBoard(b){const size=sizeOf(b);return !!size&&b.every(t=>t&&['empty','wall','block','pipe','source','sink'].includes(t.kind)&&Number.isInteger(t.mask)&&t.mask>=0&&t.mask<=15&&typeof t.fixed==='boolean'&&(t.kind==='pipe'||t.kind==='source'||t.kind==='sink'||t.mask===0))&&[1,2].includes(b.filter(t=>t.kind==='source').length)&&[1,2].includes(b.filter(t=>t.kind==='sink').length);}
-return Object.freeze({SIZE,MAX_LEVEL,N,E,S,W,DIRECTIONS,STAGES,stageCount,objectiveForLevel,sizeOf,at,id,adjacent,direction,clone,rng,get,random,freePlay,daily,hashSeed,stageOf,timerFor,moveLimitFor,move,canMove,straightSlidePath,legalMoves,evaluate,traceLeak,validateBoard,signature});
+return Object.freeze({SIZE,MAX_LEVEL,MOVE_CAPS_V9,N,E,S,W,DIRECTIONS,STAGES,stageCount,objectiveForLevel,sizeOf,at,id,adjacent,direction,clone,rng,get,random,freePlay,daily,hashSeed,stageOf,timerFor,moveLimitFor,move,canMove,straightSlidePath,legalMoves,evaluate,traceLeak,validateBoard,signature});
 });
