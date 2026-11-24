@@ -597,7 +597,7 @@
   }
   function refreshTimeUpBoost(){
     const balance=walletBalance(),used=Math.min(2,game?.extraTimeCount||0);
-    const seconds=(2-used)*15,cost=used===0?30:20;
+    const seconds=(2-used)*15,cost=used===0?15:10;
     const canBoost=mode==='level'&&game&&!game.finishedAt&&seconds>0&&balance>=cost;
     const button=$('timeUpBoost'),note=$('timeUpBoostNote');
     button.textContent=seconds?`Continue +${seconds} seconds · ${cost} ◉`:'No extensions remaining';
@@ -625,7 +625,7 @@
     const used=game.extraTimeCount||0;
     const rescue=timedOut;
     const seconds=rescue?(2-used)*15:15;
-    const cost=rescue?(used===0?30:20):10;
+    const cost=rescue?(used===0?15:10):5;
     const kind=rescue?'extra-time-rescue':'extra-time';
     const p=loadLevelState();
     if(used>=2||p.credits<cost){
@@ -1094,7 +1094,7 @@
       $('levelStepInfo').textContent=`Level ${game.level.stage} · Puzzle ${game.level.step}/5`;
       $('gameWallet').textContent=`◉ ${walletBalance()}`;
       $('extraTime').disabled=remaining===null||(game.extraTimeCount||0)>=2||walletBalance()<10;
-      $('hint').disabled=walletBalance()<10;
+      $('hint').disabled=walletBalance()<5;
       if(!game.finishedAt&&remaining!==null&&remaining<=0&&!game.paused)triggerTimeout();
     }else{$('hint').disabled=false;}
     $('pauseButton').disabled=!!game.finishedAt || (game.paused && !explicitPause);
@@ -1380,7 +1380,7 @@
     if(!suggested){$('hintStatus').textContent='No hint fits your existing lines. Try adjusting a connection first.';return;}
     if(mode==='level'){
       const p=loadLevelState();
-      if(!levelCore.spend(p,10,'hint',game.attemptId)){game.hints--; $('hintStatus').textContent='Not enough credits (10 ◉ needed)';return;}
+      if(!levelCore.spend(p,5,'hint',game.attemptId)){game.hints--; $('hintStatus').textContent='Not enough credits (5 ◉ needed)';return;}
       if(!saveLevelState(p)){game.hints--;return;}
     }
     logRank('hint');hintPreview=suggested;hintUntil=Date.now()+9000;
