@@ -137,12 +137,12 @@ function refreshCreditControls(){
  $('pipeWallet').textContent=mode==='levels'?`◉ ${balance} Club Credits`:'';
  const button=$('pipeExtraTime');
  button.hidden=!timed||expired;
- button.disabled=!available||balance<10;
- button.textContent=`+15 seconds · 10 ◉ (${Math.max(0,2-extraTimeCount)} left)`;
+ button.disabled=!available||balance<5;
+ button.textContent=`+15 seconds · 5 ◉ (${Math.max(0,2-extraTimeCount)} left)`;
  const note=$('pipeBoostNote');
- note.textContent=timed&&!expired&&extraTimeCount<2&&balance<10?'Not enough credits for +15 seconds':'';
+ note.textContent=timed&&!expired&&extraTimeCount<2&&balance<5?'Not enough credits for +15 seconds':'';
  const seconds=(2-extraTimeCount)*15;
- const cost=extraTimeCount===0?30:20;
+ const cost=extraTimeCount===0?15:10;
  $('pipeRescue').hidden=!(timed&&expired&&failureReason==='time'&&seconds>0);
  $('pipeRescue').disabled=balance<cost;
  $('pipeRescue').textContent=`Emergency rescue · +${seconds}s · ${cost} ◉`;
@@ -158,7 +158,7 @@ function buyPipeTime(){
  if(!expired){clockSync();if(elapsed>=timeBudget())timeout('time');}
  if(expired&&failureReason!=='time')return false;
  const rescue=expired,seconds=rescue?(2-extraTimeCount)*15:15;
- const cost=rescue?(extraTimeCount===0?30:20):10;
+ const cost=rescue?(extraTimeCount===0?15:10):5;
  if(!credits?.spend(cost,rescue?'extra-time-rescue':'extra-time',attemptId)){
    refreshCreditControls();return false;
  }
@@ -177,7 +177,8 @@ function saveCurrent(){if(!puzzle||!board||won)return;
    trace:mode==='daily'?dailyTrace.map(x=>({...x})):null,
    serverAttemptId:mode==='daily'?dailyServerAttemptId:null,
    extraTimeMs,extraTimeCount,attemptId,
-   moveCapVersion:mode==='levels'?1:null,moveCapExempt:mode==='levels'&&legacyMoveCapExempt,failureReason,
+   moveCapVersion:mode==='levels'?2:null,moveCapExempt:mode==='levels'&&legacyMoveCapExempt,
+   timerBudgetMs:mode==='levels'?puzzle?.timerMs:null,failureReason,
    randomLayoutVersion:mode==='random'?(puzzle.randomLayoutVersion||1):null,
    hintsUsed,
    freeObjective:mode==='random'?puzzle.freeObjective:null,
@@ -489,9 +490,9 @@ function puzzleInstruction(p){
 // The player chooses the area before the wallet is charged; the live board
 // is never modified by a hint. Ranked Daily is deliberately excluded.
 const PIPE_HINTS=Object.freeze({
- square:{cost:5,ledger:'pipe-hint-square',title:'One square'},
- area:{cost:10,ledger:'pipe-hint-area',title:'Three squares'},
- full:{cost:25,ledger:'pipe-hint-full',title:'Full solution'}
+ square:{cost:3,ledger:'pipe-hint-square',title:'One square'},
+ area:{cost:7,ledger:'pipe-hint-area',title:'Three squares'},
+ full:{cost:18,ledger:'pipe-hint-full',title:'Full solution'}
 });
 const hintsAvailable=()=>['random','levels'].includes(mode)&&
  !!puzzle?.solvedBoard&&!won&&!expired&&!trialPending&&!dailyStartPending;
@@ -535,8 +536,8 @@ function chooseHint(kind){
  $('pipeHintMenu').hidden=true;
  $('pipeBoard').classList.add('pipeHintChoosing');
  hintMessage(kind==='square'?
-   'Tap the square to reveal (5 ◉).':
-   'Tap near the three solution squares you want to reveal (10 ◉).');
+   `Tap the square to reveal (${PIPE_HINTS.square.cost} ◉).`:
+   `Tap near the three solution squares you want to reveal (${PIPE_HINTS.area.cost} ◉).`);
  render();
 }
 function applySelectedHint(index){
@@ -672,8 +673,18 @@ function begin(p,kind,id,skipSave=false){
    extraTimeCount=Math.max(0,Math.min(2,Number(stored.extraTimeCount)||0));
    attemptId=typeof stored.attemptId==='string'&&stored.attemptId?stored.attemptId:attemptId;
    hintsUsed=Math.max(0,Math.min(100,Number(stored.hintsUsed)||0));
+   if(kind==='levels'){
+     // Preserve the original countdown for unfinished sessions, even
+     // after they are re-saved by this release.
+     const oldTimers={10:95000,11:130000,18:140000,23:140000,
+       29:285000,30:265000,31:300000};
+     if(Number.isFinite(stored.timerBudgetMs)&&stored.timerBudgetMs>0)puzzle.timerMs=stored.timerBudgetMs;
+     else if(stored.moveCapVersion!==2&&oldTimers[id])puzzle.timerMs=oldTimers[id];
+   }
    if(kind==='levels'&&moveLimit!==null){
-     legacyMoveCapExempt=stored.moveCapVersion!==1||!!stored.moveCapExempt;
+     // A previous release's unfinished attempt keeps its old move allowance.
+     // New attempts use the fully recalibrated v0.9.25 caps.
+     legacyMoveCapExempt=stored.moveCapVersion!==2||!!stored.moveCapExempt;
      if(legacyMoveCapExempt)moveLimit=null;
    }
    failureReason=stored.failureReason==='moves'?'moves':'time';

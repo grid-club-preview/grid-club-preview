@@ -3640,7 +3640,7 @@ const ITEMS=[
 ];
 const COMPLETION={5:2,7:3,9:4,11:5};
 const STAGE_BONUS=5;
-const COST=10;
+const COST=5;
 const BY_ID=new Map(ITEMS.map(x=>[x.id,x]));
 function get(id){return BY_ID.get(Number(id))||null;}
 function stageItems(stage){return ITEMS.filter(x=>x.stage===Number(stage));}
@@ -3688,23 +3688,23 @@ function spend(progress,amount,kind,attemptId){
  const p=normalize(progress),cost=Number(amount);
  if(!attemptId||p.credits<cost)return false;
  const history=p.spend[attemptId] ||= {hint:0,'extra-time':0};
- // In-play: at most two +15s boosts, each at 10 credits.
+ // In-play: at most two +15s boosts, each at 5 credits.
  // At timeout: buy only the unspent portion of a 30s allowance,
- // at a premium (30 credits for +30s, or 20 for the last +15s).
+ // at a premium (15 credits for +30s, or 10 for the last +15s).
  // No further extension may be bought once a rescue has been used.
  if(kind==='hint'){
    if(cost!==COST)return false;
  }else if(kind==='pipe-hint-square'){
-   if(cost!==10)return false;
+   if(cost!==3)return false;
  }else if(kind==='pipe-hint-area'){
-   if(cost!==25)return false;
+   if(cost!==7)return false;
  }else if(kind==='pipe-hint-full'){
-   if(cost!==75)return false;
+   if(cost!==18)return false;
  }else if(kind==='extra-time'){
    if(cost!==COST||history['extra-time']>=2||history['extra-time-rescue'])return false;
  }else if(kind==='extra-time-rescue'){
    if(history['extra-time-rescue']||history['extra-time']>=2)return false;
-   if(cost!==(history['extra-time']===0?30:20))return false;
+   if(cost!==(history['extra-time']===0?15:10))return false;
  }else return false;
  history[kind]=(history[kind]||0)+1;
  if(kind==='extra-time-rescue')history['extra-time']=2;

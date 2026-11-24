@@ -12,9 +12,9 @@
   <link rel="icon" href="./icons/icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
   <title>Grid Club · Dot Trails &amp; Pipe Shift</title>
-  <link rel="stylesheet" href="pipe-shift.css?v=0.9.24">
-  <link rel="stylesheet" href="vault-reward.css?v=0.9.24">
-  <link rel="stylesheet" href="dot-daily.css?v=0.9.24">
+  <link rel="stylesheet" href="pipe-shift.css?v=0.9.25">
+  <link rel="stylesheet" href="vault-reward.css?v=0.9.25">
+  <link rel="stylesheet" href="dot-daily.css?v=0.9.25">
   <style>
     :root { color-scheme: dark; --bg:#0e1424; --surface:#1a243a; --tile:#253147; --muted:#9daabe; --mint:#7be3d4; --purple:#a178ff; }
     * { box-sizing: border-box; }
@@ -332,7 +332,7 @@
 <body>
   <main class="shell">
     <section id="home">
-      <header><div><div class="eyebrow">GRID CLUB</div><h1>A little puzzle break.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.24</span></div></header>
+      <header><div><div class="eyebrow">GRID CLUB</div><h1>A little puzzle break.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.25</span></div></header>
       <details class="backendCheck" aria-label="Leaderboard connection diagnostics">
         <summary class="backendCheckTitle">Connection diagnostics (beta)</summary>
         <p id="backendCheckMessage" role="status" aria-live="polite">Checking configuration…</p>
@@ -516,7 +516,7 @@
             <div class="pipeResult" id="pipeTimeout" hidden role="dialog" aria-label="Time's up">
               <div class="pipeResultInner"><div class="pipeVictoryIcon" aria-hidden="true">⌛</div>
                 <h3 id="pipeTimeoutTitle">Time's up!</h3><p id="pipeTimeoutMessage">Try this puzzle again.</p>
-                <button type="button" id="pipeRescue" hidden>Emergency rescue · +30s · 30 ◉</button>
+                <button type="button" id="pipeRescue" hidden>Emergency rescue · +30s · 15 ◉</button>
                 <p id="pipeRescueNote" class="pipeRescueNote" role="status"></p>
                 <button type="button" id="pipeRetry">Retry for free</button>
                 <button type="button" class="pipeSecondary" id="pipeTimeoutBack">Back to Levels</button>
@@ -533,14 +533,14 @@
           </div>
           <div id="pipeHintMenu" class="pipeHintMenu" hidden>
             <div class="pipeHintMenuHeading"><strong>Solution hints</strong><span id="pipeHintBalance">◉ 0 available</span></div>
-            <button type="button" id="pipeHintSquare">One square <span>5 ◉</span></button>
-            <button type="button" id="pipeHintArea">Three squares <span>10 ◉</span></button>
-            <button type="button" id="pipeHintFull">Full solution <span>25 ◉</span></button>
+            <button type="button" id="pipeHintSquare">One square <span>3 ◉</span></button>
+            <button type="button" id="pipeHintArea">Three squares <span>7 ◉</span></button>
+            <button type="button" id="pipeHintFull">Full solution <span>18 ◉</span></button>
             <p id="pipeHintNote">Hints pause the timer for 5 seconds. Using a hint prevents a new personal best.</p>
             <button type="button" id="pipeHintCancel" class="pipeHintCancel">Cancel</button>
           </div>
           <p id="pipeHintStatus" class="pipeHintStatus" hidden role="status" aria-live="polite"></p>
-          <button type="button" id="pipeExtraTime" class="pipeBoostButton" hidden>+15 seconds · 10 ◉</button>
+          <button type="button" id="pipeExtraTime" class="pipeBoostButton" hidden>+15 seconds · 5 ◉</button>
           <p id="pipeBoostNote" class="pipeRescueNote" role="status" aria-live="polite"></p>
           <p id="pipeSaveNotice" class="pipeSaveNotice" hidden role="alert">Progress couldn't be saved.</p>
         </div>
@@ -587,7 +587,6 @@
         <span class="modeCopy">
           <strong>Today's Daily Challenge</strong>
           <small id="dailyStartText">11×11 · Play today's puzzle</small>
-          <small id="solvedTag" class="dotSolvedTag" hidden>✓ Completed today</small>
         </span>
         <span class="modeArrow" aria-hidden="true">›</span>
       </button>
@@ -671,7 +670,7 @@
           </div></div>
         </div>
         <div class="accessibilityBar"><button class="numberToggle" type="button" id="numberToggle" aria-pressed="false" aria-label="Show numbers on coloured dots" title="Increase accessibility: show numbers on matching dot pairs">123</button></div>
-        <div class="controls"><button id="undo"><span>↶</span>Undo</button><button id="hint" class="boostButton"><span class="boostCost" id="hintCost" hidden>10 ◉</span><span>✧</span>Hint</button><button id="reset"><span>⟲</span>Reset</button><button id="new"><span>❖</span>New</button><button id="extraTime" class="boostButton" hidden><span class="boostCost">10 ◉</span><span>◷+</span>+15s</button></div>
+        <div class="controls"><button id="undo"><span>↶</span>Undo</button><button id="hint" class="boostButton"><span class="boostCost" id="hintCost" hidden>5 ◉</span><span>✧</span>Hint</button><button id="reset"><span>⟲</span>Reset</button><button id="new"><span>❖</span>New</button><button id="extraTime" class="boostButton" hidden><span class="boostCost">10 ◉</span><span>◷+</span>+15s</button></div>
         <aside id="playPrompt" class="playPrompt" hidden role="status" aria-live="polite"><div class="promptTop"><span id="playPromptMessage"></span><button type="button" id="playPromptDismiss" class="promptDismiss" aria-label="Dismiss suggestion">×</button></div><button type="button" id="playPromptAction" class="promptAction" hidden>Try Free Play →</button></aside>
         <p id="incomplete" class="boardAlert" role="status" aria-live="polite" hidden>Oof, nice work, but all squares need filling</p>
         <p id="hintStatus" class="hintAlert" role="status" aria-live="polite" hidden></p>
@@ -680,7 +679,7 @@
       </div>
       
       <div class="adSlot" id="adSlot" aria-hidden="true" hidden></div>
-      <footer>Grid Club · v0.9.24 beta</footer>
+      <footer>Grid Club · v0.9.25 beta</footer>
     </section>
   </main>
   <div class="pauseLayer" id="dotDailyCompleteLayer" hidden role="dialog" aria-modal="true" aria-labelledby="dotDailyCompleteTitle">
@@ -696,7 +695,7 @@
       <button type="button" id="dotDailyCompleteClose" class="secondary dailyCompletedClose">Back to Dot Trails</button>
     </div>
   </div>
-  <div class="pauseLayer" id="timeUpLayer" hidden role="dialog" aria-modal="true" aria-labelledby="timeUpTitle"><div class="pauseInner"><div style="font-size:47px;color:var(--mint)">◷</div><h2 id="timeUpTitle">Time's up!</h2><p>Retry for free (first-attempt puzzle credits forfeited), or continue this attempt for credits.</p><button id="timeUpBoost" type="button">Continue +30 seconds · 30 ◉</button><p id="timeUpBoostNote" class="timeUpBoostNote" role="status" aria-live="polite"></p><button id="timeUpRetry" class="secondary">Retry puzzle</button><button id="timeUpBack" class="secondary">Return to Levels</button></div></div>
+  <div class="pauseLayer" id="timeUpLayer" hidden role="dialog" aria-modal="true" aria-labelledby="timeUpTitle"><div class="pauseInner"><div style="font-size:47px;color:var(--mint)">◷</div><h2 id="timeUpTitle">Time's up!</h2><p>Retry for free (first-attempt puzzle credits forfeited), or continue this attempt for credits.</p><button id="timeUpBoost" type="button">Continue +30 seconds · 15 ◉</button><p id="timeUpBoostNote" class="timeUpBoostNote" role="status" aria-live="polite"></p><button id="timeUpRetry" class="secondary">Retry puzzle</button><button id="timeUpBack" class="secondary">Return to Levels</button></div></div>
   <div class="pauseLayer" id="pauseLayer" hidden role="dialog" aria-modal="true" aria-labelledby="pauseTitle">
     <div class="pauseInner">
       <div style="font-size:47px;color:var(--mint)">Ⅱ</div>
@@ -711,14 +710,14 @@
   <script src="ranked.js?v=0.7.0"></script>
   <script src="stats-utils.js?v=0.7.0"></script>
   <script src="puzzle.js?v=0.9.9"></script>
-  <script src="levels.js?v=0.9.20"></script>
-  <script src="win-messages.js?v=0.9.4"></script>
-  <script src="daily-journey.js?v=0.9.22"></script>
+  <script src="levels.js?v=0.9.25"></script>
+  <script src="win-messages.js?v=0.9.5"></script>
+  <script src="daily-journey.js?v=0.9.25"></script>
   <script src="club-credits.js?v=0.9.11"></script>
-  <script src="game.js?v=0.9.24"></script>
-  <script src="pipe-engine.js?v=0.9.24"></script>
-  <script src="vault-reward.js?v=0.9.24"></script>
-  <script src="pipe-shift.js?v=0.9.24"></script>
+  <script src="game.js?v=0.9.25"></script>
+  <script src="pipe-engine.js?v=0.9.25"></script>
+  <script src="vault-reward.js?v=0.9.25"></script>
+  <script src="pipe-shift.js?v=0.9.25"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol === 'https:') {
       addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));

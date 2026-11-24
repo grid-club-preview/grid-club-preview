@@ -259,7 +259,6 @@
   }
   function updateHome() {
     const solved=dailySolved();
-    $('solvedTag').hidden = !solved;
     $('dailyStartText').textContent = '11×11 · '+(solved?'View today’s result':
       savedGame('daily',11) ? 'Continue today’s puzzle' : 'Play today’s puzzle');
     $('dotMenuWallet').textContent=`◉ ${walletBalance()}`;
@@ -482,7 +481,12 @@
     const eligible=!!mine?.verified&&!mine.assisted&&mine.date===today();
     const faster=Number(stats?.unassisted?.fasterCount);
     const rank=eligible&&Number.isFinite(faster)&&faster>=0?Math.floor(faster)+1:null;
-    summary.textContent=stats?`${total} verified finish${total===1?'':'es'}${rank?' · Your rank: '+rank:''}`:
+    const average=Number(stats?.unassisted?.averageMs);
+    const summaryParts=[];
+    if(Number.isFinite(average)&&average>0&&total>0)summaryParts.push('Global average '+fmtSeconds(average));
+    if(stats)summaryParts.push('Verified players: '+total);
+    if(rank)summaryParts.push('Your rank: '+rank);
+    summary.textContent=stats?summaryParts.join(' · '):
       (navigator.onLine?(window.GridRanked?.configured?'Loading today’s verified results…':'Online rankings not configured'):'Offline · showing your saved result');
     // The Dot Trails backend currently returns verified community statistics.
     // If it later returns a ranked entry list, this renderer supports it without
@@ -517,11 +521,9 @@
       p.textContent='No verified, unassisted results yet today.';
       box.append(p);return;
     }
-    if(!rows.length){
+    if(!rows.length&&!eligible){
       const p=document.createElement('p');p.className='dotDailyAggregate';
-      const data=stats.unassisted;
-      p.textContent=data?.averageMs?`Community average: ${fmtSeconds(data.averageMs)}.`:
-        'Verified results are recorded, but individual rankings are not supplied by the current Dot Trails service.';
+      p.textContent='Individual player rankings are not supplied by the current Dot Trails service.';
       box.append(p);
     }
     if(mine?.assisted){
@@ -597,7 +599,7 @@
   }
   function refreshTimeUpBoost(){
     const balance=walletBalance(),used=Math.min(2,game?.extraTimeCount||0);
-    const seconds=(2-used)*15,cost=used===0?30:20;
+    const seconds=(2-used)*15,cost=used===0?15:10;
     const canBoost=mode==='level'&&game&&!game.finishedAt&&seconds>0&&balance>=cost;
     const button=$('timeUpBoost'),note=$('timeUpBoostNote');
     button.textContent=seconds?`Continue +${seconds} seconds · ${cost} ◉`:'No extensions remaining';
@@ -625,7 +627,7 @@
     const used=game.extraTimeCount||0;
     const rescue=timedOut;
     const seconds=rescue?(2-used)*15:15;
-    const cost=rescue?(used===0?30:20):10;
+    const cost=rescue?(used===0?15:10):5;
     const kind=rescue?'extra-time-rescue':'extra-time';
     const p=loadLevelState();
     if(used>=2||p.credits<cost){
@@ -1094,7 +1096,7 @@
       $('levelStepInfo').textContent=`Level ${game.level.stage} · Puzzle ${game.level.step}/5`;
       $('gameWallet').textContent=`◉ ${walletBalance()}`;
       $('extraTime').disabled=remaining===null||(game.extraTimeCount||0)>=2||walletBalance()<10;
-      $('hint').disabled=walletBalance()<10;
+      $('hint').disabled=walletBalance()<5;
       if(!game.finishedAt&&remaining!==null&&remaining<=0&&!game.paused)triggerTimeout();
     }else{$('hint').disabled=false;}
     $('pauseButton').disabled=!!game.finishedAt || (game.paused && !explicitPause);
@@ -1380,7 +1382,7 @@
     if(!suggested){$('hintStatus').textContent='No hint fits your existing lines. Try adjusting a connection first.';return;}
     if(mode==='level'){
       const p=loadLevelState();
-      if(!levelCore.spend(p,10,'hint',game.attemptId)){game.hints--; $('hintStatus').textContent='Not enough credits (10 ◉ needed)';return;}
+      if(!levelCore.spend(p,5,'hint',game.attemptId)){game.hints--; $('hintStatus').textContent='Not enough credits (5 ◉ needed)';return;}
       if(!saveLevelState(p)){game.hints--;return;}
     }
     logRank('hint');hintPreview=suggested;hintUntil=Date.now()+9000;
