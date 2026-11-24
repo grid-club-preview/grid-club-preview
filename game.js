@@ -19,7 +19,7 @@
   const RANK_TRACE_PREFIX = 'gridclub-ranked-events-v1:';
   let rankedAttempt=null, rankEligible=false, rankEvents=[], incompleteDismissed=false;
   let rankClockQueue=Promise.resolve();
-  let retryPromise=null, lastCommunity=null, rankedGateActive=false;
+  let retryPromise=null, lastCommunity=null, lastCommunityDay='', rankedGateActive=false;
   let rankStartGeneration=0;
   function gateRanked(show, text){
     rankedGateActive=!!show;
@@ -194,7 +194,7 @@
     return true;
   }
   function progressSlot(forMode=mode, forSize=size, forId=levelId) {
-    return forMode==='daily'?`daily:${today()}`:forMode==='level'?`level:${forId}`:`free:${forSize}`;
+    return forMode==='daily'?`daily:${today()}`:forMode==='practice'?`practice:${today()}`:forMode==='level'?`level:${forId}`:`free:${forSize}`;
   }
   function readProgress() { return readJSON(PROGRESS_KEY, {}); }
   function savedGame(forMode, forSize, forId=levelId) {
@@ -221,6 +221,7 @@
   function persist() {
     if (!game) return false;
     const all = readProgress();
+    if(mode==='practice')return true; // Daily practice never overwrites ranked progress.
     const snap = core.serialize(game);
     snap.savedDay = mode==='daily'?(game.dailyDay||dailyStartDay):today();
     if(mode==='level'){snap.extraTimeMs=game.extraTimeMs||0;snap.extraTimeCount=game.extraTimeCount||0;snap.levelId=levelId;}
@@ -276,12 +277,12 @@
     if (globalThis.crypto?.getRandomValues) return crypto.getRandomValues(new Uint32Array(1))[0];
     return Math.floor(Math.random()*0x100000000);
   }
-  function label() { return mode==='daily'?'Daily challenge':mode==='level'?`Level ${game?.level?.stage||levelCore.get(levelId)?.stage}`:labels[size]; }
+  function label() { return mode==='daily'?'Daily Challenge':mode==='practice'?'Daily practice':mode==='level'?`Level ${game?.level?.stage||levelCore.get(levelId)?.stage}`:labels[size]; }
   function dailyLevelSeed() { return core.hash(`gridclub-dottrails-daily-v04a-${dailyStartDay}-11`); }
   function freshGame() {
     const fixed=mode==='level'?levelCore.get(levelId):null;
-    const seed = mode === 'daily' ? dailyLevelSeed() : fixed?fixed.seed:randomSeed();
-    const plain=core.generate(size,seed,{daily:mode==='daily'});
+    const seed = mode === 'daily'||mode==='practice' ? dailyLevelSeed() : fixed?fixed.seed:randomSeed();
+    const plain=core.generate(size,seed,{daily:mode==='daily'||mode==='practice'});
     const curatedPath=Number.isInteger(fixed?.blockedPathIndex)?plain.solution[fixed.blockedPathIndex]:null;
     const blocked=fixed?.blocked?.length?core.withBlocked(plain,fixed.blocked):
       curatedPath?core.withBlocked(plain,curatedPath):plain;
@@ -291,7 +292,7 @@
     if(fixed){puzzle.levelId=fixed.id;puzzle.stage=fixed.stage;puzzle.step=fixed.step;puzzle.limitMs=fixed.limitSec===null?null:fixed.limitSec*1000;}
     const g=core.create(puzzle);
     if(fixed){g.extraTimeMs=0;g.extraTimeCount=0;}
-    if(mode==='daily')g.dailyDay=dailyStartDay;
+    if(mode==='daily'||mode==='practice')g.dailyDay=dailyStartDay;
     return g;
   }
   function setGame(newGameObject) {
@@ -328,10 +329,10 @@
     if(timedOut)refreshTimeUpBoost();
     levelReward=null;
     $('incomplete').hidden = true; $('hintStatus').hidden = true;
-    $('modeTitle').textContent = mode === 'daily' ? `Daily challenge · ${dailyStartDay}` : mode==='level'?`Level ${game.level.stage} · Puzzle ${game.level.step}/5`:`${label()} · ${size}×${size}`;
-    $('boardTitle').textContent = mode === 'daily' ? 'Daily Dot Trails' : mode==='level'?`Dot Trails · ${labels[size]}`:`Dot Trails · ${label()}`;
-    $('next').textContent = mode === 'daily' ? 'Continue in Free Play' : mode==='level' && levelId===75 ? 'See your Levels →' : mode==='level' ? `Continue Level ${game.level.stage+(game.level.step===5?1:0)} →` : 'Next puzzle';
-    $('returnWinHome').hidden = mode !== 'daily';
+    $('modeTitle').textContent = mode === 'daily'||mode==='practice' ? `${mode==='practice'?'Daily practice':'Daily challenge'} · ${dailyStartDay}` : mode==='level'?`Level ${game.level.stage} · Puzzle ${game.level.step}/5`:`${label()} · ${size}×${size}`;
+    $('boardTitle').textContent = mode === 'daily'||mode==='practice' ? 'Daily Dot Trails' : mode==='level'?`Dot Trails · ${labels[size]}`:`Dot Trails · ${label()}`;
+    $('next').textContent = mode === 'daily'||mode==='practice' ? 'Daily Challenge →' : mode==='level' && levelId===75 ? 'See your Levels →' : mode==='level' ? `Continue Level ${game.level.stage+(game.level.step===5?1:0)} →` : 'Next puzzle';
+    $('returnWinHome').hidden = mode !== 'daily'&&mode!=='practice';
     $('winToLevels').hidden = mode!=='level';
     $('winToLevels').textContent='Return to Levels overview';
     $('win').dataset.stage = mode==='level'?String(game.level.stage):'';
@@ -362,6 +363,7 @@
     $('randomScreen').hidden = page !== 'random';
     $('gameScreen').hidden = page !== 'game';
     $('statsScreen').hidden = page !== 'stats';
+    $('dotDailyScreen').hidden = page !== 'daily';
     $('levelsScreen').hidden = page !== 'levels';
     $('dotDailyCompleteLayer').hidden=true;
     // Leaving a result permanently closes its overlay. Stats never navigates back to it.
@@ -391,7 +393,6 @@
     if(!$('gameScreen').hidden && !game?.finishedAt)suspendSilently();
     showPage('stats');
     renderStatsPage();
-    refreshLeaderboard();
     retryPendingDaily();
   }
   function statBox(label,value){
@@ -456,32 +457,84 @@
         ' Saved on this device; not verified for the leaderboard.';
       dailyStatus.textContent=score+online;
     }
-    $('communityDay').textContent='· '+today();
-    renderCommunityPage();
   }
-  function renderCommunityPage(){
-    const box=$('communitySummary');box.replaceChildren();
-    if(!lastCommunity){box.textContent=navigator.onLine?'Press Refresh leaderboard to check verified results.':'You are offline. Personal statistics remain available.';return;}
-    const total=Number(lastCommunity.total||0);
-    const title=document.createElement('p');title.textContent=total===1?'1 unassisted player today':`${total} unassisted players today`;
-    box.append(title);
+  // A single Daily Challenge view owns the play/practice action and online
+  // community results. Stats remains entirely personal, even offline.
+  function renderDailyPage(){
+    const result=dailyRecord(),finished=!!result,day=today();
+    $('dotDailyDay').textContent=day;
+    const play=$('dotDailyPlay'),note=$('dotDailyResultNote');
+    play.textContent=finished?"Practise today's puzzle":
+      savedGame('daily',11)?"Continue today's puzzle":"Play today's puzzle";
+    if(result){
+      const time=fmtSeconds(result.serverElapsedMs||result.elapsedMs);
+      const state=result.verified?(result.assisted?'Verified · assisted, not ranked':'Verified'):
+        result.sync==='review'?'Awaiting fair-play review':result.sync==='expired'?'Ranked attempt expired':
+        'Saved locally · verification pending';
+      note.textContent=`Your first result: ${time} · ${result.moves} moves · ${state}`;
+    }else note.textContent='One ranked attempt per day. Practice unlocks after completion.';
+    renderDailyLeaderboard();
+  }
+  function renderDailyLeaderboard(){
+    const box=$('dotDailyEntries'),summary=$('dotDailyRank');box.replaceChildren();
+    const mine=dailyRecord(),stats=lastCommunityDay===today()?lastCommunity:null;
+    const total=Math.max(0,Number(stats?.unassisted?.count??stats?.total??0));
+    const eligible=!!mine?.verified&&!mine.assisted&&mine.date===today();
+    const faster=Number(stats?.unassisted?.fasterCount);
+    const rank=eligible&&Number.isFinite(faster)&&faster>=0?Math.floor(faster)+1:null;
+    summary.textContent=stats?`${total} verified finish${total===1?'':'es'}${rank?' · Your rank: '+rank:''}`:
+      (navigator.onLine?(window.GridRanked?.configured?'Loading today’s verified results…':'Online rankings not configured'):'Offline · showing your saved result');
+    // The Dot Trails backend currently returns verified community statistics.
+    // If it later returns a ranked entry list, this renderer supports it without
+    // inventing names or positions for players when none were supplied.
+    const rows=Array.isArray(stats?.leaderboard)?stats.leaderboard:
+      Array.isArray(stats?.entries)?stats.entries:[];
+    if(rows.length){
+      for(const row of rows.slice(0,20)){
+        const position=Number(row.rank||row.position),elapsed=Number(row.elapsedMs||row.timeMs);
+        if(!Number.isInteger(position)||position<1||!Number.isFinite(elapsed)||elapsed<0)continue;
+        const entry=document.createElement('div');entry.className='dotDailyEntry';
+        const label=document.createElement('span');
+        label.textContent=`${position}. ${typeof row.name==='string'&&row.name.trim()?row.name.slice(0,32):'Player'}`;
+        const value=document.createElement('strong');value.textContent=fmtSeconds(elapsed);
+        if(eligible&&rank===position){entry.dataset.you='true';label.textContent=`${position}. You`;}
+        entry.append(label,value);box.append(entry);
+      }
+    }
+    if(eligible&&!box.querySelector('[data-you="true"]')){
+      const entry=document.createElement('div');entry.className='dotDailyEntry';entry.dataset.you='true';
+      const label=document.createElement('span');label.textContent=`${rank?rank+'. ':'✓ '}You`;
+      const time=document.createElement('strong');time.textContent=fmtSeconds(mine.serverElapsedMs||mine.elapsedMs);
+      entry.append(label,time);box.append(entry);
+    }
+    if(!stats){
+      const p=document.createElement('p');p.className='dotDailyAggregate';
+      p.textContent=navigator.onLine?(window.GridRanked?.configured?'Checking the leaderboard…':'Online leaderboard is not configured yet.'):'Connect to see verified community results.';
+      box.append(p);return;
+    }
     if(!total){
-      const info=document.createElement('p');
-      info.textContent='No verified, unassisted leaderboard results for today yet. This does not affect locally saved completions.';
-      box.append(info);
+      const p=document.createElement('p');p.className='dotDailyAggregate';
+      p.textContent='No verified, unassisted results yet today.';
+      box.append(p);return;
     }
-    const mine=dailyRecord();
-    if(mine?.assisted){const m=document.createElement('p');m.textContent=`Your assisted result: ${fmtSeconds(mine.serverElapsedMs||mine.elapsedMs)} · ${mine.serverMoves??mine.moves} moves. Hints exclude this result from the leaderboard, but it remains in your personal stats.`;box.append(m);}
-    if(!total)return;
-    for(const [name,group,assisted] of [['Unassisted',lastCommunity.unassisted,false]]){
-      const c=document.createElement('div');c.className='communityCard';
-      const h=document.createElement('strong');h.textContent=name;
-      const lines=statsUtil.communityLines(group,assisted);
-      const b=document.createElement('p');b.textContent=lines.summary;
-      c.append(h,b);
-      if(lines.detail){const d=document.createElement('small');d.textContent=lines.detail;c.append(d);}
-      box.append(c);
+    if(!rows.length){
+      const p=document.createElement('p');p.className='dotDailyAggregate';
+      const data=stats.unassisted;
+      p.textContent=data?.averageMs?`Community average: ${fmtSeconds(data.averageMs)}.`:
+        'Verified results are recorded, but individual rankings are not supplied by the current Dot Trails service.';
+      box.append(p);
     }
+    if(mine?.assisted){
+      const p=document.createElement('p');p.className='dotDailyAggregate';
+      p.textContent='Your assisted attempt is saved in Your stats but does not enter the leaderboard.';
+      box.append(p);
+    }
+  }
+  function showDailyScreen(){
+    if(!$('gameScreen').hidden&&!game?.finishedAt)suspendSilently();
+    showPage('daily');renderDailyPage();
+    void retryPendingDaily();
+    void refreshLeaderboard();
   }
   function showLevelBrowser(stage){
     if(!$('gameScreen').hidden && !game?.finishedAt)suspendSilently();
@@ -632,16 +685,16 @@
   }
   function start(nextMode, chosenSize) {
     // Completion opens choices rather than taking the player to Stats.
-    if(nextMode==='daily' && dailySolved()) { showDailyCompleteDialog(); return; }
+    if(nextMode==='daily' && dailySolved()) {showDailyScreen();return;}
     if (!$('gameScreen').hidden && !game?.finishedAt) suspendSilently();
     mode = nextMode;
-    if(mode==='daily')dailyStartDay=today();
-    size = mode === 'daily' ? 11 : (core.SIZES.includes(chosenSize) ? chosenSize : loadDifficulty());
+    if(mode==='daily'||mode==='practice')dailyStartDay=today();
+    size = (mode === 'daily'||mode==='practice') ? 11 : (core.SIZES.includes(chosenSize) ? chosenSize : loadDifficulty());
     if (mode === 'free') saveDifficulty();
     explicitPause = false; backgroundSuspended = false;
     showPage('game');
-    const saved = savedGame(mode,size);
-    // A completed board is never reopened after the player leaves its results.
+    const saved = mode==='practice'?null:savedGame(mode,size);
+    // Practice always starts the same dated puzzle afresh, without touching ranked progress.
     const selected = saved && !saved.finishedAt ? saved : freshGame();
     setGame(selected);
   }
@@ -725,6 +778,9 @@
   }
   function recordCompletion() {
     const stats = readStats(), item = stats.games.dotTrails;
+    if(mode==='practice')return {attemptId:game.attemptId,mode:'practice',date:dailyStartDay,
+      elapsedMs:Math.round(core.elapsed(game)),moves:game.moves,hints:game.hints,assisted:true,
+      headline:'Practice complete!',verified:false,sync:'practice'};
     const existing = item.results.find(r=>r.attemptId===game.attemptId);
     if(existing) return existing;
     levelReward=null;
@@ -814,7 +870,7 @@
   function dailyRecord(){return readStats().games.dotTrails.daily[today()]||null;}
   function renderWinCommunity(result){
     const box=$('rankingBox');box.hidden=true;box.replaceChildren();
-    return; // Detailed rankings and assisted/unassisted labels belong on Your statistics.
+    return; // Rankings and community results belong on the Daily Challenge page.
     const total=Number(lastCommunity?.total||0);
     const head=document.createElement('strong');head.textContent=total===1?'Today\'s verified results · 1 player':`Today\'s verified results · ${total} players`;
     box.append(head);
@@ -834,11 +890,12 @@
   async function refreshLeaderboard(result){
     if(!window.GridRanked?.configured||!navigator.onLine)return;
     try{
-      const stats=await GridRanked.call('stats',{day:today()});
-      lastCommunity=stats;
+      const day=today(),stats=await GridRanked.call('stats',{day});
+      if(day!==today())return;
+      lastCommunity=stats;lastCommunityDay=day;
       if(mode==='daily'&&!$('gameScreen').hidden)renderWinCommunity(result||dailyRecord());
-      if(!$('statsScreen').hidden)renderCommunityPage();
-    }catch(e){console.warn('Community stats unavailable',e);if(!$('statsScreen').hidden)$('communitySummary').textContent='Community statistics unavailable. Your own results remain saved.';}
+      if(!$('dotDailyScreen').hidden)renderDailyPage();
+    }catch(e){console.warn('Community stats unavailable',e);if(!$('dotDailyScreen').hidden){$('dotDailyEntries').textContent='Leaderboard currently unavailable. Your personal result remains saved.';}}
   }
   function saveVerifiedResult(result,reply){
     const stats=readStats(),item=stats.games.dotTrails;
@@ -975,14 +1032,16 @@
     $('winEasier').disabled = size === 5;
     $('winHarder').disabled = size === 11;
     const failed=!storageAvailable||result.saveFailed;
-    $('resultStatsLink').hidden=failed||mode==='level';
-    $('resultStatsLink').firstChild.textContent=mode==='daily'?'View your stats ':'Result added to your stats ';
+    $('resultStatsLink').hidden=mode==='practice'||(failed&&mode!=='daily')||mode==='level';
+    $('resultStatsLink').firstChild.textContent=mode==='daily'?'View daily leaderboard ':'Result added to your stats ';
     const status=$('resultStatus');
     status.hidden=false;
     if(failed){
       status.textContent='Your browser could not save this result. Please keep this page open.';
     }else if(mode==='daily'){
       status.textContent=navigator.onLine?'Checking your ranked result…':"You're offline, but your achievement is saved. We'll try to submit it while today's challenge is active.";
+    }else if(mode==='practice'){
+      status.textContent='Practice only. Your ranked Daily Challenge result is unchanged.';
     }else{
       status.textContent='';
       status.hidden=true;
@@ -1095,9 +1154,8 @@
     updateHome();
   }
   function exitPuzzle() {
-    // The in-game Back follows the navigation hierarchy: Free Play returns
-    // to difficulty selection, Daily Challenge returns directly Home.
-    if (mode === 'daily') returnHome();
+    // Back from ranked Daily or non-ranked practice returns to the Daily page.
+    if (mode === 'daily'||mode==='practice') showDailyScreen();
     else if(mode==='level')showLevelBrowser(game?.level?.stage||selectedStage);
     else showRandomScreen();
   }
@@ -1238,14 +1296,17 @@
     try {
       const res=await window.GridRanked.call('stats',{day:today()});
       backendCheckMessage.textContent=`Connected to daily-api. Verified community results today: ${Number(res.total||0)}. ${res.total?'':'No completed ranked attempts yet.'}`;
-      lastCommunity=res;
+      lastCommunity=res;lastCommunityDay=today();
     } catch(e) {
       backendCheckMessage.textContent='Connection failed: '+String(e?.message||e).slice(0,240);
       console.warn('Grid Club leaderboard connection test:',e);
     } finally { testBackendButton.disabled=false; }
   };
   refreshBackendCheck();
-  $('dailyStart').onclick=()=>start('daily');
+  $('dailyStart').onclick=showDailyScreen;
+  $('dotDailyBack').onclick=showDifficultyScreen;
+  $('dotDailyPlay').onclick=()=>start(dailySolved()?'practice':'daily');
+  $('dotDailyRefresh').onclick=()=>{renderDailyPage();void refreshLeaderboard();};
   $('dotDailyCompleteStats').onclick=showStatsScreen;
   $('dotDailyCompleteNext').onclick=()=>globalThis.GridClubDailyJourney?.visitNext('dotTrails');
   $('dotDailyCompleteFree').onclick=showRandomScreen;
@@ -1294,7 +1355,6 @@
   $('extraTime').onclick=buyExtraTime;
   $('viewStats').onclick=showStatsScreen;
   $('statsBack').onclick=showDifficultyScreen;
-  $('refreshCommunity').onclick=()=>refreshLeaderboard();
   $('freeStart').onclick=showDifficultyScreen;
   $('chooseBack').onclick=returnHome;
   $('back').onclick=exitPuzzle;
@@ -1329,8 +1389,8 @@
   };
   $('reset').onclick=()=>{if(!game||game.paused)return;clearHint();core.reset(game);logRank('reset');update();};
   $('new').onclick=()=>{if(game && !game.finishedAt && core.filled(game)>0 && !confirm('Start a fresh puzzle? Your current unfinished puzzle will be replaced.'))return;newGame();};
-  $('next').onclick=()=>mode==='daily'?showRandomScreen():mode==='level'?(levelId<75?startLevel(levelId+1):showLevelBrowser()):newGame();
-  $('resultStatsLink').onclick=showStatsScreen;
+  $('next').onclick=()=>mode==='daily'||mode==='practice'?showDailyScreen():mode==='level'?(levelId<75?startLevel(levelId+1):showLevelBrowser()):newGame();
+  $('resultStatsLink').onclick=()=>mode==='daily'?showDailyScreen():showStatsScreen();
   // Easier/Harder choose adjacent difficulties and preserve any unfinished
   // puzzle already saved at the destination size.
   $('winToRandom').onclick=showRandomScreen;
@@ -1351,6 +1411,7 @@
     if(!$('pauseLayer').hidden||!$('timeUpLayer').hidden)return;
     if(!$('gameScreen').hidden){exitPuzzle();return;}
     if(!$('statsScreen').hidden){showDifficultyScreen();return;}
+    if(!$('dotDailyScreen').hidden){showDifficultyScreen();return;}
     if(!$('randomScreen').hidden){showDifficultyScreen();return;}
     if(!$('levelsScreen').hidden){
       if(selectedStage===null)showDifficultyScreen();else showLevelBrowser();
@@ -1408,5 +1469,5 @@
     if(game&&!$('gameScreen').hidden){render();if(!game.paused&&!game.finishedAt)persist();}
     if(!document.hidden && !($('statsScreen').hidden))renderStatsPage();
   },1000);
-  globalThis.GridDotTrailsApp={openDaily:()=>start('daily'),home:returnHome};
+  globalThis.GridDotTrailsApp={openDaily:showDailyScreen,home:returnHome};
 })();
