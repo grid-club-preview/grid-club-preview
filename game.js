@@ -19,7 +19,7 @@
   const RANK_TRACE_PREFIX = 'gridclub-ranked-events-v1:';
   let rankedAttempt=null, rankEligible=false, rankEvents=[], incompleteDismissed=false;
   let rankClockQueue=Promise.resolve();
-  let retryPromise=null, lastCommunity=null, rankedGateActive=false;
+  let retryPromise=null, lastCommunity=null, lastCommunityDay='', rankedGateActive=false;
   let rankStartGeneration=0;
   function gateRanked(show, text){
     rankedGateActive=!!show;
@@ -477,13 +477,13 @@
   }
   function renderDailyLeaderboard(){
     const box=$('dotDailyEntries'),summary=$('dotDailyRank');box.replaceChildren();
-    const mine=dailyRecord(),stats=lastCommunity;
-    const total=Math.max(0,Number(stats?.total||stats?.unassisted?.count||0));
+    const mine=dailyRecord(),stats=lastCommunityDay===today()?lastCommunity:null;
+    const total=Math.max(0,Number(stats?.unassisted?.count??stats?.total??0));
     const eligible=!!mine?.verified&&!mine.assisted&&mine.date===today();
     const faster=Number(stats?.unassisted?.fasterCount);
     const rank=eligible&&Number.isFinite(faster)&&faster>=0?Math.floor(faster)+1:null;
     summary.textContent=stats?`${total} verified finish${total===1?'':'es'}${rank?' · Your rank: '+rank:''}`:
-      (navigator.onLine?'Loading today’s verified results…':'Offline · showing your saved result');
+      (navigator.onLine?(window.GridRanked?.configured?'Loading today’s verified results…':'Online rankings not configured'):'Offline · showing your saved result');
     // The Dot Trails backend currently returns verified community statistics.
     // If it later returns a ranked entry list, this renderer supports it without
     // inventing names or positions for players when none were supplied.
@@ -509,7 +509,7 @@
     }
     if(!stats){
       const p=document.createElement('p');p.className='dotDailyAggregate';
-      p.textContent=navigator.onLine?'Checking the leaderboard…':'Connect to see verified community results.';
+      p.textContent=navigator.onLine?(window.GridRanked?.configured?'Checking the leaderboard…':'Online leaderboard is not configured yet.'):'Connect to see verified community results.';
       box.append(p);return;
     }
     if(!total){
@@ -870,7 +870,7 @@
   function dailyRecord(){return readStats().games.dotTrails.daily[today()]||null;}
   function renderWinCommunity(result){
     const box=$('rankingBox');box.hidden=true;box.replaceChildren();
-    return; // Detailed rankings and assisted/unassisted labels belong on Your statistics.
+    return; // Rankings and community results belong on the Daily Challenge page.
     const total=Number(lastCommunity?.total||0);
     const head=document.createElement('strong');head.textContent=total===1?'Today\'s verified results · 1 player':`Today\'s verified results · ${total} players`;
     box.append(head);
@@ -890,8 +890,9 @@
   async function refreshLeaderboard(result){
     if(!window.GridRanked?.configured||!navigator.onLine)return;
     try{
-      const stats=await GridRanked.call('stats',{day:today()});
-      lastCommunity=stats;
+      const day=today(),stats=await GridRanked.call('stats',{day});
+      if(day!==today())return;
+      lastCommunity=stats;lastCommunityDay=day;
       if(mode==='daily'&&!$('gameScreen').hidden)renderWinCommunity(result||dailyRecord());
       if(!$('dotDailyScreen').hidden)renderDailyPage();
     }catch(e){console.warn('Community stats unavailable',e);if(!$('dotDailyScreen').hidden){$('dotDailyEntries').textContent='Leaderboard currently unavailable. Your personal result remains saved.';}}
@@ -1153,8 +1154,7 @@
     updateHome();
   }
   function exitPuzzle() {
-    // The in-game Back follows the navigation hierarchy: Free Play returns
-    // to difficulty selection, Daily Challenge returns directly Home.
+    // Back from ranked Daily or non-ranked practice returns to the Daily page.
     if (mode === 'daily'||mode==='practice') showDailyScreen();
     else if(mode==='level')showLevelBrowser(game?.level?.stage||selectedStage);
     else showRandomScreen();
@@ -1296,7 +1296,7 @@
     try {
       const res=await window.GridRanked.call('stats',{day:today()});
       backendCheckMessage.textContent=`Connected to daily-api. Verified community results today: ${Number(res.total||0)}. ${res.total?'':'No completed ranked attempts yet.'}`;
-      lastCommunity=res;
+      lastCommunity=res;lastCommunityDay=today();
     } catch(e) {
       backendCheckMessage.textContent='Connection failed: '+String(e?.message||e).slice(0,240);
       console.warn('Grid Club leaderboard connection test:',e);
