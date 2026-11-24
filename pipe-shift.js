@@ -177,7 +177,8 @@ function saveCurrent(){if(!puzzle||!board||won)return;
    trace:mode==='daily'?dailyTrace.map(x=>({...x})):null,
    serverAttemptId:mode==='daily'?dailyServerAttemptId:null,
    extraTimeMs,extraTimeCount,attemptId,
-   moveCapVersion:mode==='levels'?2:null,moveCapExempt:mode==='levels'&&legacyMoveCapExempt,failureReason,
+   moveCapVersion:mode==='levels'?2:null,moveCapExempt:mode==='levels'&&legacyMoveCapExempt,
+   timerBudgetMs:mode==='levels'?puzzle?.timerMs:null,failureReason,
    randomLayoutVersion:mode==='random'?(puzzle.randomLayoutVersion||1):null,
    hintsUsed,
    freeObjective:mode==='random'?puzzle.freeObjective:null,
@@ -672,12 +673,13 @@ function begin(p,kind,id,skipSave=false){
    extraTimeCount=Math.max(0,Math.min(2,Number(stored.extraTimeCount)||0));
    attemptId=typeof stored.attemptId==='string'&&stored.attemptId?stored.attemptId:attemptId;
    hintsUsed=Math.max(0,Math.min(100,Number(stored.hintsUsed)||0));
-   if(kind==='levels'&&stored.moveCapVersion!==2){
-     // Preserve the old countdown for existing sessions. Recalibration
-     // takes effect on the NEXT fresh attempt, never mid-puzzle.
+   if(kind==='levels'){
+     // Preserve the original countdown for unfinished sessions, even
+     // after they are re-saved by this release.
      const oldTimers={10:95000,11:130000,18:140000,23:140000,
        29:285000,30:265000,31:300000};
-     if(oldTimers[id])puzzle.timerMs=oldTimers[id];
+     if(Number.isFinite(stored.timerBudgetMs)&&stored.timerBudgetMs>0)puzzle.timerMs=stored.timerBudgetMs;
+     else if(stored.moveCapVersion!==2&&oldTimers[id])puzzle.timerMs=oldTimers[id];
    }
    if(kind==='levels'&&moveLimit!==null){
      // A previous release's unfinished attempt keeps its old move allowance.
