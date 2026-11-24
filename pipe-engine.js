@@ -42,6 +42,14 @@ function loopDesign(seed){
  if(r()>.5)main.splice(1,0,[0,y-sign],[1,y-sign]);
  return {paths:[main,[[2,y],[2,y+sign],[3,y+sign],[4,y+sign],[4,y]]],sources:[[0,y]],sinks:[[6,y]]};
 }
+// Staggered terminals prevent a near-straight 6×6 shortcut in Level 2
+// Stage 2. It retains an authored solved route and normal legal scrambling.
+function staggerDesign(seed){
+ const flip=(seed&1)===0;
+ const points=[[0,5],[1,5],[2,5],[2,4],[2,3],[3,3],[4,3],[4,2],[4,1],[5,1],[5,0]];
+ const paths=[points.map(([x,y])=>[flip?5-x:x,y])];
+ return {paths,sources:[paths[0][0]],sinks:[paths[0][paths[0].length-1]]};
+}
 function multipleDesign(seed){
  const flip=(seed>>>0)%2===0;
  if(flip)return {paths:[[[0,3],[1,3],[2,3],[3,3],[4,3]],[[4,3],[4,2],[4,1],[5,1],[6,1]],[[4,3],[4,4],[4,5],[5,5],[6,5]]],sources:[[0,3]],sinks:[[6,1],[6,5]]};
@@ -89,7 +97,7 @@ function advancedFreeDesign(seed){
 }
 const DECORS=[N|S,E|W,N|E,E|S,S|W,W|N];
 function network({size,mode,seed,complexity=1,fixedCount=0,walls=0,decoys=0,blocks=0,requireAllFlow=false}){
- const graph=mode==='advancedFree'?advancedFreeDesign(seed):mode==='corner'?cornerTraverseDesign():mode==='weaveA'?weaveDesignA():mode==='weaveB'?weaveDesignB():mode==='loop'?loopDesign(seed):mode==='multiple'?multipleDesign(seed):mode==='double'?doubleDesign(seed):pathDesign(size,seed,complexity);
+ const graph=mode==='stagger'?staggerDesign(seed):mode==='advancedFree'?advancedFreeDesign(seed):mode==='corner'?cornerTraverseDesign():mode==='weaveA'?weaveDesignA():mode==='weaveB'?weaveDesignB():mode==='loop'?loopDesign(seed):mode==='multiple'?multipleDesign(seed):mode==='double'?doubleDesign(seed):pathDesign(size,seed,complexity);
  const rand=rng(seed^0x87661ab5),board=Array.from({length:size*size},()=>({kind:'empty',mask:0,fixed:false})),ports=new Map();
  for(const path of graph.paths)for(let i=1;i<path.length;i++){
    const a=id(...path[i-1],size),b=id(...path[i],size),d=direction(a,b,size);
@@ -291,6 +299,9 @@ function timerFor(n){
  const at=n-stage.first,count=stageCount(stage);
  if(stage.id>=5&&at>=count-2)return null; // true endurance finales
  if(at<3)return null;
+ if(n===4)return 55000; // Level 1 Stage 4: player-tested ~25 seconds
+ if(n===5)return 45000; // Level 1 Stage 5: quick routing trial
+ if(n===9)return 80000; // Level 2 Stage 4: player-tested 21 moves
  if(stage.id===4&&at===count-2)return 360000;
  if(stage.id===4&&at===count-1)return 390000;
  const base=[70,115,125,165,285,355][stage.id-1];
@@ -303,12 +314,14 @@ function timerFor(n){
 function moveLimitFor(n,legacy=false){
  const stage=stageOf(n);
  if(!stage||timerFor(n)===null)return null;
+ // Player-tested shortcuts are actual legal wins under their published goal.
+ // Scramble reversal is a reproducible fallback route, NOT a shortest solution.
+ // 24/9/21 moves have been observed respectively for these three stages.
+ const testedCaps={4:50,5:30,9:30};
+ if(Object.hasOwn(testedCaps,n))return testedCaps[n];
  const baseline=get(n,undefined,legacy).solutionMoves.length;
  const multiplier=[2.0,1.85,1.7,1.6,1.5,1.45][stage.id-1];
- const ordinary=Math.ceil(baseline*multiplier/5)*5;
- // Preserve the old attempts, while giving real manoeuvring room on
- // Level 4 puzzles 6–7 for their 29–31-connected-cell networks.
- return n===27?Math.max(ordinary,240):n===28?Math.max(ordinary,250):ordinary;
+ return Math.ceil(baseline*multiplier/5)*5;
 }
 // Rotate an already audited board and its entire solution route together.
 // This changes orientation without changing scramble difficulty or validity.
@@ -383,7 +396,7 @@ const FIXED_SEEDS=Object.freeze({1:3074878952,2:4088790921,3:3074894406,4:307490
 const EXTRA_SEEDS=Object.freeze({6:3074917587,7:4088829556,13:420535907,14:2835629075,20:4088930007,21:3075033492,27:1434548327,28:1434556054,34:1434602416,35:1434610143,41:4089092274,42:4089100001}); // Additional audited puzzle seeds.
 function get(n,seedOverride,legacy=false){
  if(!Number.isInteger(n)||n<1||n>MAX_LEVEL)return null;
- const stage=stageOf(n),k=n-stage.first,version=8;
+ const stage=stageOf(n),k=n-stage.first,version=n===7?9:8;
  const override=Number.isInteger(seedOverride);
  const seed=(override?seedOverride:hashSeed(`gridclub-campaign-v8:${stage.id}:${k}`))>>>0;
  const key=`v${version}:${n}:${seed}`;
@@ -391,7 +404,7 @@ function get(n,seedOverride,legacy=false){
    const endurance=stage.id>=5&&k>=stageCount(stage)-2;
    const dense=(stage.id===4&&k>=stageCount(stage)-2)||
      (stage.id===5&&k>=6)||(stage.id===6&&k>=5);
-   const mode=dense?(k%2?'weaveA':'weaveB'):
+   const mode=n===7?'stagger':dense?(k%2?'weaveA':'weaveB'):
      stage.id>=5?'double':stage.mode;
    const objective=objectiveForLevel(stage,k);
    const all=objective==='all';
