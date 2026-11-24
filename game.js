@@ -194,7 +194,7 @@
     return true;
   }
   function progressSlot(forMode=mode, forSize=size, forId=levelId) {
-    return forMode==='daily'?`daily:${today()}`:forMode==='level'?`level:${forId}`:`free:${forSize}`;
+    return forMode==='daily'?`daily:${today()}`:forMode==='practice'?`practice:${today()}`:forMode==='level'?`level:${forId}`:`free:${forSize}`;
   }
   function readProgress() { return readJSON(PROGRESS_KEY, {}); }
   function savedGame(forMode, forSize, forId=levelId) {
@@ -221,6 +221,7 @@
   function persist() {
     if (!game) return false;
     const all = readProgress();
+    if(mode==='practice')return true; // Daily practice never overwrites ranked progress.
     const snap = core.serialize(game);
     snap.savedDay = mode==='daily'?(game.dailyDay||dailyStartDay):today();
     if(mode==='level'){snap.extraTimeMs=game.extraTimeMs||0;snap.extraTimeCount=game.extraTimeCount||0;snap.levelId=levelId;}
@@ -276,11 +277,11 @@
     if (globalThis.crypto?.getRandomValues) return crypto.getRandomValues(new Uint32Array(1))[0];
     return Math.floor(Math.random()*0x100000000);
   }
-  function label() { return mode==='daily'?'Daily challenge':mode==='level'?`Level ${game?.level?.stage||levelCore.get(levelId)?.stage}`:labels[size]; }
+  function label() { return mode==='daily'?'Daily Challenge':mode==='practice'?'Daily practice':mode==='level'?`Level ${game?.level?.stage||levelCore.get(levelId)?.stage}`:labels[size]; }
   function dailyLevelSeed() { return core.hash(`gridclub-dottrails-daily-v04a-${dailyStartDay}-11`); }
   function freshGame() {
     const fixed=mode==='level'?levelCore.get(levelId):null;
-    const seed = mode === 'daily' ? dailyLevelSeed() : fixed?fixed.seed:randomSeed();
+    const seed = mode === 'daily'||mode==='practice' ? dailyLevelSeed() : fixed?fixed.seed:randomSeed();
     const plain=core.generate(size,seed,{daily:mode==='daily'});
     const curatedPath=Number.isInteger(fixed?.blockedPathIndex)?plain.solution[fixed.blockedPathIndex]:null;
     const blocked=fixed?.blocked?.length?core.withBlocked(plain,fixed.blocked):
@@ -291,7 +292,7 @@
     if(fixed){puzzle.levelId=fixed.id;puzzle.stage=fixed.stage;puzzle.step=fixed.step;puzzle.limitMs=fixed.limitSec===null?null:fixed.limitSec*1000;}
     const g=core.create(puzzle);
     if(fixed){g.extraTimeMs=0;g.extraTimeCount=0;}
-    if(mode==='daily')g.dailyDay=dailyStartDay;
+    if(mode==='daily'||mode==='practice')g.dailyDay=dailyStartDay;
     return g;
   }
   function setGame(newGameObject) {
@@ -362,6 +363,7 @@
     $('randomScreen').hidden = page !== 'random';
     $('gameScreen').hidden = page !== 'game';
     $('statsScreen').hidden = page !== 'stats';
+    $('dotDailyScreen').hidden = page !== 'daily';
     $('levelsScreen').hidden = page !== 'levels';
     $('dotDailyCompleteLayer').hidden=true;
     // Leaving a result permanently closes its overlay. Stats never navigates back to it.
@@ -391,7 +393,6 @@
     if(!$('gameScreen').hidden && !game?.finishedAt)suspendSilently();
     showPage('stats');
     renderStatsPage();
-    refreshLeaderboard();
     retryPendingDaily();
   }
   function statBox(label,value){
@@ -456,32 +457,84 @@
         ' Saved on this device; not verified for the leaderboard.';
       dailyStatus.textContent=score+online;
     }
-    $('communityDay').textContent='· '+today();
-    renderCommunityPage();
   }
-  function renderCommunityPage(){
-    const box=$('communitySummary');box.replaceChildren();
-    if(!lastCommunity){box.textContent=navigator.onLine?'Press Refresh leaderboard to check verified results.':'You are offline. Personal statistics remain available.';return;}
-    const total=Number(lastCommunity.total||0);
-    const title=document.createElement('p');title.textContent=total===1?'1 unassisted player today':`${total} unassisted players today`;
-    box.append(title);
+  // A single Daily Challenge view owns the play/practice action and online
+  // community results. Stats remains entirely personal, even offline.
+  function renderDailyPage(){
+    const result=dailyRecord(),finished=!!result,day=today();
+    $('dotDailyDay').textContent=day;
+    const play=$('dotDailyPlay'),note=$('dotDailyResultNote');
+    play.textContent=finished?"Practise today's puzzle":
+      savedGame('daily',11)?"Continue today's puzzle":"Play today's puzzle";
+    if(result){
+      const time=fmtSeconds(result.serverElapsedMs||result.elapsedMs);
+      const state=result.verified?(result.assisted?'Verified · assisted, not ranked':'Verified'):
+        result.sync==='review'?'Awaiting fair-play review':result.sync==='expired'?'Ranked attempt expired':
+        'Saved locally · verification pending';
+      note.textContent=`Your first result: ${time} · ${result.moves} moves · ${state}`;
+    }else note.textContent='One ranked attempt per day. Practice unlocks after completion.';
+    renderDailyLeaderboard();
+  }
+  function renderDailyLeaderboard(){
+    const box=$('dotDailyEntries'),summary=$('dotDailyRank');box.replaceChildren();
+    const mine=dailyRecord(),stats=lastCommunity;
+    const total=Math.max(0,Number(stats?.total||stats?.unassisted?.count||0));
+    const eligible=!!mine?.verified&&!mine.assisted&&mine.date===today();
+    const faster=Number(stats?.unassisted?.fasterCount);
+    const rank=eligible&&Number.isFinite(faster)&&faster>=0?Math.floor(faster)+1:null;
+    summary.textContent=stats?`${total} verified finish${total===1?'':'es'}${rank?' · Your rank: '+rank:''}`:
+      (navigator.onLine?'Loading today’s verified results…':'Offline · showing your saved result');
+    // The Dot Trails backend currently returns verified community statistics.
+    // If it later returns a ranked entry list, this renderer supports it without
+    // inventing names or positions for players when none were supplied.
+    const rows=Array.isArray(stats?.leaderboard)?stats.leaderboard:
+      Array.isArray(stats?.entries)?stats.entries:[];
+    if(rows.length){
+      for(const row of rows.slice(0,20)){
+        const position=Number(row.rank||row.position),elapsed=Number(row.elapsedMs||row.timeMs);
+        if(!Number.isInteger(position)||position<1||!Number.isFinite(elapsed)||elapsed<0)continue;
+        const entry=document.createElement('div');entry.className='dotDailyEntry';
+        const label=document.createElement('span');
+        label.textContent=`${position}. ${typeof row.name==='string'&&row.name.trim()?row.name.slice(0,32):'Player'}`;
+        const value=document.createElement('strong');value.textContent=fmtSeconds(elapsed);
+        if(eligible&&rank===position){entry.dataset.you='true';label.textContent=`${position}. You`;}
+        entry.append(label,value);box.append(entry);
+      }
+    }
+    if(eligible&&!box.querySelector('[data-you="true"]')){
+      const entry=document.createElement('div');entry.className='dotDailyEntry';entry.dataset.you='true';
+      const label=document.createElement('span');label.textContent=`${rank?rank+'. ':'✓ '}You`;
+      const time=document.createElement('strong');time.textContent=fmtSeconds(mine.serverElapsedMs||mine.elapsedMs);
+      entry.append(label,time);box.append(entry);
+    }
+    if(!stats){
+      const p=document.createElement('p');p.className='dotDailyAggregate';
+      p.textContent=navigator.onLine?'Checking the leaderboard…':'Connect to see verified community results.';
+      box.append(p);return;
+    }
     if(!total){
-      const info=document.createElement('p');
-      info.textContent='No verified, unassisted leaderboard results for today yet. This does not affect locally saved completions.';
-      box.append(info);
+      const p=document.createElement('p');p.className='dotDailyAggregate';
+      p.textContent='No verified, unassisted results yet today.';
+      box.append(p);return;
     }
-    const mine=dailyRecord();
-    if(mine?.assisted){const m=document.createElement('p');m.textContent=`Your assisted result: ${fmtSeconds(mine.serverElapsedMs||mine.elapsedMs)} · ${mine.serverMoves??mine.moves} moves. Hints exclude this result from the leaderboard, but it remains in your personal stats.`;box.append(m);}
-    if(!total)return;
-    for(const [name,group,assisted] of [['Unassisted',lastCommunity.unassisted,false]]){
-      const c=document.createElement('div');c.className='communityCard';
-      const h=document.createElement('strong');h.textContent=name;
-      const lines=statsUtil.communityLines(group,assisted);
-      const b=document.createElement('p');b.textContent=lines.summary;
-      c.append(h,b);
-      if(lines.detail){const d=document.createElement('small');d.textContent=lines.detail;c.append(d);}
-      box.append(c);
+    if(!rows.length){
+      const p=document.createElement('p');p.className='dotDailyAggregate';
+      const data=stats.unassisted;
+      p.textContent=data?.averageMs?`Community average: ${fmtSeconds(data.averageMs)}.`:
+        'Verified results are recorded, but individual rankings are not supplied by the current Dot Trails service.';
+      box.append(p);
     }
+    if(mine?.assisted){
+      const p=document.createElement('p');p.className='dotDailyAggregate';
+      p.textContent='Your assisted attempt is saved in Your stats but does not enter the leaderboard.';
+      box.append(p);
+    }
+  }
+  function showDailyScreen(){
+    if(!$('gameScreen').hidden&&!game?.finishedAt)suspendSilently();
+    showPage('daily');renderDailyPage();
+    void retryPendingDaily();
+    void refreshLeaderboard();
   }
   function showLevelBrowser(stage){
     if(!$('gameScreen').hidden && !game?.finishedAt)suspendSilently();
