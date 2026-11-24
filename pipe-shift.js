@@ -5,7 +5,7 @@ const e=globalThis.PipeEngine;if(!e)return;
 const $=id=>document.getElementById(id),root=$('pipeShiftScreen'),hub=$('home');
 if(!root||!hub||!$('pipeShiftEntry'))return;
 const KEY='gridclub-pipeshift-progress-v1',BACKUP=KEY+'-v08-backup',MAX=e.MAX_LEVEL;
-const blank=()=>({version:2,levelCatalog:6,completed:{},best:{},active:{},randomBest:{},randomBestV3:{},randomBestV4:{},randomBestByGoal:{all:{},any:{}},randomGoal:'all',randomCount:{},legacyArchived:{},legacyUnlockedStages:{},firstAttemptFailed:{},daily:{},moveStats:{random:{},levels:{count:0,total:0},daily:{count:0,total:0}}});
+const blank=()=>({version:2,levelCatalog:6,challengeTuneV24:true,completed:{},best:{},active:{},randomBest:{},randomBestV3:{},randomBestV4:{},randomBestByGoal:{all:{},any:{}},randomGoal:'all',randomCount:{},legacyArchived:{},legacyUnlockedStages:{},firstAttemptFailed:{},daily:{},moveStats:{random:{},levels:{count:0,total:0},daily:{count:0,total:0}}});
 const oldToNew=id=>{const n=Number(id);return Number.isInteger(n)&&n>=1&&n<=30?Math.floor((n-1)/5)*7+(n-1)%5+1:null;};
 function remapLevels(items){const mapped={};for(const [id,value] of Object.entries(items||{})){const next=oldToNew(id);if(next!==null)mapped[next]=value;}return mapped;}
 let progress=blank(),section='menu',stage=1,mode='levels',currentLevel=null,currentSize=5,currentTier='beginner',puzzle=null;
@@ -61,6 +61,13 @@ function read(){
        next.active=Object.fromEntries(Object.entries(next.active||{}).filter(([key])=>!key.startsWith('level:')));
        next.moveStats.levels={count:0,total:0};
        next.levelCatalog=6;
+     }
+     if(!next.challengeTuneV24){
+       // Level 2 Stage 2 has a different, staggered board in v0.9.24:
+       // discard only that old PB/unfinished board, not completed levels,
+       // credits, Free Play records or Daily Challenge results.
+       delete next.best[7];delete next.active['level:7'];
+       next.challengeTuneV24=true;
      }
      next.randomGoal=next.randomGoal==='any'?'any':'all';
      next.randomBestByGoal={all:{...(next.randomBestByGoal?.all||{})},
