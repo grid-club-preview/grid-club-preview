@@ -259,7 +259,6 @@
   }
   function updateHome() {
     const solved=dailySolved();
-    $('solvedTag').hidden = !solved;
     $('dailyStartText').textContent = '11×11 · '+(solved?'View today’s result':
       savedGame('daily',11) ? 'Continue today’s puzzle' : 'Play today’s puzzle');
     $('dotMenuWallet').textContent=`◉ ${walletBalance()}`;
@@ -482,7 +481,12 @@
     const eligible=!!mine?.verified&&!mine.assisted&&mine.date===today();
     const faster=Number(stats?.unassisted?.fasterCount);
     const rank=eligible&&Number.isFinite(faster)&&faster>=0?Math.floor(faster)+1:null;
-    summary.textContent=stats?`${total} verified finish${total===1?'':'es'}${rank?' · Your rank: '+rank:''}`:
+    const average=Number(stats?.unassisted?.averageMs);
+    const summaryParts=[];
+    if(Number.isFinite(average)&&average>0&&total>0)summaryParts.push('Global average '+fmtSeconds(average));
+    if(stats)summaryParts.push('Verified players: '+total);
+    if(rank)summaryParts.push('Your rank: '+rank);
+    summary.textContent=stats?summaryParts.join(' · '):
       (navigator.onLine?(window.GridRanked?.configured?'Loading today’s verified results…':'Online rankings not configured'):'Offline · showing your saved result');
     // The Dot Trails backend currently returns verified community statistics.
     // If it later returns a ranked entry list, this renderer supports it without
@@ -517,11 +521,9 @@
       p.textContent='No verified, unassisted results yet today.';
       box.append(p);return;
     }
-    if(!rows.length){
+    if(!rows.length&&!eligible){
       const p=document.createElement('p');p.className='dotDailyAggregate';
-      const data=stats.unassisted;
-      p.textContent=data?.averageMs?`Community average: ${fmtSeconds(data.averageMs)}.`:
-        'Verified results are recorded, but individual rankings are not supplied by the current Dot Trails service.';
+      p.textContent='Individual player rankings are not supplied by the current Dot Trails service.';
       box.append(p);
     }
     if(mine?.assisted){
