@@ -329,10 +329,10 @@
     if(timedOut)refreshTimeUpBoost();
     levelReward=null;
     $('incomplete').hidden = true; $('hintStatus').hidden = true;
-    $('modeTitle').textContent = mode === 'daily' ? `Daily challenge · ${dailyStartDay}` : mode==='level'?`Level ${game.level.stage} · Puzzle ${game.level.step}/5`:`${label()} · ${size}×${size}`;
-    $('boardTitle').textContent = mode === 'daily' ? 'Daily Dot Trails' : mode==='level'?`Dot Trails · ${labels[size]}`:`Dot Trails · ${label()}`;
-    $('next').textContent = mode === 'daily' ? 'Continue in Free Play' : mode==='level' && levelId===75 ? 'See your Levels →' : mode==='level' ? `Continue Level ${game.level.stage+(game.level.step===5?1:0)} →` : 'Next puzzle';
-    $('returnWinHome').hidden = mode !== 'daily';
+    $('modeTitle').textContent = mode === 'daily'||mode==='practice' ? `${mode==='practice'?'Daily practice':'Daily challenge'} · ${dailyStartDay}` : mode==='level'?`Level ${game.level.stage} · Puzzle ${game.level.step}/5`:`${label()} · ${size}×${size}`;
+    $('boardTitle').textContent = mode === 'daily'||mode==='practice' ? 'Daily Dot Trails' : mode==='level'?`Dot Trails · ${labels[size]}`:`Dot Trails · ${label()}`;
+    $('next').textContent = mode === 'daily'||mode==='practice' ? 'Daily Challenge →' : mode==='level' && levelId===75 ? 'See your Levels →' : mode==='level' ? `Continue Level ${game.level.stage+(game.level.step===5?1:0)} →` : 'Next puzzle';
+    $('returnWinHome').hidden = mode !== 'daily'&&mode!=='practice';
     $('winToLevels').hidden = mode!=='level';
     $('winToLevels').textContent='Return to Levels overview';
     $('win').dataset.stage = mode==='level'?String(game.level.stage):'';
@@ -685,16 +685,16 @@
   }
   function start(nextMode, chosenSize) {
     // Completion opens choices rather than taking the player to Stats.
-    if(nextMode==='daily' && dailySolved()) { showDailyCompleteDialog(); return; }
+    if(nextMode==='daily' && dailySolved()) {showDailyScreen();return;}
     if (!$('gameScreen').hidden && !game?.finishedAt) suspendSilently();
     mode = nextMode;
-    if(mode==='daily')dailyStartDay=today();
-    size = mode === 'daily' ? 11 : (core.SIZES.includes(chosenSize) ? chosenSize : loadDifficulty());
+    if(mode==='daily'||mode==='practice')dailyStartDay=today();
+    size = (mode === 'daily'||mode==='practice') ? 11 : (core.SIZES.includes(chosenSize) ? chosenSize : loadDifficulty());
     if (mode === 'free') saveDifficulty();
     explicitPause = false; backgroundSuspended = false;
     showPage('game');
-    const saved = savedGame(mode,size);
-    // A completed board is never reopened after the player leaves its results.
+    const saved = mode==='practice'?null:savedGame(mode,size);
+    // Practice always starts the same dated puzzle afresh, without touching ranked progress.
     const selected = saved && !saved.finishedAt ? saved : freshGame();
     setGame(selected);
   }
@@ -778,6 +778,9 @@
   }
   function recordCompletion() {
     const stats = readStats(), item = stats.games.dotTrails;
+    if(mode==='practice')return {attemptId:game.attemptId,mode:'practice',date:dailyStartDay,
+      elapsedMs:Math.round(core.elapsed(game)),moves:game.moves,hints:game.hints,assisted:true,
+      headline:'Practice complete!',verified:false,sync:'practice'};
     const existing = item.results.find(r=>r.attemptId===game.attemptId);
     if(existing) return existing;
     levelReward=null;
@@ -890,8 +893,8 @@
       const stats=await GridRanked.call('stats',{day:today()});
       lastCommunity=stats;
       if(mode==='daily'&&!$('gameScreen').hidden)renderWinCommunity(result||dailyRecord());
-      if(!$('statsScreen').hidden)renderCommunityPage();
-    }catch(e){console.warn('Community stats unavailable',e);if(!$('statsScreen').hidden)$('communitySummary').textContent='Community statistics unavailable. Your own results remain saved.';}
+      if(!$('dotDailyScreen').hidden)renderDailyPage();
+    }catch(e){console.warn('Community stats unavailable',e);if(!$('dotDailyScreen').hidden){$('dotDailyEntries').textContent='Leaderboard currently unavailable. Your personal result remains saved.';}}
   }
   function saveVerifiedResult(result,reply){
     const stats=readStats(),item=stats.games.dotTrails;
@@ -1028,14 +1031,16 @@
     $('winEasier').disabled = size === 5;
     $('winHarder').disabled = size === 11;
     const failed=!storageAvailable||result.saveFailed;
-    $('resultStatsLink').hidden=failed||mode==='level';
-    $('resultStatsLink').firstChild.textContent=mode==='daily'?'View your stats ':'Result added to your stats ';
+    $('resultStatsLink').hidden=mode==='practice'||(failed&&mode!=='daily')||mode==='level';
+    $('resultStatsLink').firstChild.textContent=mode==='daily'?'View daily leaderboard ':'Result added to your stats ';
     const status=$('resultStatus');
     status.hidden=false;
     if(failed){
       status.textContent='Your browser could not save this result. Please keep this page open.';
     }else if(mode==='daily'){
       status.textContent=navigator.onLine?'Checking your ranked result…':"You're offline, but your achievement is saved. We'll try to submit it while today's challenge is active.";
+    }else if(mode==='practice'){
+      status.textContent='Practice only. Your ranked Daily Challenge result is unchanged.';
     }else{
       status.textContent='';
       status.hidden=true;
@@ -1150,7 +1155,7 @@
   function exitPuzzle() {
     // The in-game Back follows the navigation hierarchy: Free Play returns
     // to difficulty selection, Daily Challenge returns directly Home.
-    if (mode === 'daily') returnHome();
+    if (mode === 'daily'||mode==='practice') showDailyScreen();
     else if(mode==='level')showLevelBrowser(game?.level?.stage||selectedStage);
     else showRandomScreen();
   }
@@ -1298,7 +1303,10 @@
     } finally { testBackendButton.disabled=false; }
   };
   refreshBackendCheck();
-  $('dailyStart').onclick=()=>start('daily');
+  $('dailyStart').onclick=showDailyScreen;
+  $('dotDailyBack').onclick=showDifficultyScreen;
+  $('dotDailyPlay').onclick=()=>start(dailySolved()?'practice':'daily');
+  $('dotDailyRefresh').onclick=()=>{renderDailyPage();void refreshLeaderboard();};
   $('dotDailyCompleteStats').onclick=showStatsScreen;
   $('dotDailyCompleteNext').onclick=()=>globalThis.GridClubDailyJourney?.visitNext('dotTrails');
   $('dotDailyCompleteFree').onclick=showRandomScreen;
@@ -1347,7 +1355,6 @@
   $('extraTime').onclick=buyExtraTime;
   $('viewStats').onclick=showStatsScreen;
   $('statsBack').onclick=showDifficultyScreen;
-  $('refreshCommunity').onclick=()=>refreshLeaderboard();
   $('freeStart').onclick=showDifficultyScreen;
   $('chooseBack').onclick=returnHome;
   $('back').onclick=exitPuzzle;
@@ -1382,8 +1389,8 @@
   };
   $('reset').onclick=()=>{if(!game||game.paused)return;clearHint();core.reset(game);logRank('reset');update();};
   $('new').onclick=()=>{if(game && !game.finishedAt && core.filled(game)>0 && !confirm('Start a fresh puzzle? Your current unfinished puzzle will be replaced.'))return;newGame();};
-  $('next').onclick=()=>mode==='daily'?showRandomScreen():mode==='level'?(levelId<75?startLevel(levelId+1):showLevelBrowser()):newGame();
-  $('resultStatsLink').onclick=showStatsScreen;
+  $('next').onclick=()=>mode==='daily'||mode==='practice'?showDailyScreen():mode==='level'?(levelId<75?startLevel(levelId+1):showLevelBrowser()):newGame();
+  $('resultStatsLink').onclick=()=>mode==='daily'?showDailyScreen():showStatsScreen();
   // Easier/Harder choose adjacent difficulties and preserve any unfinished
   // puzzle already saved at the destination size.
   $('winToRandom').onclick=showRandomScreen;
@@ -1404,6 +1411,7 @@
     if(!$('pauseLayer').hidden||!$('timeUpLayer').hidden)return;
     if(!$('gameScreen').hidden){exitPuzzle();return;}
     if(!$('statsScreen').hidden){showDifficultyScreen();return;}
+    if(!$('dotDailyScreen').hidden){showDifficultyScreen();return;}
     if(!$('randomScreen').hidden){showDifficultyScreen();return;}
     if(!$('levelsScreen').hidden){
       if(selectedStage===null)showDifficultyScreen();else showLevelBrowser();
@@ -1461,5 +1469,5 @@
     if(game&&!$('gameScreen').hidden){render();if(!game.paused&&!game.finishedAt)persist();}
     if(!document.hidden && !($('statsScreen').hidden))renderStatsPage();
   },1000);
-  globalThis.GridDotTrailsApp={openDaily:()=>start('daily'),home:returnHome};
+  globalThis.GridDotTrailsApp={openDaily:showDailyScreen,home:returnHome};
 })();
