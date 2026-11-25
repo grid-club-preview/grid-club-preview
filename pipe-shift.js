@@ -1,4 +1,4 @@
-/* Grid Club · Pipe Shift v0.9.27 · balanced levels and verified Daily v2 */
+/* Grid Club · Pipe Shift v0.9.28 · consistent two-tap movement */
 (function(){
 'use strict';
 const e=globalThis.PipeEngine;if(!e)return;
@@ -870,8 +870,9 @@ function clickCell(i){if(section!=='game'||won||expired||trialPending||dailyStar
  if(hintPreviewActive)return;
  if(selected!==null&&board[i].kind==='empty'&&slide(selected,i))return;
  const t=board[i];if(!['pipe','block'].includes(t.kind)||t.fixed){selected=null;render();return;}
- const options=availableDestinations(i);
- if(options.length===1){slide(i,options[0]);return;}
+ // Use select-then-destination for every tap, even if only one adjacent
+ // square is available. Drag gestures remain a deliberate single gesture.
+ // Auto-sliding on selection can accidentally waste a limited move.
  selected=selected===i?null:i;render();
 }
 function undoMove(){if(won||expired||trialPending||dailyStartPending||hintPreviewActive||hintSelection||!undo.length)return;clockSync();const last=undo.pop();board=e.clone(last.board);if(mode==='daily')for(let step=0;step<(last.steps||1);step++)dailyTrace.push({action:'undo'});selected=null;render();saveCurrent();}
