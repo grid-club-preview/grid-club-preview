@@ -29,7 +29,7 @@
 .wrSun{position:absolute;top:21px;right:30px;width:42px;height:42px;border-radius:50%;background:#fff4b3;box-shadow:0 0 25px #f9e6a0aa}
 .wrCloud{position:absolute;background:#e5f5ffb6;border-radius:99px;width:68px;height:15px;top:54px;left:25%}
 .wrCloud:before{content:'';position:absolute;width:31px;height:24px;left:16px;bottom:2px;border-radius:90px 90px 0 0;background:#e5f5ffb6}
-.wrSea{position:absolute;bottom:0;left:0;right:0;height:10%;z-index:3;transition:height .14s linear;
+.wrSea{position:absolute;bottom:0;left:0;right:0;height:22%;z-index:3;transition:height .14s linear;
  background:linear-gradient(180deg,#087fccf0,#084fa0f7)}
 .wrSea:before{content:'';position:absolute;top:-7px;left:0;width:200%;height:13px;
  background:repeating-radial-gradient(ellipse 45px 8px at 22px 10px,transparent 0 23px,#d6f5ff 24px 30px,transparent 31px 45px);
@@ -85,6 +85,7 @@
  height:clamp(340px,48svh,490px);border-radius:20px;
  background:linear-gradient(180deg,#25539a 0%,#64b3e9 63%,#96d6df 100%);
 }
+/* The sea starts at the same 22% baseline as the raft, with no air gap. */
 #wordRescueScreen .wrStack{bottom:22%;width:86px}
 #wordRescueScreen .wrBrick{height:7px}
 #wordRescueScreen .wrAvatar{
