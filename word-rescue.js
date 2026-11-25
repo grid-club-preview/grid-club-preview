@@ -119,6 +119,7 @@ function render(){
  scene.dataset.panic=state.won||state.expired?'end':danger>=.92?'frantic':danger>=.78?'panicking':danger>=.48?'worried':'calm';
  scene.style.setProperty('--wrDanger',String(danger));
  scene.style.setProperty('--wrBuild',String(Math.min(24,state.blocks)));
+ scene.style.setProperty('--wrRaftLength',(Math.min(24,state.blocks)*8.5).toFixed(1)+'px');
  scene.style.setProperty('--wrBodySpeed',(1.65-danger*1.22).toFixed(2)+'s');
  scene.style.setProperty('--wrArmSpeed',(1.20-danger*.88).toFixed(2)+'s');
  $('wrShark').style.left=state.mode==='raft'?(90-62*danger).toFixed(1)+'%':'5%';
@@ -134,7 +135,7 @@ function render(){
  }
  // Animation state is owned by the scene CSS; never replace the SVG avatar
  // on each timer tick, which would restart its animation.
- $('wrSceneLabel').textContent=state.mode==='sinking'?'LETTERS SINKING':'SHARK ESCAPE';
+ $('wrSceneLabel').textContent=state.mode==='raft'?'SHARK APPROACHING':state.mode==='sinking'?'LETTERS SINKING':'RISING TIDE';
  const selected=state.selected.map(i=>state.rack[i]).join('');
  const preview=$('wrSelected');preview.replaceChildren();
  if(selected){preview.textContent=selected;}
@@ -153,6 +154,7 @@ function render(){
  $('wrRerack').disabled=completed;
  $('wrWordHistory').textContent=state.words.length?
    'Words: '+state.words.slice(-7).map(x=>x.word).join(' · '):
+   state.mode==='raft'?'Longer words build more planks. Reach shore before the shark.':
    'Longer words earn more points. Each letter adds one block.';
  $('wrResult').hidden=!completed;
 }
