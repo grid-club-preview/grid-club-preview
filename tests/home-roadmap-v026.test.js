@@ -10,7 +10,7 @@ assert(home.includes('ARCADE'));
 assert(home.indexOf('PUZZLE DECK')<home.indexOf('ARCADE'));
 for(const id of ['freeStart','pipeShiftEntry'])
  assert(home.includes('id="'+id+'"'),'Playable game missing: '+id);
-for(const title of ['Block Shift','Grid Flip','Word game','Starting Grid','Towers'])
+for(const title of ['Block Shift','Grid Flip','Words Down','Starting Grid','Towers'])
  assert(home.includes('<strong>'+title+'</strong>'),'Planned title missing: '+title);
 const planned=home.match(/<article class="roadmapCard"/g)||[];
 assert.equal(planned.length,5);
