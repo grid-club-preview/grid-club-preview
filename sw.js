@@ -13,6 +13,7 @@ const APP_FILES=[
   './dot-daily.css?v=0.9.25',
   './home-roadmap.css?v=0.9.26',
   './word-rescue.css?v=0.9.30',
+  './word-rescue-lexicon.js?v=0.9.30',
   './word-rescue-engine.js?v=0.9.30',
   './word-rescue.js?v=0.9.30',
   './vault-reward.js?v=0.9.25',
