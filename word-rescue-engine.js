@@ -71,8 +71,8 @@ function submit(s){
 }
 function rerack(s){if(s.expired||s.won)return false;s.rack=freshRack(s);s.selected=[];return true;}
 const DURATION_MS=90000;
-function waterHeight(s){return 10+(s.elapsedMs/DURATION_MS)*(s.mode==='sinking'?52:60);}
-function safeHeight(s){return 22+Math.min(24,s.blocks)*1.8;}
+function waterHeight(s){return 8+(s.elapsedMs/DURATION_MS)*(s.mode==='sinking'?52:60);}
+function safeHeight(s){return 25+Math.min(24,s.blocks)*1.8;}
 function advance(s,ms){
  if(s.won||s.expired||!s.started)return;
  s.elapsedMs=Math.min(DURATION_MS,s.elapsedMs+Math.max(0,ms));
