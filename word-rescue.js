@@ -10,7 +10,12 @@ let state=null,screen='menu',timer=null,lastTick=0,lastSecond=-1,flash='';
 const safeGet=(key)=>{try{return localStorage.getItem(key);}catch(_){return null;}};
 const safeSave=(key,value)=>{try{localStorage.setItem(key,JSON.stringify(value));return true;}catch(_){return false;}};
 const safeDel=key=>{try{localStorage.removeItem(key);}catch(_){}};
-const readState=()=>{try{const s=JSON.parse(safeGet(KEY)||'null');return engine.validState(s)&&!s.won&&!s.expired?s:null;}catch(_){return null;}};
+const readState=()=>{try{const s=JSON.parse(safeGet(KEY)||'null');if(!engine.validState(s)||s.won||s.expired)return null;
+  // Older v0.9.30 unfinished runs may be saved with no available vowel.
+  // Repair only the letter rack; keep their tower, score and elapsed time.
+  if(engine.ensureVowel(s))safeSave(KEY,s);
+  return s;
+ }catch(_){return null;}};
 const balance=()=>globalThis.GridClubCredits?.balance?.()||0;
 function ensureDictionary(){
  // All words are loaded synchronously from the PWA bundle before this app
