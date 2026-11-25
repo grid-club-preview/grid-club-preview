@@ -1,5 +1,5 @@
-/* Grid Club v0.9.25 · updated cache key + stats module */
-const CACHE='gridclub-pwa-v0.9.25';
+/* Grid Club v0.9.26 · updated cache key + stats module */
+const CACHE='gridclub-pwa-v0.9.26';
 const APP_FILES=[
   './','./index.html',
   './puzzle.js?v=0.9.9',
@@ -11,6 +11,7 @@ const APP_FILES=[
   './pipe-shift.css?v=0.9.25',
   './vault-reward.css?v=0.9.25',
   './dot-daily.css?v=0.9.25',
+  './home-roadmap.css?v=0.9.26',
   './vault-reward.js?v=0.9.25',
   './pipe-engine.js?v=0.9.25',
   './pipe-shift.js?v=0.9.25',
