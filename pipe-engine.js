@@ -1,4 +1,4 @@
-/* Grid Club Pipe Shift v0.9.5 · reproducible challenges and shortcut-audited levels */
+/* Grid Club Pipe Shift v0.9.27 · timed trial calibration and ranked daily v2 */
 (function(root,factory){const api=factory();if(typeof module!=='undefined'&&module.exports)module.exports=api;if(root)root.PipeEngine=api;})(typeof globalThis!=='undefined'?globalThis:this,function(){
 'use strict';
 const N=1,E=2,S=4,W=8,SIZE=5,MAX_LEVEL=42;
@@ -294,40 +294,34 @@ function stretchCorner(scrambled,desired=8){
 function signature(board){return board.map(t=>`${t.kind[0]}${t.mask}${t.fixed?'f':''}`).join('|');}
 const LEGACY=[{"level":1,"size":5,"board":[{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"source","mask":2,"fixed":true},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":10,"fixed":false},{"kind":"pipe","mask":10,"fixed":false},{"kind":"sink","mask":8,"fixed":true},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":10,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false}],"solvedBoard":[{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"source","mask":2,"fixed":true},{"kind":"pipe","mask":10,"fixed":false},{"kind":"pipe","mask":10,"fixed":false},{"kind":"pipe","mask":10,"fixed":false},{"kind":"sink","mask":8,"fixed":true},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false}],"solutionMoves":[{"from":12,"to":11},{"from":17,"to":12}],"initialMoves":2,"displacement":2,"fixedPipes":0,"walls":0},{"level":2,"size":5,"board":[{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":6,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":12,"fixed":false,"decoy":true},{"kind":"pipe","mask":10,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"source","mask":2,"fixed":true},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":9,"fixed":false},{"kind":"pipe","mask":12,"fixed":false},{"kind":"sink","mask":8,"fixed":true},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":3,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false}],"solvedBoard":[{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":12,"fixed":false,"decoy":true},{"kind":"pipe","mask":6,"fixed":false},{"kind":"pipe","mask":10,"fixed":false},{"kind":"pipe","mask":12,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"source","mask":2,"fixed":true},{"kind":"pipe","mask":9,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":3,"fixed":false},{"kind":"sink","mask":8,"fixed":true},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false}],"solutionMoves":[{"from":13,"to":8},{"from":12,"to":11},{"from":6,"to":5},{"from":1,"to":6},{"from":18,"to":13}],"initialMoves":5,"displacement":8,"fixedPipes":0,"walls":0},{"level":3,"size":5,"board":[{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":12,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"source","mask":2,"fixed":true},{"kind":"pipe","mask":3,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"sink","mask":8,"fixed":true},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":10,"fixed":false},{"kind":"pipe","mask":6,"fixed":false},{"kind":"pipe","mask":12,"fixed":false,"decoy":true},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":9,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":3,"fixed":false,"decoy":true},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"wall","mask":0,"fixed":true},{"kind":"empty","mask":0,"fixed":false}],"solvedBoard":[{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"source","mask":2,"fixed":true},{"kind":"pipe","mask":12,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":6,"fixed":false},{"kind":"sink","mask":8,"fixed":true},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":3,"fixed":false},{"kind":"pipe","mask":10,"fixed":false},{"kind":"pipe","mask":9,"fixed":false},{"kind":"pipe","mask":12,"fixed":false,"decoy":true},{"kind":"pipe","mask":3,"fixed":false,"decoy":true},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"wall","mask":0,"fixed":true},{"kind":"empty","mask":0,"fixed":false}],"solutionMoves":[{"from":12,"to":7},{"from":17,"to":18},{"from":13,"to":8},{"from":6,"to":11},{"from":18,"to":13},{"from":7,"to":12},{"from":1,"to":6},{"from":20,"to":15}],"initialMoves":8,"displacement":8,"fixedPipes":0,"walls":1},{"level":4,"size":5,"board":[{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":6,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":3,"fixed":false,"decoy":true},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":9,"fixed":false},{"kind":"pipe","mask":12,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":6,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":3,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"sink","mask":8,"fixed":true},{"kind":"source","mask":2,"fixed":true},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":9,"fixed":false},{"kind":"pipe","mask":9,"fixed":false,"decoy":true},{"kind":"empty","mask":0,"fixed":false},{"kind":"wall","mask":0,"fixed":true}],"solvedBoard":[{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":3,"fixed":false,"decoy":true},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":6,"fixed":false},{"kind":"pipe","mask":12,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":6,"fixed":false},{"kind":"pipe","mask":9,"fixed":false},{"kind":"pipe","mask":3,"fixed":false},{"kind":"sink","mask":8,"fixed":true},{"kind":"source","mask":2,"fixed":true},{"kind":"pipe","mask":9,"fixed":false},{"kind":"pipe","mask":9,"fixed":false,"decoy":true},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"wall","mask":0,"fixed":true}],"solutionMoves":[{"from":21,"to":16},{"from":1,"to":2},{"from":4,"to":3},{"from":12,"to":13},{"from":10,"to":11},{"from":2,"to":1},{"from":7,"to":12},{"from":22,"to":17},{"from":1,"to":6},{"from":3,"to":2},{"from":6,"to":7}],"initialMoves":11,"displacement":12,"fixedPipes":0,"walls":1},{"level":5,"size":5,"board":[{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":5,"fixed":false,"decoy":true},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":9,"fixed":false,"decoy":true},{"kind":"pipe","mask":12,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"sink","mask":8,"fixed":true},{"kind":"source","mask":2,"fixed":true},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":5,"fixed":false},{"kind":"pipe","mask":6,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":3,"fixed":false},{"kind":"pipe","mask":10,"fixed":true},{"kind":"pipe","mask":9,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":9,"fixed":false,"decoy":true},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"wall","mask":0,"fixed":true}],"solvedBoard":[{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":5,"fixed":false,"decoy":true},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":9,"fixed":false,"decoy":true},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":6,"fixed":false},{"kind":"sink","mask":8,"fixed":true},{"kind":"source","mask":2,"fixed":true},{"kind":"pipe","mask":12,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":5,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":3,"fixed":false},{"kind":"pipe","mask":10,"fixed":true},{"kind":"pipe","mask":9,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"pipe","mask":9,"fixed":false,"decoy":true},{"kind":"empty","mask":0,"fixed":false},{"kind":"empty","mask":0,"fixed":false},{"kind":"wall","mask":0,"fixed":true}],"solutionMoves":[{"from":16,"to":11},{"from":13,"to":8},{"from":5,"to":0},{"from":12,"to":13},{"from":6,"to":7},{"from":11,"to":16},{"from":21,"to":22},{"from":16,"to":21},{"from":0,"to":5},{"from":13,"to":12},{"from":21,"to":16},{"from":7,"to":6},{"from":12,"to":13},{"from":22,"to":21},{"from":6,"to":11}],"initialMoves":15,"displacement":5,"fixedPipes":1,"walls":1}]; // exact first five boards from shipped v0.8.0
 const stageOf=n=>STAGES.find(s=>n>=s.first&&n<=s.last)||null;
+// Timed stages calibrated against player completions or reproducible winning
+// routes. Untimed early stages and late endurance finales remain unlimited.
+const TIMED_TRIALS_V10=Object.freeze({
+ 4:[35,50000],5:[22,38000],
+ 9:[27,68000],10:[32,65000],11:[25,68000],
+ 15:[35,75000],16:[55,85000],17:[75,90000],18:[145,170000],
+ 22:[85,100000],23:[145,195000],24:[100,195000],25:[180,270000],
+ 29:[55,145000],30:[48,125000],31:[35,105000],
+ 37:[170,255000],38:[185,265000],39:[200,300000],40:[200,320000]
+});
 function timerFor(n){
  const stage=stageOf(n);if(!stage)return null;
- const at=n-stage.first,count=stageCount(stage);
- if(stage.id>=5&&at>=count-2)return null; // true endurance finales
- if(at<3)return null;
- if(n===4)return 55000; // Level 1 Stage 4: player-tested ~25 seconds
- if(n===5)return 45000; // Level 1 Stage 5: quick routing trial
- if(n===9)return 80000; // Level 2 Stage 4: player-tested 21 moves
- // Keep short-route trials brisk. Later dense networks retain larger clocks.
- const tuned={10:75000,11:80000,18:105000,23:85000,29:200000,30:170000,31:140000};
- if(Object.hasOwn(tuned,n))return tuned[n];
- if(stage.id===4&&at===count-2)return 360000;
- if(stage.id===4&&at===count-1)return 390000;
- const base=[70,115,125,165,285,355][stage.id-1];
- const finaleReduction=[18,20,22,25,20,20][stage.id-1];
- return (at===4?base-finaleReduction:at>=5?base+15:base)*1000;
+ const pos=n-stage.first;
+ if(stage.id>=5&&pos>=stageCount(stage)-2)return null;
+ if(pos<3)return null;
+ return TIMED_TRIALS_V10[n]?.[1]??null;
 }
-// All 20 timed stages have audited, reproducible LEGAL winning routes.
-// Short routes come from the objective-aware development solver. Where that
-// bounded search could not improve the route, the reversible generator path
-// remains the guarantee and is allowed with a modest margin. These are NOT
-// claims of optimality. Each cap is validated in regression tests.
+// Freeze old caps so resumed v0.9.25 campaigns retain their original budget.
 const MOVE_CAPS_V9=Object.freeze({
- 4:40,5:25,
- 9:30,10:35,11:30,
+ 4:40,5:25,9:30,10:35,11:30,
  15:45,16:55,17:140,18:40,
  22:145,23:25,24:170,25:185,
  29:65,30:55,31:40,
  37:170,38:185,39:200,40:200
 });
-function moveLimitFor(n){
- if(!stageOf(n)||timerFor(n)===null)return null;
- return MOVE_CAPS_V9[n]??null;
-}
+const MOVE_CAPS_V10=Object.freeze(Object.fromEntries(
+ Object.entries(TIMED_TRIALS_V10).map(([n,[cap]])=>[Number(n),cap])));
+function moveLimitFor(n){return timerFor(n)!==null?MOVE_CAPS_V10[n]??null:null;}
 // Rotate an already audited board and its entire solution route together.
 // This changes orientation without changing scramble difficulty or validity.
 function rotatedIndex(index,size,turns){
@@ -401,7 +395,7 @@ const FIXED_SEEDS=Object.freeze({1:3074878952,2:4088790921,3:3074894406,4:307490
 const EXTRA_SEEDS=Object.freeze({6:3074917587,7:4088829556,13:420535907,14:2835629075,20:4088930007,21:3075033492,27:1434548327,28:1434556054,34:1434602416,35:1434610143,41:4089092274,42:4089100001}); // Additional audited puzzle seeds.
 function get(n,seedOverride,legacy=false){
  if(!Number.isInteger(n)||n<1||n>MAX_LEVEL)return null;
- const stage=stageOf(n),k=n-stage.first,version=n===7?9:8;
+ const stage=stageOf(n),k=n-stage.first,version=n===18||n===23?10:n===7?9:8;
  const override=Number.isInteger(seedOverride);
  const seed=(override?seedOverride:hashSeed(`gridclub-campaign-v8:${stage.id}:${k}`))>>>0;
  const key=`v${version}:${n}:${seed}`;
@@ -409,7 +403,7 @@ function get(n,seedOverride,legacy=false){
    const endurance=stage.id>=5&&k>=stageCount(stage)-2;
    const dense=(stage.id===4&&k>=stageCount(stage)-2)||
      (stage.id===5&&k>=6)||(stage.id===6&&k>=5);
-   const mode=n===7?'stagger':dense?(k%2?'weaveA':'weaveB'):
+   const mode=(n===18||n===23)?'advancedFree':n===7?'stagger':dense?(k%2?'weaveA':'weaveB'):
      stage.id>=5?'double':stage.mode;
    const objective=objectiveForLevel(stage,k);
    const all=objective==='all';
@@ -470,23 +464,53 @@ function hasShortWin(initial,maxDepth=4){
  return false;
 }
 const dailyCache=new Map();
+// UTC cutover after v0.9.27 server release. Previous daily boards keep their
+// seed, board and ranked replay unchanged, including today's live competition.
+const DAILY_V2_START='2026-11-27';
+function dailyV2(day){
+ const seed=hashSeed('gridclub-pipe-daily-v2:'+day);
+ const modes=['double','advancedFree','weaveA','double','weaveB','advancedFree','double'];
+ const days=Math.floor(Date.parse(day+'T00:00:00Z')/86400000);
+ const mode=modes[(days%7+7)%7];
+ const solvedBoard=network({size:7,mode,seed,complexity:3,
+   fixedCount:2,walls:2,decoys:0,blocks:5,requireAllFlow:true});
+ // The goal is every working pipe connected, rather than a short IN-OUT
+ // shortcut that ignores the rest of an apparently complex 7x7 board.
+ const trial=campaignScramble(solvedBoard,seed^0x729aa07b,
+   mode.startsWith('weave')?180:145,20);
+ const p=rotatePuzzle({mode:'daily',day,dailyVersion:2,size:7,seed,
+   networkType:mode,freeObjective:'all',requireAllFlow:true,timerMs:null,
+   ...trial,solvedBoard,initialMoves:trial.solutionMoves.length},
+   orientationForRandom(seed));
+ if(!evaluate(p.solvedBoard).solved||evaluate(p.board).solved)
+   throw Error('Daily v2 board failed validation');
+ return p;
+}
 function daily(day){
- if(typeof day!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(day)||Number.isNaN(Date.parse(day+'T00:00:00Z')))throw Error('Invalid UTC day');
- if(dailyCache.has(day)){const cached=dailyCache.get(day);return {...cached,board:clone(cached.board),solvedBoard:clone(cached.solvedBoard),solutionMoves:cached.solutionMoves.map(m=>({...m}))};}
+ if(typeof day!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(day)||
+   Number.isNaN(Date.parse(day+'T00:00:00Z')))throw Error('Invalid UTC day');
+ if(dailyCache.has(day)){
+   const cached=dailyCache.get(day);
+   return {...cached,board:clone(cached.board),solvedBoard:clone(cached.solvedBoard),
+     solutionMoves:cached.solutionMoves.map(m=>({...m}))};
+ }
+ if(day>=DAILY_V2_START){
+   const p=dailyV2(day);dailyCache.set(day,p);
+   return {...p,board:clone(p.board),solvedBoard:clone(p.solvedBoard),
+     solutionMoves:p.solutionMoves.map(m=>({...m}))};
+ }
  const days=Math.floor(Date.parse(day+'T00:00:00Z')/86400000);
  const size=[5,6,7,6,7,5,7][(days%7+7)%7];
- const base=hashSeed(`gridclub-pipe-daily-v094:${day}:${size}`);
+ const base=hashSeed('gridclub-pipe-daily-v094:'+day+':'+size);
  let p=null;
- // Daily boards reject immediate two-, three- and four-slide wins.
- // The search checks the *actual* leak-free victory condition, not just how
- // many moves were used to scramble the authored solved board.
  for(let attempt=0;attempt<10;attempt++){
    const seed=(base+Math.imul(attempt,2654435761))>>>0;
    p=random(size,seed,true);
    if(!hasShortWin(p.board,4))break;
  }
  const result={...p,mode:'daily',day,dailyVersion:1,timerMs:null};dailyCache.set(day,result);
- return {...result,board:clone(result.board),solvedBoard:clone(result.solvedBoard),solutionMoves:result.solutionMoves.map(m=>({...m}))};
+ return {...result,board:clone(result.board),solvedBoard:clone(result.solvedBoard),
+   solutionMoves:result.solutionMoves.map(m=>({...m}))};
 }
 // Fresh Expert Free Play uses densely-connected, serpentine networks instead
 // of the old ~11-cell strip. Both known solution and board remain reproducible.
@@ -611,5 +635,5 @@ function freePlay(size,seed,objective='all',tier=size===5?'beginner':size===6?'a
  return puzzle;
 }
 function validateBoard(b){const size=sizeOf(b);return !!size&&b.every(t=>t&&['empty','wall','block','pipe','source','sink'].includes(t.kind)&&Number.isInteger(t.mask)&&t.mask>=0&&t.mask<=15&&typeof t.fixed==='boolean'&&(t.kind==='pipe'||t.kind==='source'||t.kind==='sink'||t.mask===0))&&[1,2].includes(b.filter(t=>t.kind==='source').length)&&[1,2].includes(b.filter(t=>t.kind==='sink').length);}
-return Object.freeze({SIZE,MAX_LEVEL,MOVE_CAPS_V9,N,E,S,W,DIRECTIONS,STAGES,stageCount,objectiveForLevel,sizeOf,at,id,adjacent,direction,clone,rng,get,random,freePlay,daily,hashSeed,stageOf,timerFor,moveLimitFor,move,canMove,straightSlidePath,legalMoves,evaluate,traceLeak,validateBoard,signature});
+return Object.freeze({SIZE,MAX_LEVEL,MOVE_CAPS_V9,MOVE_CAPS_V10,TIMED_TRIALS_V10,DAILY_V2_START,N,E,S,W,DIRECTIONS,STAGES,stageCount,objectiveForLevel,sizeOf,at,id,adjacent,direction,clone,rng,get,random,freePlay,daily,hashSeed,stageOf,timerFor,moveLimitFor,move,canMove,straightSlidePath,legalMoves,evaluate,traceLeak,validateBoard,signature});
 });
