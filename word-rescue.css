@@ -1,0 +1,76 @@
+/* Grid Club · Word Rescue alpha · self-contained third-game interface */
+#wordRescueScreen{padding:2px 0 20px}
+.wrHeader{display:flex;align-items:center;gap:13px;margin:0 0 20px}
+.wrHeader .back{flex:none}
+.wrHeader h2{font-size:26px;margin:5px 0 0;letter-spacing:-.8px}
+.wrHeader .clubWalletBadge{font-size:12px;padding:8px}
+.wrCard{background:#1a293f;border:1px solid #344b67;border-radius:20px;padding:17px;margin:12px 0}
+.wrIntro h3{font-size:23px;margin:0 0 9px}
+.wrIntro p{font-size:14px;line-height:1.6;color:#b7c8dc;margin:5px 0 0}
+.wrMode{display:flex;align-items:center;gap:14px;width:100%;text-align:left;padding:16px 15px;margin:11px 0;
+ border-radius:17px;background:#213b4a;border:1px solid #4a7a85}
+.wrModeAlt{background:#302d4c;border-color:#655b94}
+.wrModeIcon{width:48px;height:48px;display:grid;place-items:center;flex:none;border-radius:14px;background:#35596c;font-size:25px}
+.wrModeAlt .wrModeIcon{background:#484068}
+.wrMode strong{display:block;font-size:17px}
+.wrMode small{display:block;font-size:12px;line-height:1.4;color:#c2d0dc;margin-top:4px}
+.wrMode .tileArrow{margin-left:auto}
+.wrFine{font-size:12px;line-height:1.55;color:#95a9c0}
+.wrContinue{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;text-align:left;
+ background:#204e4c;border:1px solid #68ae9b;padding:14px 16px;border-radius:15px;color:#e5fdf4;font-weight:800}
+.wrStatus{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:4px 0 12px}
+.wrStat{background:#1a2b40;padding:11px 12px;border:1px solid #34475e;border-radius:13px;flex:1;min-width:0}
+.wrStat small{display:block;font-size:11px;color:#a9bacb;margin-bottom:5px}
+.wrStat strong{display:block;font-size:21px;font-weight:850;font-variant-numeric:tabular-nums}
+.wrStat strong.warning{color:#ffd08a}
+.wrScene{position:relative;height:258px;overflow:hidden;border-radius:19px;
+ border:1px solid #648db3;background:linear-gradient(#27559a,#68b4e7 65%,#91d7e4);isolation:isolate}
+.wrSkyLabel{position:absolute;top:13px;left:15px;font-size:11px;letter-spacing:1px;color:#eaf8ff;font-weight:800;text-shadow:0 1px 3px #1c416c}
+.wrSun{position:absolute;top:21px;right:30px;width:42px;height:42px;border-radius:50%;background:#fff4b3;box-shadow:0 0 25px #f9e6a0aa}
+.wrCloud{position:absolute;background:#e5f5ffb6;border-radius:99px;width:68px;height:15px;top:54px;left:25%}
+.wrCloud:before{content:'';position:absolute;width:31px;height:24px;left:16px;bottom:2px;border-radius:90px 90px 0 0;background:#e5f5ffb6}
+.wrSea{position:absolute;bottom:0;left:0;right:0;height:10%;z-index:3;transition:height .14s linear;
+ background:linear-gradient(180deg,#087fccf0,#084fa0f7)}
+.wrSea:before{content:'';position:absolute;top:-7px;left:0;width:200%;height:13px;
+ background:repeating-radial-gradient(ellipse 45px 8px at 22px 10px,transparent 0 23px,#d6f5ff 24px 30px,transparent 31px 45px);
+ animation:wrWaves 3s linear infinite}
+.wrShark{position:absolute;font-size:43px;bottom:16%;left:5%;filter:drop-shadow(0 2px 3px #003c6f);
+ animation:wrSwim 8s ease-in-out infinite alternate}
+.wrStack{position:absolute;bottom:18%;left:50%;transform:translateX(-50%);z-index:2;width:76px;display:flex;flex-direction:column-reverse;align-items:stretch}
+.wrBase{height:12px;background:#8a6b52;border:2px solid #594c48;border-radius:4px}
+.wrBricks{display:flex;flex-direction:column-reverse;width:100%}
+.wrBrick{width:100%;height:5px;border:1px solid #997647;background:linear-gradient(90deg,#d69e57,#edca7c 55%,#c98841)}
+.wrBrick:nth-child(2n){background:linear-gradient(90deg,#bd7945,#f1c377 55%,#d58a4d)}
+.wrAvatar{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);font-size:32px;line-height:1;
+ filter:drop-shadow(0 2px 2px #234c70)}
+.wrProgressTag{position:absolute;top:10px;right:13px;border-radius:30px;padding:6px 9px;
+ background:#114f71c9;color:white;font-size:11px;font-weight:850}
+.wrBuildNotice{position:absolute;left:14px;bottom:12px;z-index:4;font-size:11px;font-weight:850;color:white;text-shadow:0 1px 5px #043d74}
+.wrSelected{min-height:48px;display:flex;align-items:center;justify-content:center;gap:5px;margin:12px 0 9px;
+ background:#1b2e44;border:1px dashed #49687d;border-radius:13px;padding:6px 8px;
+ letter-spacing:4px;font-size:24px;font-weight:850}
+.wrSelected small{font-size:13px;letter-spacing:0;color:#91a7b9;font-weight:600}
+.wrTray{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;margin:7px 0 11px}
+.wrLetter{height:48px;border-radius:10px;background:linear-gradient(145deg,#e4bd7c,#c38c4d);
+ border:1px solid #ffda99;box-shadow:0 3px 0 #80572f;color:#23334a;font-size:21px;font-weight:900;
+ touch-action:manipulation}
+.wrLetter[aria-pressed=true]{transform:translateY(2px);background:#9de7d4;border-color:#d7fff0;box-shadow:0 1px 0 #3f938b}
+.wrLetter:disabled{opacity:.26;box-shadow:none;background:#385268;color:#acc5d1;border-color:#385268}
+.wrActions{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.wrAction{border-radius:13px;background:#294054;padding:12px 9px;font-size:13px;font-weight:800}
+.wrActionMain{background:#7de0ce;color:#092438;grid-column:1/-1;font-size:15px}
+.wrAction:disabled{opacity:.42}
+.wrMessage{margin:10px 0 0;min-height:31px;font-size:12px;line-height:1.45;color:#cfe6f0;text-align:center}
+.wrMessage[data-error=true]{color:#ffbfac}
+.wrHistory{margin-top:13px;color:#b0c3d3;font-size:12px;line-height:1.7}
+.wrHistory strong{color:#ffdaa0}
+.wrResult{margin:14px 0 0;padding:15px;border-radius:17px;border:1px solid #72bbaa;background:#213f44}
+.wrResult h3{font-size:21px;margin:0 0 7px}
+.wrResult p{font-size:13px;line-height:1.5;color:#c4e1db}
+.wrResult button{margin-top:7px;background:#7de0ce;color:#08283b;border-radius:12px;padding:13px;width:100%;font-weight:850}
+.wrProgress{height:6px;border-radius:9px;background:#30445f;overflow:hidden;margin:12px 0}
+.wrProgress span{display:block;height:100%;background:#f3c977;transition:width .2s ease}
+@keyframes wrSwim{from{transform:translateX(0) scaleX(1)}to{transform:translateX(110px) scaleX(-1)}}
+@keyframes wrWaves{from{transform:translateX(0)}to{transform:translateX(-90px)}}
+@media(max-width:390px){.wrHeader h2{font-size:24px}.wrLetter{height:42px;font-size:18px}.wrScene{height:238px}.wrStat{padding:9px}.wrStat strong{font-size:19px}}
+@media(prefers-reduced-motion:reduce){.wrShark,.wrSea:before{animation:none}.wrSea,.wrProgress span{transition:none}}
