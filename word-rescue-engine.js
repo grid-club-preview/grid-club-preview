@@ -93,7 +93,7 @@ function possibleWords(rack,used=[]){
  return [...WORD_SET].filter(w=>w.length<=count&&!excluded.has(w)&&canMake(rack,w));
 }
 function create(seed=Date.now(),mode='tide'){
- if(!['tide','sinking'].includes(mode))throw Error('Unknown Word Rescue mode');
+ if(!['tide','sinking','raft'].includes(mode))throw Error('Unknown Word Rescue mode');
  const s={version:1,mode,rng:(Number(seed)>>>0)||1,rack:[],selected:[],used:[],words:[],
  blocks:0,score:0,elapsedMs:0,expired:false,won:false,lastErodeMs:0,started:false};
  s.rack=freshRack(s);ensureVowel(s);
@@ -135,8 +135,27 @@ const DURATION_MS=90000;
 // Match the raft's fixed 22% bottom position. Raising both starting water
 // and the danger threshold by 14 points preserves the original time pressure.
 const SEA_BASELINE=22;
-function waterHeight(s){return SEA_BASELINE+(s.elapsedMs/DURATION_MS)*(s.mode==='sinking'?52:60);}
+// Raft Escape has a fixed waterline, unlike the two Rising Tide variants.
+function waterHeight(s){
+ if(s.mode==='raft')return 32;
+ return SEA_BASELINE+(s.elapsedMs/DURATION_MS)*(s.mode==='sinking'?52:60);
+}
 function safeHeight(s){return SEA_BASELINE+17+Math.min(24,s.blocks)*1.8;}
+// Each new plank buys breathing room against the pursuing shark. The
+// effective survival pace matches Rising Tide: an idle player has ~25.5s,
+// and each completed letter buys ~2.7s before the shark catches Gridda.
+function remainingSafetySeconds(s){
+ if(s.mode==='raft')
+   return 25.5+Math.min(24,s.blocks)*2.7-s.elapsedMs/1000;
+ const rate=(s.mode==='sinking'?52:60)/90;
+ return (safeHeight(s)-waterHeight(s))/rate;
+}
+function dangerFraction(s){
+ return Math.max(0,Math.min(1,1-remainingSafetySeconds(s)/32));
+}
+function hazard(s){
+ return s.mode==='raft'?'shark':'drowning';
+}
 function advance(s,ms){
  if(s.won||s.expired||!s.started)return;
  s.elapsedMs+=Math.max(0,ms);
@@ -156,13 +175,14 @@ function advance(s,ms){
    }
    s.lastErodeMs=s.elapsedMs;
  }
- // The waterline alone ends a round. Elapsed time measures performance but
- // is not a second, competing deadline. Once the water reaches Gridda, fail.
- if(waterHeight(s)>=safeHeight(s))s.expired=true;
+ // Each environment has exactly one threat: drowning as the water rises,
+ // or shark attack as the raft fails to outpace the predator. No time cap.
+ if(s.mode==='raft'?remainingSafetySeconds(s)<=0:waterHeight(s)>=safeHeight(s))
+   s.expired=true;
 }
 // Retained for older callers; the interface now displays elapsed time instead.
 const remainingMs=s=>Math.max(0,DURATION_MS-s.elapsedMs);
-function validState(s){return !!s&&s.version===1&&['tide','sinking'].includes(s.mode)&&
+function validState(s){return !!s&&s.version===1&&['tide','sinking','raft'].includes(s.mode)&&
  Number.isInteger(s.rng)&&Array.isArray(s.rack)&&s.rack.length===7&&
  s.rack.every(c=>c===''||/^[A-Z]$/.test(c))&&Array.isArray(s.selected)&&
  s.selected.every(i=>Number.isInteger(i)&&i>=0&&i<7&&!!s.rack[i])&&
@@ -171,5 +191,5 @@ function validState(s){return !!s&&s.version===1&&['tide','sinking'].includes(s.
  s.blocks>=0&&Number.isFinite(s.elapsedMs)&&s.elapsedMs>=0&&s.elapsedMs<=DURATION_MS*2&&
  typeof s.won==='boolean'&&typeof s.expired==='boolean';}
 return Object.freeze({WORD_SET,SEEDS,importDictionary,create,wordFor,select,removeLast,submit,rerack,
- ensureVowel,possibleWords,canMake,advance,remainingMs,waterHeight,safeHeight,SEA_BASELINE,DURATION_MS,validState});
+ ensureVowel,possibleWords,canMake,advance,remainingMs,waterHeight,safeHeight,remainingSafetySeconds,dangerFraction,hazard,SEA_BASELINE,DURATION_MS,validState});
 });
