@@ -1,0 +1,48 @@
+/* Grid Club v0.9.26 · home-page roadmap for Puzzle Deck and Arcade.
+   Future-game cards are deliberately noninteractive markup, not disabled buttons. */
+#home .homeSectionHeader{
+  display:flex;align-items:baseline;justify-content:space-between;gap:12px;
+  margin:21px 0 12px;
+}
+#home .homeSectionHeader .eyebrow{color:#a9b9cb;letter-spacing:2px;}
+#home .homeSectionCount{font-size:11px;font-weight:650;color:#8ea4b8;text-align:right;line-height:1.4;}
+#home .tileButton{border:1px solid #344258;}
+#home .tileButton:focus-visible{outline:2px solid #81e2d3;outline-offset:3px;}
+#home .roadmapGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:13px 0 0;}
+#home .roadmapCard{
+  min-width:0;min-height:106px;display:flex;flex-direction:column;
+  align-items:flex-start;justify-content:space-between;gap:7px;
+  border:1px dashed #425067;border-radius:17px;padding:13px 14px;
+  background:linear-gradient(145deg,#1c2739,#1a2335);
+  color:#d2dbe7;
+}
+#home .roadmapCardHeader{display:flex;align-items:center;gap:9px;min-width:0;}
+#home .roadmapSymbol{
+  display:grid;place-items:center;width:33px;height:33px;flex:none;
+  border-radius:11px;background:#2b3a4d;color:#a7c6d1;
+  font-size:19px;font-weight:850;line-height:1;
+}
+#home .roadmapCard strong{font-size:15px;font-weight:800;line-height:1.22;letter-spacing:-.2px;overflow-wrap:anywhere;}
+#home .roadmapCard small{font-size:11px;color:#91a3b6;line-height:1.2;letter-spacing:.2px;}
+#home .roadmapCard[data-game="word"] .roadmapSymbol{font-size:14px;letter-spacing:-.4px;}
+#home .arcadeSection{margin-top:27px;padding-top:1px;}
+#home .arcadeSection .roadmapCard{
+  background:linear-gradient(145deg,#21283a,#1c2736);
+  border-color:#4c5368;
+}
+#home .arcadeSection .roadmapSymbol{background:#34394e;color:#c5b9e8;}
+#home .homeDiagnostics{
+  margin:35px 0 4px;
+  background:#171f2d;
+  border-color:#2c384a;
+}
+#home .homeDiagnostics summary{color:#879aac;font-size:11px;margin-bottom:0;cursor:pointer;}
+#home .homeDiagnostics[open] summary{margin-bottom:9px;}
+#home .homeDiagnostics button:focus-visible{outline:2px solid #7be3d4;outline-offset:3px;}
+@media(max-width:370px){
+ #home .roadmapGrid{gap:8px;}
+ #home .roadmapCard{padding:11px;min-height:99px;}
+ #home .roadmapCard strong{font-size:13px;}
+ #home .roadmapSymbol{height:29px;width:29px;}
+ #home .homeSectionCount{font-size:10px;}
+}
