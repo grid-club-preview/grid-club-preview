@@ -1,4 +1,4 @@
-/* Grid Club Word Rescue v0.9.36 · persistent letter buttons and lightweight tap updates. */
+/* Grid Club Word Rescue v0.9.37 · responsive raft and island rescue helper. */
 (function(){
 'use strict';
 const engine=globalThis.GridClubWordRescueEngine;
@@ -146,7 +146,8 @@ function render(){
  scene.dataset.panic=state.won||state.expired?'end':danger>=.92?'frantic':danger>=.78?'panicking':danger>=.48?'worried':'calm';
  scene.style.setProperty('--wrDanger',String(danger));
  scene.style.setProperty('--wrBuild',String(Math.min(24,state.blocks)));
- scene.style.setProperty('--wrRaftLength',(Math.min(24,state.blocks)*8.5).toFixed(1)+'px');
+ // The gap from starter raft to jetty is 54% of the scene width at every screen size.
+ scene.style.setProperty('--wrRaftLength',(Math.min(24,state.blocks)/24*54).toFixed(3)+'%');
  scene.style.setProperty('--wrBodySpeed',(1.65-danger*1.22).toFixed(2)+'s');
  scene.style.setProperty('--wrArmSpeed',(1.20-danger*.88).toFixed(2)+'s');
  $('wrShark').style.left=state.mode==='raft'?(90-62*danger).toFixed(1)+'%':'5%';
@@ -158,7 +159,7 @@ function render(){
  $('wrModeTitle').textContent=modeName(state.mode);
  $('wrProgress').style.width=Math.min(100,state.blocks/24*100)+'%';
  $('wrSea').style.height=engine.waterHeight(state)+'%';
- $('wrBuildNotice').textContent=state.mode==='raft'?'Make words. Build outwards.':'Make words. Build higher.';
+ $('wrBuildNotice').textContent=state.mode==='raft'?(state.won?'Together at last!':'Make words. Reach the jetty.'):'Make words. Build higher.';
  const bricks=$('wrBricks'),count=Math.min(24,state.blocks);
  if(drawnBlocks!==count){
    bricks.replaceChildren();

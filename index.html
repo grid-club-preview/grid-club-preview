@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="vault-reward.css?v=0.9.25">
   <link rel="stylesheet" href="dot-daily.css?v=0.9.25">
   <link rel="stylesheet" href="home-roadmap.css?v=0.9.26">
-  <link rel="stylesheet" href="word-rescue.css?v=0.9.36">
+  <link rel="stylesheet" href="word-rescue.css?v=0.9.37">
   <style>
     :root { color-scheme: dark; --bg:#0e1424; --surface:#1a243a; --tile:#253147; --muted:#9daabe; --mint:#7be3d4; --purple:#a178ff; }
     * { box-sizing: border-box; }
@@ -334,7 +334,7 @@
 <body>
   <main class="shell">
     <section id="home">
-      <header><div><div class="eyebrow">GRID CLUB</div><h1>A pocketful of challenges.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.36</span></div></header>
+      <header><div><div class="eyebrow">GRID CLUB</div><h1>A pocketful of challenges.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.37</span></div></header>
       <div class="homeSectionHeader" aria-label="Puzzle Deck games">
         <div class="eyebrow">PUZZLE DECK</div>
         <span class="homeSectionCount">3 playable · 3 planned</span>
@@ -490,7 +490,29 @@
             <div class="wrBase"></div>
           </div>
           <div class="wrSea" id="wrSea"><span class="wrShark" id="wrShark" aria-hidden="true">🦈</span></div>
-          <div class="wrShore" aria-hidden="true"><span>🌴</span></div>
+          <div class="wrShore" aria-hidden="true">
+            <span class="wrPalm">🌴</span>
+            <div class="wrJetty"></div>
+            <div class="wrPlankPile"></div>
+            <svg class="wrHelper" viewBox="0 0 78 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <ellipse cx="39" cy="95" rx="23" ry="3" fill="#6b563d" opacity=".25"/>
+              <g class="wrHelperBody">
+                <path d="M32 70 L28 89 L19 92 M47 70 L50 89 L59 92" fill="none" stroke="#34485d" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M26 43 Q39 38 51 43 L55 71 Q40 78 23 71 Z" fill="#e58c4f" stroke="#a85839" stroke-width="2"/>
+                <path d="M48 47 Q60 52 54 65" fill="none" stroke="#b67a55" stroke-width="8" stroke-linecap="round"/>
+                <g class="wrHelperArm">
+                  <path d="M29 46 L14 40 L10 27" fill="none" stroke="#bc825b" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path class="wrHelperHammer" d="M10 26 L7 10" stroke="#775137" stroke-width="4" stroke-linecap="round"/>
+                  <rect class="wrHelperHammer" x="0" y="5" width="16" height="8" rx="2" fill="#647583" stroke="#3c4a58"/>
+                </g>
+                <ellipse cx="39" cy="27" rx="17" ry="19" fill="#c58b63"/>
+                <path d="M22 26 Q20 7 38 6 Q56 7 57 25 L21 22" fill="#376a65"/>
+                <path d="M18 25 L58 25" stroke="#27534e" stroke-width="5" stroke-linecap="round"/>
+                <circle cx="32" cy="31" r="2.2" fill="#302d33"/><circle cx="45" cy="31" r="2.2" fill="#302d33"/>
+                <path d="M34 39 Q39 43 44 38" stroke="#73442d" stroke-width="2" fill="none" stroke-linecap="round"/>
+              </g>
+            </svg>
+          </div>
           <span class="wrBuildNotice" id="wrBuildNotice">Make words. Build higher.</span>
         </div>
         <div class="wrProgress" aria-label="Escape progress"><span id="wrProgress" style="width:0"></span></div>
@@ -842,7 +864,7 @@
       </div>
       
       <div class="adSlot" id="adSlot" aria-hidden="true" hidden></div>
-      <footer>Grid Club · v0.9.36 beta</footer>
+      <footer>Grid Club · v0.9.37 beta</footer>
     </section>
   </main>
   <div class="pauseLayer" id="dotDailyCompleteLayer" hidden role="dialog" aria-modal="true" aria-labelledby="dotDailyCompleteTitle">
@@ -883,7 +905,7 @@
   <script src="pipe-shift.js?v=0.9.33"></script>
   <script src="word-rescue-lexicon.js?v=0.9.30"></script>
   <script src="word-rescue-engine.js?v=0.9.32"></script>
-  <script src="word-rescue.js?v=0.9.36"></script>
+  <script src="word-rescue.js?v=0.9.37"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol === 'https:') {
       addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));

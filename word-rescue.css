@@ -273,3 +273,28 @@
 #wordRescueScreen .wrLetter{transition:none;transform:none;-webkit-tap-highlight-color:transparent}
 #wordRescueScreen .wrLetter[aria-pressed=true]{transform:none}
 #wordRescueScreen .wrLetter:active:not(:disabled){filter:brightness(1.14)}
+
+/* v0.9.37: an island helper and a jetty that meets the raft at exactly 24 planks. */
+#wordRescueScreen .wrScene[data-mode=raft] .wrStack{left:12%;width:calc(14% + var(--wrRaftLength,0%))}
+#wordRescueScreen .wrScene[data-mode=raft]{container-type:inline-size}
+#wordRescueScreen .wrScene[data-mode=raft] .wrBase{width:14cqw;flex:0 0 14cqw}
+#wordRescueScreen .wrScene[data-mode=raft] .wrBricks{min-width:0;flex:1 1 0}
+#wordRescueScreen .wrScene[data-mode=raft] .wrBrick{min-width:0;width:auto;flex:1 1 0}
+#wordRescueScreen .wrScene[data-mode=raft] .wrAvatar{left:7cqw;transition:left .5s ease}
+#wordRescueScreen .wrScene[data-mode=raft][data-danger=won] .wrAvatar{left:calc(100% - 16px)}
+#wordRescueScreen .wrScene[data-mode=raft] .wrShore{right:0;bottom:32%;width:16%;height:28px;overflow:visible;border-radius:15px 0 0 0}
+#wordRescueScreen .wrShore .wrPalm{right:-3px;bottom:20px;font-size:clamp(28px,10cqw,54px)}
+#wordRescueScreen .wrJetty{position:absolute;right:100%;bottom:0;width:25%;height:17px;box-sizing:border-box;border:1px solid #855a34;border-radius:3px 0 0 3px;background:repeating-linear-gradient(90deg,#d39a58 0 6px,#885a38 6px 7px)}
+#wordRescueScreen .wrPlankPile{position:absolute;right:6%;bottom:6px;width:34%;height:9px;border:1px solid #946136;border-radius:2px;background:repeating-linear-gradient(0deg,#d49c54 0 3px,#946136 3px 4px)}
+#wordRescueScreen .wrHelper{position:absolute;bottom:12px;right:22%;width:clamp(42px,16cqw,83px);height:auto;overflow:visible;filter:drop-shadow(0 2px 2px #3b4e6955)}
+#wordRescueScreen .wrHelperArm{transform-origin:29px 46px;animation:wrHelperBuild 1.2s ease-in-out infinite alternate}
+#wordRescueScreen .wrScene[data-panic=worried] .wrHelperArm{animation-duration:.7s}
+#wordRescueScreen .wrScene[data-panic=panicking] .wrHelperArm,#wordRescueScreen .wrScene[data-panic=frantic] .wrHelperArm{animation-duration:.34s}
+#wordRescueScreen .wrScene[data-danger=won] .wrHelperHammer{opacity:0}
+#wordRescueScreen .wrScene[data-danger=won] .wrHelperArm{animation:wrHelperCheer .48s ease-in-out infinite alternate}
+#wordRescueScreen .wrScene[data-danger=won] .wrHelperBody{transform-origin:39px 90px;animation:wrHelperJump .6s ease-in-out infinite alternate}
+#wordRescueScreen .wrScene[data-danger=lost] .wrHelperArm{animation:none;transform:rotate(-10deg)}
+@keyframes wrHelperBuild{from{transform:rotate(12deg)}to{transform:rotate(-65deg)}}
+@keyframes wrHelperCheer{from{transform:rotate(4deg)}to{transform:rotate(40deg)}}
+@keyframes wrHelperJump{from{transform:translateY(0)}to{transform:translateY(-7px)}}
+@media(prefers-reduced-motion:reduce){#wordRescueScreen .wrHelperArm,#wordRescueScreen .wrHelperBody{animation:none!important}#wordRescueScreen .wrScene[data-mode=raft] .wrAvatar{transition:none}}
