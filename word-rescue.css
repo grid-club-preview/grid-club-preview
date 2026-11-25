@@ -337,3 +337,13 @@
 #wordRescueScreen .wrStatus .wrSafetyStat:first-child{flex:2.2}
 #wordRescueScreen .wrStatus .wrStat:last-child{flex:.8}
 #wordRescueScreen #wrBlocks:not(.wrSafe){font-size:clamp(14px,4vw,20px)}
+
+/* v0.9.43: help icon in the eyebrow row, not beside the game title. */
+#wordRescueScreen .wrHeading{flex:1;min-width:0}
+#wordRescueScreen .wrHeadingTop{display:flex;align-items:center;gap:5px;min-height:28px}
+#wordRescueScreen .wrHeadingTop .eyebrow{flex:0 1 auto;min-width:0}
+#wordRescueScreen .wrHeadingTop .wrInfo{position:relative;flex:none;width:26px;height:26px;font-size:19px}
+#wordRescueScreen .wrHeadingTop .wrInfo::before{content:"";position:absolute;inset:-7px}
+#wordRescueScreen .wrHeader:has(.wrInfo:not([hidden])) h2{font-size:26px}
+#wordRescueScreen .wrHeader .clubWalletBadge{flex:none}
+@media(max-width:390px){#wordRescueScreen .wrHeader:has(.wrInfo:not([hidden])) h2{font-size:24px}#wordRescueScreen .wrHeadingTop .eyebrow{font-size:9px;letter-spacing:.6px}}
