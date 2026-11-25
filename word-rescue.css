@@ -318,3 +318,10 @@
  #wordRescueScreen .wrScene[data-mode=raft][data-danger=won] .wrAvatar,
  #wordRescueScreen .wrScene[data-mode=raft][data-danger=won] .wrHelper{transition:none}
 }
+
+/* v0.9.39: match the two characters' on-screen scale in Raft Escape. */
+#wordRescueScreen .wrScene[data-mode=raft] .wrAvatar{width:clamp(54px,21cqw,95px);height:auto;aspect-ratio:96/132}
+#wordRescueScreen .wrScene[data-mode=raft] .wrHelper{width:clamp(54px,21cqw,95px);bottom:16px}
+#wordRescueScreen .wrScene[data-mode=raft][data-danger=won] .wrShark{opacity:0;transition:opacity .45s ease}
+#wordRescueScreen .wrScene[data-mode=raft][data-danger=won] .wrAvatar{left:59cqw}
+@media(prefers-reduced-motion:reduce){#wordRescueScreen .wrScene[data-mode=raft][data-danger=won] .wrShark{transition:none}}

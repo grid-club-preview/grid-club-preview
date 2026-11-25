@@ -1,4 +1,4 @@
-/* Grid Club Word Rescue v0.9.38 · island-to-Gridda construction. */
+/* Grid Club Word Rescue v0.9.39 · balanced rescue characters and end-state labels. */
 (function(){
 'use strict';
 const engine=globalThis.GridClubWordRescueEngine;
@@ -84,9 +84,9 @@ function finished(){
    // Ordinary Free Play rounds do not award credits. A future verified
    // Daily Challenge can award Club Credits separately.
    $('wrResultTitle').textContent='Safe at last!';
-   $('wrResultText').textContent='You built '+state.blocks+(state.mode==='raft'?' planks':' blocks')+' using '+state.words.length+
+   $('wrResultText').textContent='You built '+Math.min(24,state.blocks)+(state.mode==='raft'?' planks':' blocks')+' using '+state.words.length+
      ' words in '+Math.round(state.elapsedMs/1000)+' seconds. Score: '+state.score+'. '+
-     'Prototype results are saved on this device.';
+     'Results saved.';
  }else{
    $('wrResultTitle').textContent=state.mode==='raft'?'The shark caught Gridda!':'The water caught up!';
    $('wrResultText').textContent='You built '+state.blocks+' of 24 '+(state.mode==='raft'?'planks':'blocks')+'. Try quicker words or a different letter combination.';
@@ -171,7 +171,7 @@ function render(){
  }
  // Animation state is owned by the scene CSS; never replace the SVG avatar
  // on each timer tick, which would restart its animation.
- $('wrSceneLabel').textContent=state.mode==='raft'?'SHARK APPROACHING':state.mode==='sinking'?'LETTERS SINKING':'RISING TIDE';
+ $('wrSceneLabel').textContent=state.won?'GRIDDA IS SAFE':state.expired?(state.mode==='raft'?'CAUGHT BY THE SHARK':'CAUGHT BY THE TIDE'):state.mode==='raft'?'SHARK APPROACHING':state.mode==='sinking'?'LETTERS SINKING':'RISING TIDE';
  renderLetters();
  $('wrWordHistory').textContent=state.words.length?
    'Words: '+state.words.slice(-7).map(x=>x.word).join(' · '):

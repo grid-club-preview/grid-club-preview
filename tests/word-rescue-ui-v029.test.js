@@ -110,6 +110,8 @@ while(dom.wrResult.hidden&&iterations++<9){
 }
 assert.equal(dom.wrResult.hidden,false,'Building 24 planks should complete Raft Escape');
 assert.equal(dom.wrBlocks.textContent,'SAFE');assert.equal(dom.wrDock.hidden,true);
+assert.equal(dom.wrSceneLabel.textContent,'GRIDDA IS SAFE');
+assert(dom.wrResultText.textContent.includes('24 planks'));
 assert.equal(dom.wrScene.style['--wrRaftLength'],'54.000cqw');
 assert.equal(dom.wrBricks.children.length,24);
 dom.wrTryAgain.onclick();assert.equal(dom.wrRules.hidden,true);assert.equal(dom.wrDock.hidden,false);
