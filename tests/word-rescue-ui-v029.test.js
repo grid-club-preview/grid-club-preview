@@ -8,7 +8,7 @@ const engine=require('../word-rescue-engine.js');
 const ids=[...html.matchAll(/id="([^"]+)"/g)].map(x=>x[1]);
 assert.equal(new Set(ids).size,ids.length,'No duplicate HTML ids');
 class Node {
- constructor(){this.hidden=false;this.children=[];this.style={};this.dataset={};this.attrs={};
+ constructor(){this.hidden=false;this.children=[];this.style={setProperty:()=>{}};this.dataset={};this.attrs={};
    this.classList={toggle:()=>{},add:()=>{},remove:()=>{}};
    this.listeners={};this.textContent='';this.disabled=false;}
  append(...xs){this.children.push(...xs);}
