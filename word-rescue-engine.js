@@ -59,14 +59,29 @@ if(typeof globalThis.GridClubWordRescueLexicon==='string'){
 }
 const SEEDS='PLANET SINGER SILVER BRIDGE STREAM SHARKS GARDEN MARKET WINTER SUMMER FLOWER BRIGHT CANDLE PLANTS STONES PLAYER ROCKET LITTLE OCEANS BOTTLE FRIEND CAMERA ORANGE DRAGON TUNNEL RABBIT NATURE TRAVEL PURPLE MARBLE JACKET BANNER WIZARD CASTLE BASKET ANCHOR ARTIST PILOTS PENCIL MONKEY SHIELD LETTER SUMMIT HUNTER STRONG SUNSET CREATE CLOSER COMET BREAD TIGER FISHES WHEELS PIPES HONEY BROWN CROWN CHAIR TRAIN PLANE TABLE LEAF STAR SINK BOOK GAME RIVER LEMON WATER SCORE BRAVE PAPER ROSE CLOUD'.split(' ').filter(w=>WORD_SET.has(w));
 const FILL='EEEEEEAAAAAIIIIOOOOONNNNRRRRTTTTSSSSLLLLCCCDDDHHHMMMPPPUUUGGBBFKVWY';
+const VOWELS='AEIOU',VOWEL_WEIGHTS='AAAAAEEEEEEEIIIIOOOOUU';
 function rand(s){s.rng=(Math.imul(s.rng,1664525)+1013904223)>>>0;return s.rng/4294967296;}
 const pick=(s,n)=>Math.floor(rand(s)*n);
 function shuffleLetters(s,letters){for(let i=letters.length-1;i>0;i--){const j=pick(s,i+1);[letters[i],letters[j]]=[letters[j],letters[i]];}return letters;}
+// Guarantee one vowel after refills, reracks and resumed older saves.
+function ensureVowel(s){
+ if(s.rack.some(letter=>letter!==''&&VOWELS.includes(letter)))return false;
+ const available=s.rack.map((letter,i)=>({letter,i})).filter(x=>x.letter&&!s.selected.includes(x.i));
+ const any=s.rack.map((letter,i)=>({letter,i})).filter(x=>x.letter);
+ const candidates=available.length?available:any;
+ const i=candidates.length?candidates[pick(s,candidates.length)].i:s.rack.findIndex(x=>!x);
+ if(i<0)return false;
+ s.rack[i]=VOWEL_WEIGHTS[pick(s,VOWEL_WEIGHTS.length)];
+ s.selected=s.selected.filter(x=>x!==i);
+ return true;
+}
 function freshRack(s){
  const goal=SEEDS[pick(s,SEEDS.length)];
  const rack=goal.split('');
  while(rack.length<7)rack.push(FILL[pick(s,FILL.length)]);
- return shuffleLetters(s,rack);
+ shuffleLetters(s,rack);
+ if(!rack.some(c=>VOWELS.includes(c)))rack[pick(s,7)]=VOWEL_WEIGHTS[pick(s,VOWEL_WEIGHTS.length)];
+ return rack;
 }
 function canMake(rack,word){
  const left=[...rack];
@@ -81,7 +96,7 @@ function create(seed=Date.now(),mode='tide'){
  if(!['tide','sinking'].includes(mode))throw Error('Unknown Word Rescue mode');
  const s={version:1,mode,rng:(Number(seed)>>>0)||1,rack:[],selected:[],used:[],words:[],
  blocks:0,score:0,elapsedMs:0,expired:false,won:false,lastErodeMs:0,started:false};
- s.rack=freshRack(s);
+ s.rack=freshRack(s);ensureVowel(s);
  return s;
 }
 function wordFor(s,indices=s.selected){
@@ -108,24 +123,34 @@ function submit(s){
  const taken=[...s.selected];s.selected=[];
  for(const i of taken)s.rack[i]=FILL[pick(s,FILL.length)];
  for(let i=0;i<7;i++)if(!s.rack[i])s.rack[i]=FILL[pick(s,FILL.length)];
+ ensureVowel(s);
  if(possibleWords(s.rack,s.used).length<2)s.rack=freshRack(s);
+ ensureVowel(s);
  if(s.blocks>=24)s.won=true;
  return {ok:true,word,blocks:word.length,points,won:s.won};
 }
-function rerack(s){if(s.expired||s.won)return false;s.rack=freshRack(s);s.selected=[];return true;}
+function rerack(s){if(s.expired||s.won)return false;s.rack=freshRack(s);s.selected=[];ensureVowel(s);return true;}
 // Water rises at the v0.9.29 pace, without a hard 90-second timeout.
 const DURATION_MS=90000;
-function waterHeight(s){return 8+(s.elapsedMs/DURATION_MS)*(s.mode==='sinking'?52:60);}
-function safeHeight(s){return 25+Math.min(24,s.blocks)*1.8;}
+// Match the raft's fixed 22% bottom position. Raising both starting water
+// and the danger threshold by 14 points preserves the original time pressure.
+const SEA_BASELINE=22;
+function waterHeight(s){return SEA_BASELINE+(s.elapsedMs/DURATION_MS)*(s.mode==='sinking'?52:60);}
+function safeHeight(s){return SEA_BASELINE+17+Math.min(24,s.blocks)*1.8;}
 function advance(s,ms){
  if(s.won||s.expired||!s.started)return;
  s.elapsedMs+=Math.max(0,ms);
+ ensureVowel(s);
  if(s.mode==='sinking'){
    const waves=Math.floor(s.elapsedMs/7000),old=Math.floor(s.lastErodeMs/7000);
    for(let k=old;k<waves;k++){
      const present=s.rack.map((v,i)=>v?i:-1).filter(i=>i>=0);
      if(present.length>2){
-       const i=present[pick(s,present.length)];s.rack[i]='';
+       const vowelCount=present.filter(i=>VOWELS.includes(s.rack[i])).length;
+       // Preserve the last vowel while other letters sink normally.
+       const options=vowelCount===1?present.filter(i=>!VOWELS.includes(s.rack[i])):present;
+       if(!options.length)break;
+       const i=options[pick(s,options.length)];s.rack[i]='';
        s.selected=s.selected.filter(x=>x!==i);
      }
    }
@@ -146,5 +171,5 @@ function validState(s){return !!s&&s.version===1&&['tide','sinking'].includes(s.
  s.blocks>=0&&Number.isFinite(s.elapsedMs)&&s.elapsedMs>=0&&s.elapsedMs<=DURATION_MS*2&&
  typeof s.won==='boolean'&&typeof s.expired==='boolean';}
 return Object.freeze({WORD_SET,SEEDS,importDictionary,create,wordFor,select,removeLast,submit,rerack,
- possibleWords,canMake,advance,remainingMs,waterHeight,safeHeight,DURATION_MS,validState});
+ ensureVowel,possibleWords,canMake,advance,remainingMs,waterHeight,safeHeight,SEA_BASELINE,DURATION_MS,validState});
 });
