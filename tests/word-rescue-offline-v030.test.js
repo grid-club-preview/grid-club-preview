@@ -20,7 +20,7 @@ for(const word of ['CATS','DOGS','SHARKS','BEACHES','HOUSES','WOLVES','FLOWERS',
 }
 assert.equal(typeof context.GridClubWordRescueLexicon,'undefined','Lexicon source should be released after import');
 const scriptOrder=[html.indexOf('word-rescue-lexicon.js?v=0.9.30'),html.indexOf('word-rescue-engine.js?v=0.9.30'),
- html.indexOf('word-rescue.js?v=0.9.30')];
+ html.search(/word-rescue\.js\?v=[\d.]+/)];
 assert(scriptOrder.every(i=>i>0)&&scriptOrder[0]<scriptOrder[1]&&scriptOrder[1]<scriptOrder[2],
  'Lexicon must load before engine and UI, in order');
 assert(!/\bfetch\s*\(/.test(ui),'No network dependence for dictionary');
