@@ -69,7 +69,7 @@ assert(css.includes('position:fixed;bottom:0;left:50%'),'Submit controls must re
 assert(css.includes('env(safe-area-inset-bottom)'),'Bottom buttons must respect iPhone home indicator');
 assert(css.includes('data-mode=raft')&&css.includes('--wrRaftLength'),'Horizontal raft must visibly grow');
 assert(css.includes('data-panic=frantic'),'Avatar must grow visibly frantic near danger');
-assert(ui.includes("+' '+(state.mode==='raft'?'planks':'blocks')+' to safety'"),
+assert(ui.includes("'plank':'planks'")&&ui.includes("'block':'blocks'")&&ui.includes("' to safety'"),
  'Progress counter must show remaining planks/blocks');
 assert(ui.includes("scene.style.setProperty('--wrBodySpeed'"),'Character animation speeds should vary with danger');
 assert(!ui.includes('GridClubCredits?.award'),'Ordinary Free Play must not grant credits');
