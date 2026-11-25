@@ -1,11 +1,11 @@
-/* Grid Club · Pipe Shift v0.9.5 · Levels, Free Play & verified Daily Challenge */
+/* Grid Club · Pipe Shift v0.9.27 · balanced levels and verified Daily v2 */
 (function(){
 'use strict';
 const e=globalThis.PipeEngine;if(!e)return;
 const $=id=>document.getElementById(id),root=$('pipeShiftScreen'),hub=$('home');
 if(!root||!hub||!$('pipeShiftEntry'))return;
 const KEY='gridclub-pipeshift-progress-v1',BACKUP=KEY+'-v08-backup',MAX=e.MAX_LEVEL;
-const blank=()=>({version:2,levelCatalog:6,challengeTuneV24:true,completed:{},best:{},active:{},randomBest:{},randomBestV3:{},randomBestV4:{},randomBestByGoal:{all:{},any:{}},randomGoal:'all',randomCount:{},legacyArchived:{},legacyUnlockedStages:{},firstAttemptFailed:{},daily:{},moveStats:{random:{},levels:{count:0,total:0},daily:{count:0,total:0}}});
+const blank=()=>({version:2,levelCatalog:6,challengeTuneV24:true,challengeTuneV27:true,completed:{},best:{},active:{},randomBest:{},randomBestV3:{},randomBestV4:{},randomBestByGoal:{all:{},any:{}},randomGoal:'all',randomCount:{},legacyArchived:{},legacyUnlockedStages:{},firstAttemptFailed:{},daily:{},moveStats:{random:{},levels:{count:0,total:0},daily:{count:0,total:0}}});
 const oldToNew=id=>{const n=Number(id);return Number.isInteger(n)&&n>=1&&n<=30?Math.floor((n-1)/5)*7+(n-1)%5+1:null;};
 function remapLevels(items){const mapped={};for(const [id,value] of Object.entries(items||{})){const next=oldToNew(id);if(next!==null)mapped[next]=value;}return mapped;}
 let progress=blank(),section='menu',stage=1,mode='levels',currentLevel=null,currentSize=5,currentTier='beginner',puzzle=null;
@@ -15,7 +15,7 @@ let board=null,moves=0,elapsed=0,undo=[],selected=null,won=false,expired=false,j
 let timer=null,lastTick=null,flowTimer=null,pointerOrigin=null,ignoreClickUntil=0,nonce=0;
 let dailyDay='',dailyTrace=[],dailyPractice=false,dailyConnection='',dailySync=null,dailyLoading=null;
 let dailyServerAttemptId=null,dailyStartPending=false;
-let moveLimit=null,legacyMoveCapExempt=false,failureReason='time';
+let moveLimit=null,legacyMoveCapExempt=false,moveCapVersion=3,failureReason='time';
 let extraTimeMs=0,extraTimeCount=0,attemptId='',creditReward=null;
 let hintSelection=null,hintPreviewActive=false,hintPreviewInterval=null,hintPreviewUntil=0,hintsUsed=0;
 const credits=globalThis.GridClubCredits;
@@ -68,6 +68,12 @@ function read(){
        // credits, Free Play records or Daily Challenge results.
        delete next.best[7];delete next.active['level:7'];
        next.challengeTuneV24=true;
+     }
+     if(v.challengeTuneV27!==true){
+       // Retain campaign progress and earned credits, but old PBs cannot be
+       // compared with the two deeper replacement networks.
+       for(const n of [18,23]){delete next.best[n];delete next.active['level:'+n];}
+       next.challengeTuneV27=true;
      }
      next.randomGoal=next.randomGoal==='any'?'any':'all';
      next.randomBestByGoal={all:{...(next.randomBestByGoal?.all||{})},
@@ -177,7 +183,7 @@ function saveCurrent(){if(!puzzle||!board||won)return;
    trace:mode==='daily'?dailyTrace.map(x=>({...x})):null,
    serverAttemptId:mode==='daily'?dailyServerAttemptId:null,
    extraTimeMs,extraTimeCount,attemptId,
-   moveCapVersion:mode==='levels'?2:null,moveCapExempt:mode==='levels'&&legacyMoveCapExempt,
+   moveCapVersion:mode==='levels'?moveCapVersion:null,moveCapExempt:mode==='levels'&&legacyMoveCapExempt,
    timerBudgetMs:mode==='levels'?puzzle?.timerMs:null,failureReason,
    randomLayoutVersion:mode==='random'?(puzzle.randomLayoutVersion||1):null,
    hintsUsed,
@@ -305,7 +311,7 @@ function dailyMenu(){
  saveCurrent();hub.hidden=true;root.hidden=false;route('daily');
  const day=utcToday(),p=e.daily(day),record=progress.daily?.[day];
  $('pipeDailyDay').textContent=day;
- $('pipeDailyDifficulty').textContent=`${p.size===5?'Beginner':p.size===6?'Advanced':'Expert'} · ${p.size}×${p.size}`;
+ $('pipeDailyDifficulty').textContent=p.dailyVersion>=2?`Expert · All pipes · ${p.size}×${p.size}`:`${p.size===5?'Beginner':p.size===6?'Advanced':'Expert'} · ${p.size}×${p.size}`;
  $('pipeDailyPlay').textContent=record?.completed?'Practice today’s puzzle':progress.active[`daily:${day}`]?'Continue today’s puzzle':'Play today’s puzzle';
  $('pipeDailyNote').textContent=record?.completed?`Your first result: ${record.moves} moves${record.verified?' · verified':record.sync==='review'?' · under review':' · saved locally'}`:'One ranked result per day · Fewest moves wins · Fastest verified time breaks ties.';
  $('pipeDailyRank').textContent='';
@@ -660,7 +666,7 @@ function begin(p,kind,id,skipSave=false){
  won=false;expired=false;justClearedStage=false;selected=null;elapsed=0;moves=0;undo=[];trialPending=!!p.timerMs;
  dailyServerAttemptId=null;dailyStartPending=false;
  extraTimeMs=0;extraTimeCount=0;attemptId=makeAttempt();creditReward=null;hintsUsed=0;
- failureReason='time';legacyMoveCapExempt=false;
+ failureReason='time';legacyMoveCapExempt=false;moveCapVersion=3;
  // Existing v6 attempts of redesigned puzzles 6 and 7 keep their original
  // move budgets and boards; fresh starts use the more demanding v7 layout.
  moveLimit=kind==='levels'?e.moveLimitFor(id):null;
@@ -682,10 +688,11 @@ function begin(p,kind,id,skipSave=false){
      else if(stored.moveCapVersion!==2&&oldTimers[id])puzzle.timerMs=oldTimers[id];
    }
    if(kind==='levels'&&moveLimit!==null){
-     // A previous release's unfinished attempt keeps its old move allowance.
-     // New attempts use the fully recalibrated v0.9.25 caps.
-     legacyMoveCapExempt=stored.moveCapVersion!==2||!!stored.moveCapExempt;
-     if(legacyMoveCapExempt)moveLimit=null;
+     // Unfinished v2 trials keep their old move budget, while the original
+     // uncapped v1 trials remain uncapped. Only new trials use v3 limits.
+     moveCapVersion=stored.moveCapVersion===2?2:stored.moveCapVersion===3?3:1;
+     legacyMoveCapExempt=moveCapVersion===1||!!stored.moveCapExempt;
+     moveLimit=legacyMoveCapExempt?null:moveCapVersion===2?(e.MOVE_CAPS_V9[id]??null):e.moveLimitFor(id);
    }
    failureReason=stored.failureReason==='moves'?'moves':'time';
    trialPending=!!p.timerMs&&!expired&&!stored.started&&moves===0&&elapsed===0;
@@ -700,10 +707,11 @@ function begin(p,kind,id,skipSave=false){
    kind==='daily'||kind==='practice'?'Daily Challenge':currentTier.charAt(0).toUpperCase()+currentTier.slice(1);
  $('pipeDifficultyTag').textContent=kind==='levels'? `Stage ${id-e.stageOf(id).first+1}`:
    kind==='daily'||kind==='practice'?(dailyPractice?'Practice':p.day):'Free Play';
- $('pipeObjectiveTag').hidden=kind!=='random'&&kind!=='levels';
+ const showObjective=kind==='random'||kind==='levels'||((kind==='daily'||kind==='practice')&&p.dailyVersion>=2);
+ $('pipeObjectiveTag').hidden=!showObjective;
  $('pipeObjectiveHelp').hidden=true;
  $('pipeObjectiveInfo').setAttribute('aria-expanded','false');
- if(kind==='random'||kind==='levels'){
+ if(showObjective){
    $('pipeObjectiveLabel').textContent=p.freeObjective==='all'?'Connect using all pipes':'Connect using any pipes';
    $('pipeObjectiveHelp').textContent=puzzleInstruction(p);
  }
