@@ -35,6 +35,12 @@ dom.wrEntry.onclick();
 assert.equal(dom.wordRescueScreen.hidden,false);
 assert.equal(dom.home.hidden,true);
 dom.wrNewTide.onclick();
+assert.equal(dom.wrRules.hidden,false);assert.equal(dom.wrRulesDetails.hidden,true);
+assert.equal(dom.wrRulesLead.textContent,'Raise Gridda up by making words');
+assert.equal(globals.WordRescueApp.readState().started,false);
+assert.equal(dom.wrSubmit.disabled,true);dom.wrRulesPlay.onclick();
+assert.equal(dom.wrRules.hidden,true);assert.equal(globals.WordRescueApp.readState().started,true);
+dom.wrInfo.onclick();assert.equal(dom.wrRulesDetails.hidden,false);dom.wrRulesPlay.onclick();
 assert.equal(dom.wrPlay.hidden,false);
 assert.equal(dom.wrTray.children.length,7,'Seven buttons should render');
 assert.equal(dom.wrSceneLabel.textContent,'RISING TIDE');
@@ -67,6 +73,7 @@ assert.equal(dom.home.hidden,false,'Back should return to existing home');
 // shark-driven danger meter. Ensure the primary action is always present.
 dom.wrEntry.onclick();
 dom.wrNewRaft.onclick();
+assert.equal(dom.wrRules.hidden,false);dom.wrRulesPlay.onclick();
 assert.equal(dom.wrScene.dataset.mode,'raft');
 assert.equal(dom.wrBlocks.textContent,'24 planks to safety');
 assert.equal(dom.wrSea.style.height,'32%','Raft mode has a fixed sea level');
@@ -87,6 +94,7 @@ while(dom.wrResult.hidden&&iterations++<9){
  dom.wrSubmit.onclick();
 }
 assert.equal(dom.wrResult.hidden,false,'Building 24 planks should complete Raft Escape');
-assert.equal(dom.wrBlocks.textContent,'0 planks to safety');
+assert.equal(dom.wrBlocks.textContent,'SAFE');assert.equal(dom.wrDock.hidden,true);
+dom.wrTryAgain.onclick();assert.equal(dom.wrRules.hidden,true);assert.equal(dom.wrDock.hidden,false);
 assert.equal(calls.length,0,'Free Play must not award Club Credits');
 console.log('Word Rescue browser wiring passed: three modes, raft victory, dock, scoring, pause/continue and return home');
