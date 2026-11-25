@@ -11,7 +11,7 @@ const DICTIONARY_SOURCES=[
  'https://cdn.jsdelivr.net/gh/dwyl/english-words@master/words_alpha.txt',
  'https://raw.githubusercontent.com/dwyl/english-words/master/words_alpha.txt'
 ];
-let dictionaryPromise=null,dictionaryReady=false;
+let dictionaryPromise=null,dictionaryReady=false,dictionaryExpanded=false;
 let state=null,screen='menu',timer=null,lastTick=0,lastSecond=-1,flash='';
 const safeGet=(key)=>{try{return localStorage.getItem(key);}catch(_){return null;}};
 const safeSave=(key,value)=>{try{localStorage.setItem(key,JSON.stringify(value));return true;}catch(_){return false;}};
@@ -34,7 +34,7 @@ function ensureDictionary(){
    const cached=safeGet(DICTIONARY_KEY);
    if(cached?.length>50000){
      const stats=engine.importDictionary(cached);
-     dictionaryReady=true;
+     dictionaryReady=true;dictionaryExpanded=stats.total>=20000;
      statusDictionary(stats.total.toLocaleString('en-GB')+' words ready · saved for offline play');
      enableDictionaryGames(true);
      return;
@@ -57,6 +57,7 @@ function ensureDictionary(){
        const stats=engine.importDictionary(compact);
        if(stats.total<20000)throw Error('Incomplete English dictionary');
        try{localStorage.setItem(DICTIONARY_KEY,compact);}catch(_){/* memory-only */ }
+       dictionaryExpanded=true;
        statusDictionary(stats.total.toLocaleString('en-GB')+' words ready · expanded dictionary loaded');
        ready=true;break;
      }catch(err){console.warn('Word Rescue dictionary download unavailable',err);}
@@ -233,6 +234,9 @@ document.addEventListener('visibilitychange',()=>{
  if(root.hidden||screen!=='play'||!state)return;
  if(document.hidden){if(lastTick&&!(state.won||state.expired))engine.advance(state,Math.max(0,Math.min(1000,performance.now()-lastTick)));stop();save();}
  else if(!state.won&&!state.expired){lastTick=performance.now();timer=setInterval(tick,125);render();}
+});
+window.addEventListener('online',()=>{
+ if(!dictionaryExpanded){dictionaryPromise=null;void ensureDictionary();}
 });
 window.addEventListener('pagehide',()=>{save();stop();});
 globalThis.WordRescueApp=Object.freeze({open,menu,begin,back,readState:readState});
