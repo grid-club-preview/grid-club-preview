@@ -237,3 +237,25 @@
  #wordRescueScreen .wrScene .wrArmLeft,
  #wordRescueScreen .wrScene .wrArmRight{animation:none!important}
 }
+
+/* v0.9.34: immediate end-state and first-play instructions. */
+#wordRescueScreen .wrInfo{flex:none;width:32px;height:36px;padding:0;border-radius:50%;background:#20394c;color:#cee8f5;font-size:23px;line-height:1}
+#wordRescueScreen .wrInfo:disabled{opacity:.45}
+#wordRescueScreen .wrHeader:has(.wrInfo:not([hidden])){gap:8px}
+#wordRescueScreen .wrHeader:has(.wrInfo:not([hidden])) .eyebrow{font-size:9px;letter-spacing:.9px}
+#wordRescueScreen .wrHeader:has(.wrInfo:not([hidden])) h2{font-size:23px}
+#wordRescueScreen #wrBlocks.wrSafe{color:#9ce8c9;font-size:21px;letter-spacing:1px}
+#wordRescueScreen .wrResult{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(560px,100%);box-sizing:border-box;z-index:31;margin:0;padding:16px 18px calc(12px + env(safe-area-inset-bottom));border-radius:20px 20px 0 0;box-shadow:0 -10px 35px #071422a6;text-align:center;max-height:70svh;overflow:auto}
+#wordRescueScreen .wrResult[data-outcome=lost]{background:#392e3b;border-color:#aa716e}
+#wordRescueScreen .wrResult .wrSecondary{background:#294054;color:#e4eef7}
+#wordRescueScreen .wrRules{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:calc(16px + env(safe-area-inset-top)) 18px calc(16px + env(safe-area-inset-bottom));background:#081324c9;box-sizing:border-box}
+#wordRescueScreen .wrRulesCard{width:min(100%,400px);max-height:100%;overflow:auto;box-sizing:border-box;padding:24px 20px;border-radius:22px;background:#1a293f;border:1px solid #557a90;box-shadow:0 12px 45px #0008;text-align:center}
+#wordRescueScreen .wrRulesCard h3{font-size:25px;margin:10px 0 18px}
+#wordRescueScreen #wrRulesLead{font-size:19px;font-weight:800;line-height:1.4;margin:10px 0}
+#wordRescueScreen #wrRulesWarning{color:#ffd38f;font-size:16px;line-height:1.4;margin:8px 0 20px}
+#wordRescueScreen .wrRulesDetails{text-align:left;font-size:14px;line-height:1.55;color:#c9d9e7}
+#wordRescueScreen .wrRulesDetails ul{padding-left:20px}
+#wordRescueScreen .wrRulesDetails li{margin:6px 0}
+#wordRescueScreen .wrRulesCard button{width:100%;padding:13px;margin-top:8px}
+#wordRescueScreen .wrRulesBack{background:transparent;color:#a9c3d4;border-radius:12px}
+#wordRescueScreen [hidden]{display:none!important}

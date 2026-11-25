@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="vault-reward.css?v=0.9.25">
   <link rel="stylesheet" href="dot-daily.css?v=0.9.25">
   <link rel="stylesheet" href="home-roadmap.css?v=0.9.26">
-  <link rel="stylesheet" href="word-rescue.css?v=0.9.32">
+  <link rel="stylesheet" href="word-rescue.css?v=0.9.34">
   <style>
     :root { color-scheme: dark; --bg:#0e1424; --surface:#1a243a; --tile:#253147; --muted:#9daabe; --mint:#7be3d4; --purple:#a178ff; }
     * { box-sizing: border-box; }
@@ -334,7 +334,7 @@
 <body>
   <main class="shell">
     <section id="home">
-      <header><div><div class="eyebrow">GRID CLUB</div><h1>A pocketful of challenges.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.33</span></div></header>
+      <header><div><div class="eyebrow">GRID CLUB</div><h1>A pocketful of challenges.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.34</span></div></header>
       <div class="homeSectionHeader" aria-label="Puzzle Deck games">
         <div class="eyebrow">PUZZLE DECK</div>
         <span class="homeSectionCount">3 playable · 3 planned</span>
@@ -410,6 +410,7 @@
       <div class="wrHeader">
         <button class="back" id="wrBack" type="button" aria-label="Back to Word Rescue menu or Grid Club">‹</button>
         <div><div class="eyebrow">GRID CLUB · PUZZLE DECK</div><h2>Word Rescue</h2></div>
+        <button type="button" class="wrInfo" id="wrInfo" hidden aria-label="How to play" title="How to play">ⓘ</button>
         <span class="clubWalletBadge" id="wrWallet" aria-label="Club Credits balance">◉ 0</span>
       </div>
       <div id="wrMenu">
@@ -508,10 +509,25 @@
           <p id="wrMessage" class="wrMessage" role="status" aria-live="polite"></p>
         </div>
         <div id="wrWordHistory" class="wrHistory">Longer words earn more points. Each letter adds one block.</div>
-        <div id="wrResult" class="wrResult" hidden role="status" aria-live="polite">
+        <div id="wrResult" class="wrResult" hidden role="dialog" aria-labelledby="wrResultTitle">
           <h3 id="wrResultTitle">Safe at last!</h3>
           <p id="wrResultText"></p>
           <button id="wrTryAgain" type="button">Play again</button>
+          <button id="wrResultModes" class="wrSecondary" type="button">Back to modes</button>
+        </div>
+        <div id="wrRules" class="wrRules" hidden role="dialog" aria-modal="true" aria-labelledby="wrRulesTitle">
+          <div class="wrRulesCard">
+            <div id="wrRulesMode" class="eyebrow">RISING TIDE</div>
+            <h3 id="wrRulesTitle">How to play</h3>
+            <p id="wrRulesLead"></p>
+            <p id="wrRulesWarning"></p>
+            <div id="wrRulesDetails" class="wrRulesDetails" hidden>
+              <p id="wrRulesDetail"></p>
+              <ul><li>Tap letters to make a word of at least 3 letters, then build with it.</li><li>Every letter adds one block or plank. A 4-letter word scores 16 points; a 5-letter word scores 25.</li><li>Letters refill after each valid word. You cannot repeat a word in the same run.</li><li>New letters costs 6 seconds.</li></ul>
+            </div>
+            <button class="wrAction wrActionMain" id="wrRulesPlay" type="button">Play</button>
+            <button class="wrRulesBack" id="wrRulesBack" type="button">Back to modes</button>
+          </div>
         </div>
       </div>
     </section>
@@ -826,7 +842,7 @@
       </div>
       
       <div class="adSlot" id="adSlot" aria-hidden="true" hidden></div>
-      <footer>Grid Club · v0.9.33 beta</footer>
+      <footer>Grid Club · v0.9.34 beta</footer>
     </section>
   </main>
   <div class="pauseLayer" id="dotDailyCompleteLayer" hidden role="dialog" aria-modal="true" aria-labelledby="dotDailyCompleteTitle">
@@ -867,7 +883,7 @@
   <script src="pipe-shift.js?v=0.9.33"></script>
   <script src="word-rescue-lexicon.js?v=0.9.30"></script>
   <script src="word-rescue-engine.js?v=0.9.32"></script>
-  <script src="word-rescue.js?v=0.9.32"></script>
+  <script src="word-rescue.js?v=0.9.34"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol === 'https:') {
       addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
