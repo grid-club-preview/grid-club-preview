@@ -50,6 +50,13 @@ function importDictionary(raw){
  }
  return {added,total:WORD_SET.size};
 }
+// Loaded from the versioned same-origin PWA asset before this engine runs.
+// Unlike a third-party dictionary request, these words work on the first
+// launch without an online connection and never block game input.
+if(typeof globalThis.GridClubWordRescueLexicon==='string'){
+ importDictionary(globalThis.GridClubWordRescueLexicon);
+ delete globalThis.GridClubWordRescueLexicon;
+}
 const SEEDS='PLANET SINGER SILVER BRIDGE STREAM SHARKS GARDEN MARKET WINTER SUMMER FLOWER BRIGHT CANDLE PLANTS STONES PLAYER ROCKET LITTLE OCEANS BOTTLE FRIEND CAMERA ORANGE DRAGON TUNNEL RABBIT NATURE TRAVEL PURPLE MARBLE JACKET BANNER WIZARD CASTLE BASKET ANCHOR ARTIST PILOTS PENCIL MONKEY SHIELD LETTER SUMMIT HUNTER STRONG SUNSET CREATE CLOSER COMET BREAD TIGER FISHES WHEELS PIPES HONEY BROWN CROWN CHAIR TRAIN PLANE TABLE LEAF STAR SINK BOOK GAME RIVER LEMON WATER SCORE BRAVE PAPER ROSE CLOUD'.split(' ').filter(w=>WORD_SET.has(w));
 const FILL='EEEEEEAAAAAIIIIOOOOONNNNRRRRTTTTSSSSLLLLCCCDDDHHHMMMPPPUUUGGBBFKVWY';
 function rand(s){s.rng=(Math.imul(s.rng,1664525)+1013904223)>>>0;return s.rng/4294967296;}
