@@ -1,4 +1,4 @@
-/* Grid Club Word Rescue alpha · third game, local-only beta trials. */
+/* Grid Club Word Rescue v0.9.30 · full word list, animated rescue, waterline clock. */
 (function(){
 'use strict';
 const engine=globalThis.GridClubWordRescueEngine;
@@ -6,12 +6,67 @@ const $=id=>document.getElementById(id);
 const root=$('wordRescueScreen'),home=$('home');
 if(!engine||!root||!home||!$('wrEntry'))return;
 const KEY='gridclub-word-rescue-alpha-v1',STATS_KEY='gridclub-word-rescue-records-v1';
+const DICTIONARY_KEY='gridclub-word-rescue-english-v1';
+const DICTIONARY_SOURCES=[
+ 'https://cdn.jsdelivr.net/gh/dwyl/english-words@master/words_alpha.txt',
+ 'https://raw.githubusercontent.com/dwyl/english-words/master/words_alpha.txt'
+];
+let dictionaryPromise=null,dictionaryReady=false;
 let state=null,screen='menu',timer=null,lastTick=0,lastSecond=-1,flash='';
 const safeGet=(key)=>{try{return localStorage.getItem(key);}catch(_){return null;}};
 const safeSave=(key,value)=>{try{localStorage.setItem(key,JSON.stringify(value));return true;}catch(_){return false;}};
 const safeDel=key=>{try{localStorage.removeItem(key);}catch(_){}};
 const readState=()=>{try{const s=JSON.parse(safeGet(KEY)||'null');return engine.validState(s)&&!s.won&&!s.expired?s:null;}catch(_){return null;}};
 const balance=()=>globalThis.GridClubCredits?.balance?.()||0;
+function statusDictionary(text){
+ const el=$('wrDictionaryStatus');if(el)el.textContent=text;
+}
+function enableDictionaryGames(ready){
+ for(const id of ['wrNewTide','wrNewSinking','wrContinue'])$(id).disabled=!ready;
+}
+function ensureDictionary(){
+ if(dictionaryPromise)return dictionaryPromise;
+ enableDictionaryGames(false);
+ statusDictionary('Loading a larger English dictionary…');
+ dictionaryPromise=(async()=>{
+   // This public-domain word list is cached after its first successful load.
+   // Existing prototype words always remain available offline as fallback.
+   const cached=safeGet(DICTIONARY_KEY);
+   if(cached?.length>50000){
+     const stats=engine.importDictionary(cached);
+     dictionaryReady=true;
+     statusDictionary(stats.total.toLocaleString('en-GB')+' words ready · saved for offline play');
+     enableDictionaryGames(true);
+     return;
+   }
+   if(typeof fetch!=='function'){
+     dictionaryReady=true;
+     statusDictionary('Basic offline dictionary available · connect to expand vocabulary.');
+     enableDictionaryGames(true);
+     return;
+   }
+   let ready=false;
+   for(const url of DICTIONARY_SOURCES){
+     try{
+       const reply=await fetch(url,{mode:'cors',cache:'force-cache'});
+       if(!reply.ok)throw Error('HTTP '+reply.status);
+       const raw=await reply.text();
+       if(raw.length<150000||raw.length>12000000)throw Error('Unexpected dictionary size');
+       const compact=raw.split(/[^A-Za-z]+/).filter(w=>w.length>=3&&w.length<=7).join(' ');
+       if(compact.length<120000)throw Error('Incomplete English dictionary');
+       const stats=engine.importDictionary(compact);
+       if(stats.total<20000)throw Error('Incomplete English dictionary');
+       try{localStorage.setItem(DICTIONARY_KEY,compact);}catch(_){/* memory-only */ }
+       statusDictionary(stats.total.toLocaleString('en-GB')+' words ready · expanded dictionary loaded');
+       ready=true;break;
+     }catch(err){console.warn('Word Rescue dictionary download unavailable',err);}
+   }
+   if(!ready)statusDictionary('Offline word list in use. Connect to load more English words.');
+   dictionaryReady=true;enableDictionaryGames(true);
+ })();
+ return dictionaryPromise;
+}
+
 const day=()=>new Date().toISOString().slice(0,10);
 const formatMs=ms=>{const n=Math.ceil(ms/1000);return String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0');};
 function stop(){if(timer!==null)clearInterval(timer);timer=null;lastTick=0;}
@@ -21,7 +76,8 @@ function modeName(mode){return mode==='sinking'?'Sinking Letters':'Rising Tide';
 function menu(){
  stop();screen='menu';$('wrMenu').hidden=false;$('wrPlay').hidden=true;
  const saved=readState();$('wrContinue').hidden=!saved;
- if(saved)$('wrContinueLabel').textContent='Continue '+modeName(saved.mode)+' · '+formatMs(engine.remainingMs(saved))+' left';
+ if(!dictionaryReady)void ensureDictionary();
+ if(saved)$('wrContinueLabel').textContent='Continue '+modeName(saved.mode)+' · '+formatMs(saved.elapsedMs)+' played';
  $('wrWallet').textContent='◉ '+balance();
  const best=records();
  $('wrBest').textContent=['tide','sinking'].map(mode=>best[mode]?'Best '+modeName(mode)+': '+best[mode].seconds+'s':'').filter(Boolean).join(' · ')||
@@ -42,13 +98,12 @@ function finished(){
  stop();state.selected=[];
  if(state.won){
    persistRecord();
-   const award=globalThis.GridClubCredits?.award('club:word-rescue:'+day()+':'+state.mode,2,'word-rescue');
-   const amount=award?.awarded||0;
+   // Ordinary Free Play rounds do not award credits. A future verified
+   // Daily Challenge can award Club Credits separately.
    $('wrResultTitle').textContent='Safe at last!';
    $('wrResultText').textContent='You built '+state.blocks+' blocks using '+state.words.length+
      ' words in '+Math.round(state.elapsedMs/1000)+' seconds. Score: '+state.score+'. '+
-     (amount?'+2 Club Credits earned.':award?.already?'Today’s completion credits already collected.':
-       'Prototype results are saved on this device.');
+     'Prototype results are saved on this device.';
  }else{
    $('wrResultTitle').textContent='The water caught up!';
    $('wrResultText').textContent='You built '+state.blocks+' of 24 blocks. Try quicker words or a different letter combination.';
@@ -98,8 +153,10 @@ function message(text,error){
 function render(){
  if(!state)return;
  const completed=state.won||state.expired;
- $('wrTime').textContent=formatMs(engine.remainingMs(state));
- $('wrTime').classList.toggle('warning',engine.remainingMs(state)<20000);
+ $('wrTime').textContent=formatMs(state.elapsedMs);
+ const danger=engine.waterHeight(state)/Math.max(1,engine.safeHeight(state));
+ $('wrTime').classList.toggle('warning',danger>=.8);
+ $('wrScene').dataset.danger=state.won?'won':state.expired?'lost':danger>=.88?'critical':danger>=.7?'alert':'safe';
  $('wrBlocks').textContent=Math.min(24,state.blocks)+'/24';
  $('wrScore').textContent=String(state.score);
  $('wrModeTitle').textContent=modeName(state.mode);
@@ -109,8 +166,8 @@ function render(){
  for(let i=0;i<Math.min(24,state.blocks);i++){
    const brick=document.createElement('div');brick.className='wrBrick';bricks.append(brick);
  }
- const avatar=$('wrAvatar');
- avatar.textContent=completed&&state.expired?'💦':state.won?'🙌':'🧍‍♀️';
+ // Animation state is owned by the scene CSS; never replace the SVG avatar
+ // on each timer tick, which would restart its animation.
  $('wrSceneLabel').textContent=state.mode==='sinking'?'LETTERS SINKING':'SHARK ESCAPE';
  const selected=state.selected.map(i=>state.rack[i]).join('');
  const preview=$('wrSelected');preview.replaceChildren();
