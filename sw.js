@@ -1,5 +1,5 @@
-/* Grid Club v0.9.29 · offline Word Rescue prototype */
-const CACHE='gridclub-pwa-v0.9.29';
+/* Grid Club v0.9.30 · larger Word Rescue scene and plural vocabulary */
+const CACHE='gridclub-pwa-v0.9.30';
 const APP_FILES=[
   './','./index.html',
   './puzzle.js?v=0.9.9',
@@ -12,9 +12,9 @@ const APP_FILES=[
   './vault-reward.css?v=0.9.25',
   './dot-daily.css?v=0.9.25',
   './home-roadmap.css?v=0.9.26',
-  './word-rescue.css?v=0.9.29',
-  './word-rescue-engine.js?v=0.9.29',
-  './word-rescue.js?v=0.9.29',
+  './word-rescue.css?v=0.9.30',
+  './word-rescue-engine.js?v=0.9.30',
+  './word-rescue.js?v=0.9.30',
   './vault-reward.js?v=0.9.25',
   './pipe-engine.js?v=0.9.27',
   './pipe-shift.js?v=0.9.28',
