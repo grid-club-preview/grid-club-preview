@@ -65,7 +65,7 @@ const pick=(s,n)=>Math.floor(rand(s)*n);
 function shuffleLetters(s,letters){for(let i=letters.length-1;i>0;i--){const j=pick(s,i+1);[letters[i],letters[j]]=[letters[j],letters[i]];}return letters;}
 // Guarantee one vowel after refills, reracks and resumed older saves.
 function ensureVowel(s){
- if(s.rack.some(letter=>VOWELS.includes(letter)))return false;
+ if(s.rack.some(letter=>letter!==''&&VOWELS.includes(letter)))return false;
  const available=s.rack.map((letter,i)=>({letter,i})).filter(x=>x.letter&&!s.selected.includes(x.i));
  const any=s.rack.map((letter,i)=>({letter,i})).filter(x=>x.letter);
  const candidates=available.length?available:any;
