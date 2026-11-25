@@ -14,6 +14,11 @@ const groups=[
  'absent accept access across acting action active actors actual admire advice advise afford afraid agency agenda almost always amazed amount animal annual answer anyone appeal appear apples arcade arrive artist aspect assess assist assume attack autumn avenue bakery ballet bamboo banana banner barley barrel basket battle beauty become before behalf behave behind belief belong beside better beyond bicycle bishop bitter blanket blonde border bottle bottom bounce branch breath bridge bright broken bronze budget buffer bundle burger burden burial button buying camera cancel candle canvas carbon career carpet carrot castle casual cattle center centre chance change chapel charge cheese cherry choice choose chorus chosen circle circus cities client cliffs clinic closer clouds cloudy coach coastal coffee collar combat coming common comply copper corner cotton county couple course cousin craft create credit creepy cruise crunch crying cursor custom danger daring dealer debate decade decide defect defend define degree demand depart depend deploy desert design desire detail detect device dinner direct divide doctor dollar domain double dragon drawer dreams dreamy driver driven during duties easier easily eating editor effect effort eighty eleven emerge empire enable encode energy engine enough enrich ensure entity escape estate ethics except expand expect expert expire expose extend extras fabric facing factor failed fairly family famous farmer father fellow female fences ferret fierce figure filing filled filter finale finger finish fiscal fishes flight floral flower follow forest format formal former foster fourth fragile friend fringe frozen future galaxy garage garden garlic gather gentle ginger global golden golfer gossip govern grains grants grassy ground growth guilty guitar hammer handle happen harbor harden harder hardly hazard health hearts heated height helmet hidden higher hiking holder honest honour hopper horses hotels humble humour hunger hunter impact import impose income indeed indoor inform injury inline insane insect inside insist intact intake intent invest invite island jacket jungle junior keeper kernel kindly kitten ladder ladies lagoon landed larger latest launch lawyer leader league leaves legend length letter levels lifted lights likely listen little lively living locate locked locker lonely longer loudly lovely lumber magnet mainly manage manner manual marine market marble margin marker master matter meadow medium melody member memory mental mentor method middle mighty millet mining minute mirror mobile modern module moment monkey months mostly mother motion moving muscle museum mutual narrow nation native nature nearby nearly needed needle nested nether nicely nickel ninety normal notice number object obtain occupy oceanic office offline online option orange origin outlet output oxygen packet painter palace panels parent parsed partly people pepper period person phrase picnic pieces pirate planet player please plenty poetry points police polish policy portal poster potato powder praise prefer pretty prices prince prison prized proper public puzzle quartz rabbit racing random ranked rarely rather rating reader really reason recall recent record redeem reduce region relate remain remote remove render repeat replay rescue resist retail return reveal review reward ribbon riders rising rocket roller rooted rotate routes runner safety sailor salmon sample saving scenic school screen search season second secret sector secure select seller senior sensor series server settle shadow shaking shared sheets shelter shield shifts shooter shores should signal silent silver simple singly singer sister sketch sleepy slider slides slight slowed slower smooth socket solder solved solver sounds source sparse speech speedy spiral spirit stable stages stairs stands staple starts stated static status steam steady stereo sticky stolen stored stores stormy stream street stress string strong struck studio submit subset sudden suffer summer summit sunset supply surely survey sweets switch symbol system tablet target tasted tender tennis theory theirs things thirty though thread threat throat ticket timber timing tissue titles toggle tomato tongue toward towers travel trials tricky trigger trophy tunnel turkey turned twelve twenty typing unique united unless unlock update upload upside useful valley valued values vendor verify vessel viewer violet vision visual voices volume voting walker wallet wander wanted warmer washes wasted waters wealth weekly weight wheels whilst wholly wicket wicked window winner winter wishes within wizard wonder wooden worker worlds worthy writer yellow yields yogurt zombie'
 ];
 const WORD_SET=new Set(groups.join(' ').toUpperCase().split(/\s+/).filter(w=>/^[A-Z]{3,7}$/.test(w)));
+// A full dictionary includes proper names, acronyms and extremely obscure
+// forms. Keep a reviewed exclusion layer; SHU is not accepted in current
+// standard UK/US Scrabble lists, despite having a niche dictionary meaning.
+const EXCLUDED_WORDS=new Set(['SHU']);
+const isAcceptedWord=word=>WORD_SET.has(word)&&!EXCLUDED_WORDS.has(word);
 // Only known common nouns generate regular plurals. Blindly appending S to
 // every dictionary word would admit non-words (e.g. pronouns or adjectives).
 const PLURAL_NOUNS=(
@@ -90,10 +95,10 @@ function canMake(rack,word){
 }
 function possibleWords(rack,used=[]){
  const excluded=new Set(used),count=rack.filter(Boolean).length;
- return [...WORD_SET].filter(w=>w.length<=count&&!excluded.has(w)&&canMake(rack,w));
+ return [...WORD_SET].filter(w=>w.length<=count&&!excluded.has(w)&&isAcceptedWord(w)&&canMake(rack,w));
 }
 function create(seed=Date.now(),mode='tide'){
- if(!['tide','sinking'].includes(mode))throw Error('Unknown Word Rescue mode');
+ if(!['tide','sinking','raft'].includes(mode))throw Error('Unknown Word Rescue mode');
  const s={version:1,mode,rng:(Number(seed)>>>0)||1,rack:[],selected:[],used:[],words:[],
  blocks:0,score:0,elapsedMs:0,expired:false,won:false,lastErodeMs:0,started:false};
  s.rack=freshRack(s);ensureVowel(s);
@@ -116,7 +121,7 @@ function submit(s){
  if(s.won||s.expired)return {ok:false,reason:'The round has finished.'};
  const word=wordFor(s);
  if(word.length<3)return {ok:false,reason:'Make a word of at least 3 letters.'};
- if(!WORD_SET.has(word))return {ok:false,reason:'Not in the prototype word list. Try another word.'};
+ if(!isAcceptedWord(word))return {ok:false,reason:'Not in the Word Rescue word list. Try another word.'};
  if(s.used.includes(word))return {ok:false,reason:'You have already used that word.'};
  const points=word.length*word.length;
  s.blocks+=word.length;s.score+=points;s.words.push({word,points});s.used.push(word);
@@ -135,8 +140,27 @@ const DURATION_MS=90000;
 // Match the raft's fixed 22% bottom position. Raising both starting water
 // and the danger threshold by 14 points preserves the original time pressure.
 const SEA_BASELINE=22;
-function waterHeight(s){return SEA_BASELINE+(s.elapsedMs/DURATION_MS)*(s.mode==='sinking'?52:60);}
+// Raft Escape has a fixed waterline, unlike the two Rising Tide variants.
+function waterHeight(s){
+ if(s.mode==='raft')return 32;
+ return SEA_BASELINE+(s.elapsedMs/DURATION_MS)*(s.mode==='sinking'?52:60);
+}
 function safeHeight(s){return SEA_BASELINE+17+Math.min(24,s.blocks)*1.8;}
+// Each new plank buys breathing room against the pursuing shark. The
+// effective survival pace matches Rising Tide: an idle player has ~25.5s,
+// and each completed letter buys ~2.7s before the shark catches Gridda.
+function remainingSafetySeconds(s){
+ if(s.mode==='raft')
+   return 25.5+Math.min(24,s.blocks)*2.7-s.elapsedMs/1000;
+ const rate=(s.mode==='sinking'?52:60)/90;
+ return (safeHeight(s)-waterHeight(s))/rate;
+}
+function dangerFraction(s){
+ return Math.max(0,Math.min(1,1-remainingSafetySeconds(s)/32));
+}
+function hazard(s){
+ return s.mode==='raft'?'shark':'drowning';
+}
 function advance(s,ms){
  if(s.won||s.expired||!s.started)return;
  s.elapsedMs+=Math.max(0,ms);
@@ -156,13 +180,14 @@ function advance(s,ms){
    }
    s.lastErodeMs=s.elapsedMs;
  }
- // The waterline alone ends a round. Elapsed time measures performance but
- // is not a second, competing deadline. Once the water reaches Gridda, fail.
- if(waterHeight(s)>=safeHeight(s))s.expired=true;
+ // Each environment has exactly one threat: drowning as the water rises,
+ // or shark attack as the raft fails to outpace the predator. No time cap.
+ if(s.mode==='raft'?remainingSafetySeconds(s)<=0:waterHeight(s)>=safeHeight(s))
+   s.expired=true;
 }
 // Retained for older callers; the interface now displays elapsed time instead.
 const remainingMs=s=>Math.max(0,DURATION_MS-s.elapsedMs);
-function validState(s){return !!s&&s.version===1&&['tide','sinking'].includes(s.mode)&&
+function validState(s){return !!s&&s.version===1&&['tide','sinking','raft'].includes(s.mode)&&
  Number.isInteger(s.rng)&&Array.isArray(s.rack)&&s.rack.length===7&&
  s.rack.every(c=>c===''||/^[A-Z]$/.test(c))&&Array.isArray(s.selected)&&
  s.selected.every(i=>Number.isInteger(i)&&i>=0&&i<7&&!!s.rack[i])&&
@@ -170,6 +195,6 @@ function validState(s){return !!s&&s.version===1&&['tide','sinking'].includes(s.
  Array.isArray(s.used)&&Array.isArray(s.words)&&Number.isInteger(s.blocks)&&
  s.blocks>=0&&Number.isFinite(s.elapsedMs)&&s.elapsedMs>=0&&s.elapsedMs<=DURATION_MS*2&&
  typeof s.won==='boolean'&&typeof s.expired==='boolean';}
-return Object.freeze({WORD_SET,SEEDS,importDictionary,create,wordFor,select,removeLast,submit,rerack,
- ensureVowel,possibleWords,canMake,advance,remainingMs,waterHeight,safeHeight,SEA_BASELINE,DURATION_MS,validState});
+return Object.freeze({WORD_SET,EXCLUDED_WORDS,isAcceptedWord,SEEDS,importDictionary,create,wordFor,select,removeLast,submit,rerack,
+ ensureVowel,possibleWords,canMake,advance,remainingMs,waterHeight,safeHeight,remainingSafetySeconds,dangerFraction,hazard,SEA_BASELINE,DURATION_MS,validState});
 });
