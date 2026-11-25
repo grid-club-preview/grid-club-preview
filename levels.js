@@ -3694,6 +3694,8 @@ function spend(progress,amount,kind,attemptId){
  // No further extension may be bought once a rescue has been used.
  if(kind==='hint'){
    if(cost!==COST)return false;
+ }else if(kind==='word-rerack'){
+   if(cost!==5)return false;
  }else if(kind==='pipe-hint-square'){
    if(cost!==3)return false;
  }else if(kind==='pipe-hint-area'){

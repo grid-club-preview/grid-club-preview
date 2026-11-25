@@ -24,10 +24,10 @@ const local=new Map(),storage={
 };
 const doc={getElementById:id=>dom[id],createElement:()=>new Node(),addEventListener:()=>{}};
 const fakeWindow={addEventListener:()=>{}};
-const calls=[];
+const calls=[],spends=[];let wallet=10;
 let now=100,tick=null;
 const globals={GridClubWordRescueEngine:engine,GridClubCredits:{
- balance:()=>42,award:(...args)=>{calls.push(args);return {awarded:2};}
+ balance:()=>wallet,spend:(amount,kind,id)=>{if(wallet<amount)return false;wallet-=amount;spends.push({amount,kind,id});return true;},award:(...args)=>{calls.push(args);return {awarded:2};}
 }};
 new Function('window','document','globalThis','localStorage','performance','setInterval','clearInterval','confirm',js)(
  fakeWindow,doc,globals,storage,{now:()=>now},fn=>{tick=fn;return 1;},()=>{tick=null;},()=>true);
@@ -115,5 +115,21 @@ assert(dom.wrResultText.textContent.includes('24 planks'));
 assert.equal(dom.wrScene.style['--wrRaftLength'],'54.000cqw');
 assert.equal(dom.wrBricks.children.length,24);
 dom.wrTryAgain.onclick();assert.equal(dom.wrRules.hidden,true);assert.equal(dom.wrDock.hidden,false);
+assert.equal(dom.wrRerack.textContent,'↻ New letters');
+const before=globals.WordRescueApp.readState();
+dom.wrRerack.onclick();
+let shuffled=globals.WordRescueApp.readState();
+assert.equal(shuffled.reracks,1);assert.equal(shuffled.elapsedMs,before.elapsedMs);
+assert.equal(shuffled.sharkProgress,before.sharkProgress);assert.equal(wallet,10);
+assert.equal(dom.wrRerack.textContent,'↻ New letters · ◉ 5');
+dom.wrWordBack.onclick();dom.wrContinue.onclick();
+assert.equal(dom.wrRerack.textContent,'↻ New letters · ◉ 5','Resuming does not restore free shuffle');
+dom.wrRerack.onclick();shuffled=globals.WordRescueApp.readState();
+assert.equal(shuffled.reracks,2);assert.equal(wallet,5);assert.equal(spends[0].kind,'word-rerack');
+assert.equal(spends[0].id,before.attemptId);assert.equal(shuffled.elapsedMs,before.elapsedMs);
+dom.wrRerack.onclick();assert.equal(wallet,0);
+const blocked=globals.WordRescueApp.readState();dom.wrRerack.onclick();
+assert.deepEqual(globals.WordRescueApp.readState(),blocked,'Insufficient credit must not change the rack');
+assert.equal(spends.length,2);assert(dom.wrMessage.textContent.includes('5 Club Credits'));
 assert.equal(calls.length,0,'Free Play must not award Club Credits');
 console.log('Word Rescue browser wiring passed: three modes, raft victory, dock, scoring, pause/continue and return home');

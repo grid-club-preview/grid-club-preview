@@ -20,6 +20,8 @@ const readState=()=>{try{const s=JSON.parse(safeGet(KEY)||'null');if(!engine.val
   return s;
  }catch(_){return null;}};
 const balance=()=>globalThis.GridClubCredits?.balance?.()||0;
+const RERACK_COST=5;
+const makeAttempt=()=>`word:${Date.now()}:${Math.random().toString(36).slice(2,12)}`;
 function ensureDictionary(){
  // All words are loaded synchronously from the PWA bundle before this app
  // initialises. No first-launch download, account or connectivity required.
@@ -156,6 +158,9 @@ function begin(mode,continueSaved=false){
    state=engine.create(Date.now(),mode);
  }else state=readState();
  if(!state)return menu();
+ if(typeof state.attemptId!=='string'||!state.attemptId)state.attemptId=makeAttempt();
+ if(!Number.isInteger(state.reracks)||state.reracks<0)state.reracks=0;
+ $('wrWallet').textContent='◉ '+balance();
  screen='play';$('wrMenu').hidden=true;$('wrPlay').hidden=false;
  $('wrResult').hidden=true;$('wrDock').hidden=false;$('wrRules').hidden=true;$('wrInfo').hidden=false;rulesOpen=false;firstRules=false;flash='';lastSecond=-1;
  state.started=seen(state.mode);
@@ -250,6 +255,8 @@ function renderLetters(){
  $('wrSubmit').disabled=completed||rulesOpen||state.selected.length<3;
  $('wrBackspace').disabled=completed||rulesOpen||state.selected.length===0;
  $('wrRerack').disabled=completed||rulesOpen;
+ const shuffleLabel=state.reracks>0?'↻ New letters · ◉ 5':'↻ New letters';
+ if($('wrRerack').textContent!==shuffleLabel)$('wrRerack').textContent=shuffleLabel;
 }
 function submit(){
  if(!state||rulesOpen||state.won||state.expired)return;
@@ -262,13 +269,17 @@ function submit(){
 }
 function rerack(){
  if(!state||rulesOpen||state.won||state.expired)return;
- // Reracking should not permit unlimited free vocabulary fishing during a
- // time trial. A six-second cost is applied in both modes.
- if(engine.rerack(state)){
-   engine.advance(state,6000);
-   if(state.expired)finished();else save();
-   render();message(state.expired?(state.mode==='raft'?'The shark caught Gridda during the reshuffle.':'The water caught up during the reshuffle.'):'New letters · 6 seconds used',state.expired);
+ const paid=state.reracks>0;
+ // Prepare a new rack without modifying the live state until payment succeeds.
+ const next=JSON.parse(JSON.stringify(state));
+ if(!engine.rerack(next))return;
+ if(paid&&!globalThis.GridClubCredits?.spend?.(RERACK_COST,'word-rerack',state.attemptId)){
+   message(balance()<RERACK_COST?'You need 5 Club Credits for new letters.':'Could not spend credits. Please try again.',true);
+   return;
  }
+ next.reracks=(state.reracks||0)+1;state=next;
+ save();$('wrWallet').textContent='◉ '+balance();
+ renderLetters();message(paid?'New letters · 5 credits used':'New letters',false);
 }
 $('wrEntry').onclick=open;
 $('wrBack').onclick=back;
