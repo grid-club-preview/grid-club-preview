@@ -54,7 +54,12 @@ for(const ch of w){
  dom.wrTray.listeners.click({target:dom.wrTray.children[i]});
 }
 assert.equal(dom.wrSubmit.disabled,false);
+assert.equal(dom.wrSubmit.textContent,'Build: '+w);
+dom.wrBackspace.onclick();assert.equal(dom.wrSubmit.textContent,'Build: '+w.slice(0,-1));
+dom.wrTray.listeners.click({target:dom.wrTray.children[used[used.length-1]]});
+assert.equal(dom.wrSubmit.textContent,'Build: '+w);
 dom.wrSubmit.onclick();
+assert.equal(dom.wrSubmit.textContent,'Build with this word');
 state=globals.WordRescueApp.readState();
 assert(state?.blocks>=3,'Submitting a valid word should add blocks');
 assert.equal(state.rack.length,7);

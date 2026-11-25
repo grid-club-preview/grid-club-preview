@@ -165,9 +165,10 @@ function render(){
  // on each timer tick, which would restart its animation.
  $('wrSceneLabel').textContent=state.mode==='raft'?'SHARK APPROACHING':state.mode==='sinking'?'LETTERS SINKING':'RISING TIDE';
  const selected=state.selected.map(i=>state.rack[i]).join('');
- const preview=$('wrSelected');preview.replaceChildren();
- if(selected){preview.textContent=selected;}
- else{const hint=document.createElement('small');hint.textContent='Tap letters to make a word';preview.append(hint);}
+ // Keep the chosen word in the action button itself, so the rack never shifts.
+ const buildLabel=selected?'Build: '+selected:'Build with this word';
+ if($('wrSubmit').textContent!==buildLabel)$('wrSubmit').textContent=buildLabel;
+ if($('wrSelected').textContent!==selected)$('wrSelected').textContent=selected;
  $('wrTray').replaceChildren();
  for(let i=0;i<7;i++){
    const b=document.createElement('button'),letter=state.rack[i];

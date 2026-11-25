@@ -1,5 +1,5 @@
-/* Grid Club v0.9.34 · Word Rescue instructions and instant results */
-const CACHE='gridclub-pwa-v0.9.34';
+/* Grid Club v0.9.35 · Word Rescue larger touch targets */
+const CACHE='gridclub-pwa-v0.9.35';
 const APP_FILES=[
   './','./index.html',
   './puzzle.js?v=0.9.9',
