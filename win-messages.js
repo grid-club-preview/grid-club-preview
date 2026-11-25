@@ -24,6 +24,16 @@
       grandFinale: 'Grand finale!',
       mastered: 'Dot Trails mastered!'
     },
+    wordRescue: {
+      general: ['Safe at last!','What a rescue!','What a relief!','Relief all round.',
+        'Gridda lives another day.','Good wordin’.','What a hero.',
+        'Words to the rescue!','A narrow escape!','And breathe.',
+        'Quite the wordsmith.','Saved by the spell!'],
+      raft: ['No shark meat today!','Hungry sharks today.','Not on the menu!',
+        'No lunch for the shark.'],
+      tide: ['High and dry!','You turned the tide.'],
+      sinking: ['High and dry!','You turned the tide.','Not a letter too late!']
+    },
     pipeShift: {
       general: [
         'Flow restored!',

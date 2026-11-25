@@ -77,13 +77,34 @@ function persistRecord(){
    safeSave(STATS_KEY,previous);
  }
 }
+// Rotate through each mode's pool, avoiding the last displayed title even
+// when switching modes. Store only the rotation cursor, separate from scores.
+const WIN_KEY='gridclub-word-rescue-win-messages-v1';
+let winRotation=null;
+function victoryTitle(mode){
+ if(!winRotation){
+   try{winRotation=JSON.parse(safeGet(WIN_KEY)||'null');}catch(_){}
+   if(!winRotation||typeof winRotation!=='object'||Array.isArray(winRotation))winRotation={};
+ }
+ const catalog=globalThis.GridClubWinMessages?.wordRescue;
+ const general=catalog?.general||['Safe at last!','What a rescue!','What a relief!'];
+ const specific=catalog?.[mode]||[];
+ // Interleave mode-specific messages rather than leaving them until the end.
+ const pool=general.flatMap((phrase,i)=>i<specific.length?[phrase,specific[i]]:[phrase]);
+ const n=pool.length;
+ let i=Number.isInteger(winRotation[mode])&&winRotation[mode]>=0?winRotation[mode]%n:0;
+ if(n>1&&pool[i]===winRotation.last)i=(i+1)%n;
+ const title=pool[i];
+ winRotation[mode]=(i+1)%n;winRotation.last=title;safeSave(WIN_KEY,winRotation);
+ return title;
+}
 function finished(){
  stop();state.selected=[];rulesOpen=false;$('wrRules').hidden=true;$('wrDock').inert=false;
  if(state.won){
    persistRecord();
    // Ordinary Free Play rounds do not award credits. A future verified
    // Daily Challenge can award Club Credits separately.
-   $('wrResultTitle').textContent='Safe at last!';
+   $('wrResultTitle').textContent=victoryTitle(state.mode);
    $('wrResultText').textContent='You built '+Math.min(24,state.blocks)+(state.mode==='raft'?' planks':' blocks')+' using '+state.words.length+
      ' words in '+Math.round(state.elapsedMs/1000)+' seconds. Score: '+state.score+'. '+
      'Results saved.';
