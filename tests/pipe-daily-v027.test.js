@@ -12,7 +12,7 @@ for(const [date,[seed,checksum]]of Object.entries(historical)){
  assert.equal(p.seed,seed);
  assert.equal(e.hashSeed(e.signature(p.board)),checksum);
 }
-for(let i=0;i<21;i++){
+for(let i=0;i<3;i++){
  const d=new Date(Date.parse('2026-11-27T00:00:00Z')+i*86400000).toISOString().slice(0,10);
  const p=e.daily(d),board=e.clone(p.board);
  assert.equal(p.dailyVersion,2);
@@ -27,4 +27,4 @@ for(let i=0;i<21;i++){
  assert(e.evaluate(board).solved,'Verified route must complete '+d);
  assert.equal(e.signature(e.daily(d).board),e.signature(p.board));
 }
-console.log('Pipe Daily v2: old published boards frozen and 21 new daily boards solvable');
+console.log('Pipe Daily v2: old published boards frozen and 3 scheduled v2 daily boards solvable');

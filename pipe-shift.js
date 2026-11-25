@@ -311,7 +311,7 @@ function dailyMenu(){
  saveCurrent();hub.hidden=true;root.hidden=false;route('daily');
  const day=utcToday(),p=e.daily(day),record=progress.daily?.[day];
  $('pipeDailyDay').textContent=day;
- $('pipeDailyDifficulty').textContent=p.dailyVersion>=2?`Expert · All pipes · ${p.size}×${p.size}`:`${p.size===5?'Beginner':p.size===6?'Advanced':'Expert'} · ${p.size}×${p.size}`;
+ $('pipeDailyDifficulty').textContent=p.freeObjective==='all'?'Use all pipes':'Use any pipes';
  $('pipeDailyPlay').textContent=record?.completed?'Practice today’s puzzle':progress.active[`daily:${day}`]?'Continue today’s puzzle':'Play today’s puzzle';
  $('pipeDailyNote').textContent=record?.completed?`Your first result: ${record.moves} moves${record.verified?' · verified':record.sync==='review'?' · under review':' · saved locally'}`:'One ranked result per day · Fewest moves wins · Fastest verified time breaks ties.';
  $('pipeDailyRank').textContent='';
@@ -483,7 +483,7 @@ function expertFlowFeedback(p,current){
 }
 function puzzleInstruction(p){
  if(!p)return '';
- if(p.freeObjective==='any')
+ if(p.freeObjective==='any'||(p.mode==='daily'&&!p.requireAllFlow))
    return 'Connect IN to OUT without leaks. Unused pipes can stay dry.';
  if(p.freeObjective==='all'&&!p.solvedBoard?.some(t=>t.transportPiece))
    return 'Connect every pipe to the water flow. No pipe can remain dry.';
@@ -707,7 +707,7 @@ function begin(p,kind,id,skipSave=false){
    kind==='daily'||kind==='practice'?'Daily Challenge':currentTier.charAt(0).toUpperCase()+currentTier.slice(1);
  $('pipeDifficultyTag').textContent=kind==='levels'? `Stage ${id-e.stageOf(id).first+1}`:
    kind==='daily'||kind==='practice'?(dailyPractice?'Practice':p.day):'Free Play';
- const showObjective=kind==='random'||kind==='levels'||((kind==='daily'||kind==='practice')&&p.dailyVersion>=2);
+ const showObjective=kind==='random'||kind==='levels'||kind==='daily'||kind==='practice';
  $('pipeObjectiveTag').hidden=!showObjective;
  $('pipeObjectiveHelp').hidden=true;
  $('pipeObjectiveInfo').setAttribute('aria-expanded','false');
@@ -717,6 +717,7 @@ function begin(p,kind,id,skipSave=false){
  }
  $('pipeInstruction').hidden=kind==='random'||kind==='levels';
  $('pipeGridSize').textContent=`${p.size}×${p.size}`;
+ $('pipeGridSize').hidden=kind==='daily'||kind==='practice';
  $('pipeInstruction').textContent=puzzleInstruction(p);
  $('pipeNew').hidden=kind!=='random';
  $('pipeBoard').style.setProperty('--pipe-size',p.size);$('pipeBoard').dataset.pipeGridSize=String(p.size);

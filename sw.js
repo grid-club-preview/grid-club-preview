@@ -1,5 +1,5 @@
-/* Grid Club v0.9.32 · distinct raft escape, danger animation and mobile controls */
-const CACHE='gridclub-pwa-v0.9.32';
+/* Grid Club v0.9.33 · rotating Pipe Shift daily and simplified daily screens */
+const CACHE='gridclub-pwa-v0.9.33';
 const APP_FILES=[
   './','./index.html',
   './puzzle.js?v=0.9.9',
@@ -17,8 +17,8 @@ const APP_FILES=[
   './word-rescue-engine.js?v=0.9.32',
   './word-rescue.js?v=0.9.32',
   './vault-reward.js?v=0.9.25',
-  './pipe-engine.js?v=0.9.27',
-  './pipe-shift.js?v=0.9.28',
+  './pipe-engine.js?v=0.9.33',
+  './pipe-shift.js?v=0.9.33',
   './stats-utils.js?v=0.7.0',
   './ranked.js?v=0.7.0',
   './backend-config.js?v=0.7.0',

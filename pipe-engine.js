@@ -486,6 +486,22 @@ function dailyV2(day){
    throw Error('Daily v2 board failed validation');
  return p;
 }
+// Daily v3 is a new UTC cutover, leaving every v1/v2 board intact.
+const DAILY_V3_START='2026-11-30';
+function dailyV3(day){
+ const offset=Math.floor((Date.parse(day+'T00:00:00Z')-Date.parse(DAILY_V3_START+'T00:00:00Z'))/86400000);
+ const tier=offset%2===0?'advanced':'expert';
+ // Four-day cycle: both objectives occur at both difficulties.
+ const objective=['any','all','all','any'][offset%4];
+ const base=hashSeed('gridclub-pipe-daily-v3:'+day);
+ for(let attempt=0;attempt<16;attempt++){
+   const seed=(base+Math.imul(attempt,2654435761))>>>0;
+   const p=freePlay(7,seed,objective,tier);
+   if(evaluate(p.board).solved||!evaluate(p.solvedBoard).solved||hasShortWin(p.board,2))continue;
+   return {...p,mode:'daily',day,dailyVersion:3,timerMs:null};
+ }
+ throw Error('Daily v3 board failed validation');
+}
 function daily(day){
  if(typeof day!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(day)||
    Number.isNaN(Date.parse(day+'T00:00:00Z')))throw Error('Invalid UTC day');
@@ -493,6 +509,10 @@ function daily(day){
    const cached=dailyCache.get(day);
    return {...cached,board:clone(cached.board),solvedBoard:clone(cached.solvedBoard),
      solutionMoves:cached.solutionMoves.map(m=>({...m}))};
+ }
+ if(day>=DAILY_V3_START){
+   const p=dailyV3(day);dailyCache.set(day,p);
+   return {...p,board:clone(p.board),solvedBoard:clone(p.solvedBoard),solutionMoves:p.solutionMoves.map(m=>({...m}))};
  }
  if(day>=DAILY_V2_START){
    const p=dailyV2(day);dailyCache.set(day,p);
@@ -635,5 +655,5 @@ function freePlay(size,seed,objective='all',tier=size===5?'beginner':size===6?'a
  return puzzle;
 }
 function validateBoard(b){const size=sizeOf(b);return !!size&&b.every(t=>t&&['empty','wall','block','pipe','source','sink'].includes(t.kind)&&Number.isInteger(t.mask)&&t.mask>=0&&t.mask<=15&&typeof t.fixed==='boolean'&&(t.kind==='pipe'||t.kind==='source'||t.kind==='sink'||t.mask===0))&&[1,2].includes(b.filter(t=>t.kind==='source').length)&&[1,2].includes(b.filter(t=>t.kind==='sink').length);}
-return Object.freeze({SIZE,MAX_LEVEL,MOVE_CAPS_V9,MOVE_CAPS_V10,TIMED_TRIALS_V10,DAILY_V2_START,N,E,S,W,DIRECTIONS,STAGES,stageCount,objectiveForLevel,sizeOf,at,id,adjacent,direction,clone,rng,get,random,freePlay,daily,hashSeed,stageOf,timerFor,moveLimitFor,move,canMove,straightSlidePath,legalMoves,evaluate,traceLeak,validateBoard,signature});
+return Object.freeze({SIZE,MAX_LEVEL,MOVE_CAPS_V9,MOVE_CAPS_V10,TIMED_TRIALS_V10,DAILY_V2_START,DAILY_V3_START,N,E,S,W,DIRECTIONS,STAGES,stageCount,objectiveForLevel,sizeOf,at,id,adjacent,direction,clone,rng,get,random,freePlay,daily,hashSeed,stageOf,timerFor,moveLimitFor,move,canMove,straightSlidePath,legalMoves,evaluate,traceLeak,validateBoard,signature});
 });
