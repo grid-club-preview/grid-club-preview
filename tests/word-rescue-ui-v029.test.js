@@ -63,4 +63,30 @@ globals.WordRescueApp.back();
 globals.WordRescueApp.back();
 assert.equal(dom.wordRescueScreen.hidden,true);
 assert.equal(dom.home.hidden,false,'Back should return to existing home');
-console.log('Word Rescue browser wiring passed: entry, letters, scoring, pause/continue and return home');
+// Third game mode uses the same controls with a horizontal raft and a
+// shark-driven danger meter. Ensure the primary action is always present.
+dom.wrEntry.onclick();
+dom.wrNewRaft.onclick();
+assert.equal(dom.wrScene.dataset.mode,'raft');
+assert.equal(dom.wrBlocks.textContent,'24 planks to safety');
+assert.equal(dom.wrSea.style.height,'32%','Raft mode has a fixed sea level');
+assert(dom.wrDock,'Word submission controls must have a dock');
+let iterations=0;
+while(dom.wrResult.hidden&&iterations++<9){
+ const raft=globals.WordRescueApp.readState();
+ assert(raft,'Unfinished raft must be stored');
+ const word=engine.possibleWords(raft.rack,raft.used).sort((a,b)=>b.length-a.length)[0];
+ assert(word,'Guaranteed playable word in raft mode');
+ const chosen=[];
+ for(const letter of word){
+   const i=raft.rack.findIndex((x,j)=>x===letter&&!chosen.includes(j));
+   assert(i>=0);
+   chosen.push(i);
+   dom.wrTray.listeners.click({target:dom.wrTray.children[i]});
+ }
+ dom.wrSubmit.onclick();
+}
+assert.equal(dom.wrResult.hidden,false,'Building 24 planks should complete Raft Escape');
+assert.equal(dom.wrBlocks.textContent,'0 planks to safety');
+assert.equal(calls.length,0,'Free Play must not award Club Credits');
+console.log('Word Rescue browser wiring passed: three modes, raft victory, dock, scoring, pause/continue and return home');
