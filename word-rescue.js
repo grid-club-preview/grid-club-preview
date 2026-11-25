@@ -1,4 +1,4 @@
-/* Grid Club Word Rescue v0.9.32 · dual escape threats and accessible mobile word controls. */
+/* Grid Club Word Rescue v0.9.36 · persistent letter buttons and lightweight tap updates. */
 (function(){
 'use strict';
 const engine=globalThis.GridClubWordRescueEngine;
@@ -8,6 +8,8 @@ if(!engine||!root||!home||!$('wrEntry'))return;
 const KEY='gridclub-word-rescue-alpha-v1',STATS_KEY='gridclub-word-rescue-records-v1',RULES_KEY='gridclub-word-rescue-rules-v1';
 let state=null,screen='menu',timer=null,lastTick=0,lastSecond=-1,flash='',rulesOpen=false,firstRules=false;
 const rulesSeen=new Set();
+const letterButtons=[];
+let drawnBlocks=-1;
 const safeGet=(key)=>{try{return localStorage.getItem(key);}catch(_){return null;}};
 const safeSave=(key,value)=>{try{localStorage.setItem(key,JSON.stringify(value));return true;}catch(_){return false;}};
 const safeDel=key=>{try{localStorage.removeItem(key);}catch(_){}};
@@ -157,35 +159,54 @@ function render(){
  $('wrProgress').style.width=Math.min(100,state.blocks/24*100)+'%';
  $('wrSea').style.height=engine.waterHeight(state)+'%';
  $('wrBuildNotice').textContent=state.mode==='raft'?'Make words. Build outwards.':'Make words. Build higher.';
- const bricks=$('wrBricks');bricks.replaceChildren();
- for(let i=0;i<Math.min(24,state.blocks);i++){
-   const brick=document.createElement('div');brick.className='wrBrick';bricks.append(brick);
+ const bricks=$('wrBricks'),count=Math.min(24,state.blocks);
+ if(drawnBlocks!==count){
+   bricks.replaceChildren();
+   for(let i=0;i<count;i++){
+     const brick=document.createElement('div');brick.className='wrBrick';bricks.append(brick);
+   }
+   drawnBlocks=count;
  }
  // Animation state is owned by the scene CSS; never replace the SVG avatar
  // on each timer tick, which would restart its animation.
  $('wrSceneLabel').textContent=state.mode==='raft'?'SHARK APPROACHING':state.mode==='sinking'?'LETTERS SINKING':'RISING TIDE';
- const selected=state.selected.map(i=>state.rack[i]).join('');
- // Keep the chosen word in the action button itself, so the rack never shifts.
- const buildLabel=selected?'Build: '+selected:'Build with this word';
- if($('wrSubmit').textContent!==buildLabel)$('wrSubmit').textContent=buildLabel;
- if($('wrSelected').textContent!==selected)$('wrSelected').textContent=selected;
- $('wrTray').replaceChildren();
- for(let i=0;i<7;i++){
-   const b=document.createElement('button'),letter=state.rack[i];
-   b.type='button';b.className='wrLetter';b.textContent=letter||'·';
-   b.dataset.letterIndex=String(i);b.disabled=completed||rulesOpen||!letter;
-   b.setAttribute('aria-pressed',String(state.selected.includes(i)));
-   b.setAttribute('aria-label',letter?'Letter '+letter+(state.selected.includes(i)?', selected':''):'Empty letter slot');
-   $('wrTray').append(b);
- }
- $('wrSubmit').disabled=completed||rulesOpen||state.selected.length<3;
- $('wrBackspace').disabled=completed||rulesOpen||state.selected.length===0;
- $('wrRerack').disabled=completed||rulesOpen;
+ renderLetters();
  $('wrWordHistory').textContent=state.words.length?
    'Words: '+state.words.slice(-7).map(x=>x.word).join(' · '):
    state.mode==='raft'?'Longer words build more planks. Reach shore before the shark.':
    'Longer words earn more points. Each letter adds one block.';
  $('wrResult').hidden=!completed;$('wrDock').hidden=completed;
+}
+function renderLetters(){
+ const completed=state.won||state.expired;
+ const selected=state.selected.map(i=>state.rack[i]).join('');
+ // Keep the chosen word in the action button itself, so the rack never shifts.
+ const buildLabel=selected?'Build: '+selected:'Build with this word';
+ if($('wrSubmit').textContent!==buildLabel)$('wrSubmit').textContent=buildLabel;
+ if($('wrSelected').textContent!==selected)$('wrSelected').textContent=selected;
+ // Never remove a button between a finger touching it and the resulting click.
+ // Keep the seven original DOM nodes through every timer update and word.
+ if(!letterButtons.length){
+   for(let i=0;i<7;i++){
+     const b=document.createElement('button');
+     b.type='button';b.className='wrLetter';b.dataset.letterIndex=String(i);
+     letterButtons.push(b);$('wrTray').append(b);
+   }
+ }
+ for(let i=0;i<7;i++){
+   const b=letterButtons[i],letter=state.rack[i],pressed=state.selected.includes(i);
+   const value=letter||'·',disabled=completed||rulesOpen||!letter;
+   if(b.textContent!==value)b.textContent=value;
+   if(b.disabled!==disabled)b.disabled=disabled;
+   const label=letter?'Letter '+letter+(pressed?', selected':''):'Empty letter slot';
+   if(b.dataset.pressed!==String(pressed)){
+     b.dataset.pressed=String(pressed);b.setAttribute('aria-pressed',String(pressed));
+   }
+   if(b.dataset.label!==label){b.dataset.label=label;b.setAttribute('aria-label',label);}
+ }
+ $('wrSubmit').disabled=completed||rulesOpen||state.selected.length<3;
+ $('wrBackspace').disabled=completed||rulesOpen||state.selected.length===0;
+ $('wrRerack').disabled=completed||rulesOpen;
 }
 function submit(){
  if(!state||rulesOpen||state.won||state.expired)return;
@@ -219,17 +240,18 @@ $('wrInfo').onclick=()=>showRules(false);
 $('wrRulesPlay').onclick=closeRules;
 $('wrRulesBack').onclick=back;
 $('wrTray').addEventListener('click',event=>{
- const btn=event.target.closest('[data-letter-index]');if(!btn||!state||rulesOpen||screen!=='play')return;
- if(engine.select(state,Number(btn.dataset.letterIndex))){message('',false);render();save();}
+ const btn=event.target.closest('[data-letter-index]');if(!btn||btn.disabled||!state||rulesOpen||screen!=='play')return;
+ if(engine.select(state,Number(btn.dataset.letterIndex))){if(flash)message('',false);renderLetters();}
+ // Selection is persisted by the existing once-per-second tick, Back and pagehide.
 });
 $('wrSubmit').onclick=submit;
-$('wrBackspace').onclick=()=>{if(!state||rulesOpen||state.won||state.expired)return;engine.removeLast(state);render();save();};
+$('wrBackspace').onclick=()=>{if(!state||rulesOpen||state.won||state.expired)return;engine.removeLast(state);renderLetters();};
 $('wrRerack').onclick=rerack;
 document.addEventListener('keydown',event=>{
  if(root.hidden||screen!=='play'||!state||state.won||state.expired)return;
  if(rulesOpen){if(event.key==='Escape'){event.preventDefault();if(firstRules)back();else closeRules();}return;}
  if(event.key==='Enter'){event.preventDefault();submit();}
- if(event.key==='Backspace'){event.preventDefault();engine.removeLast(state);render();}
+ if(event.key==='Backspace'){event.preventDefault();engine.removeLast(state);renderLetters();}
  if(event.key==='Escape'){back();}
 });
 document.addEventListener('visibilitychange',()=>{

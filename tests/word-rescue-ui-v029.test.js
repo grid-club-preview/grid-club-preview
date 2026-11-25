@@ -25,11 +25,12 @@ const local=new Map(),storage={
 const doc={getElementById:id=>dom[id],createElement:()=>new Node(),addEventListener:()=>{}};
 const fakeWindow={addEventListener:()=>{}};
 const calls=[];
+let now=100,tick=null;
 const globals={GridClubWordRescueEngine:engine,GridClubCredits:{
  balance:()=>42,award:(...args)=>{calls.push(args);return {awarded:2};}
 }};
 new Function('window','document','globalThis','localStorage','performance','setInterval','clearInterval','confirm',js)(
- fakeWindow,doc,globals,storage,{now:()=>100},()=>1,()=>{},()=>true);
+ fakeWindow,doc,globals,storage,{now:()=>now},fn=>{tick=fn;return 1;},()=>{tick=null;},()=>true);
 assert(globals.WordRescueApp,'Game entrypoint must initialise');
 dom.wrEntry.onclick();
 assert.equal(dom.wordRescueScreen.hidden,false);
@@ -48,10 +49,17 @@ let state=globals.WordRescueApp.readState();
 assert(engine.validState(state));
 const w=engine.possibleWords(state.rack).sort((a,b)=>b.length-a.length)[0];
 const used=[];
+const originalTiles=dom.wrTray.children.slice();
+const originalBricks=dom.wrBricks.children;
 for(const ch of w){
  const i=state.rack.findIndex((x,j)=>x===ch&&!used.includes(j));
  used.push(i);
- dom.wrTray.listeners.click({target:dom.wrTray.children[i]});
+ // A timer tick can occur while the finger is down; the target must survive.
+ const target=dom.wrTray.children[i];now+=1000;tick();
+ assert.equal(dom.wrTray.children[i],target,'Timer must not replace a held letter');
+ dom.wrTray.listeners.click({target});
+ for(let j=0;j<7;j++)assert.equal(dom.wrTray.children[j],originalTiles[j],'Tap must not replace any letter');
+ assert.equal(dom.wrBricks.children,originalBricks,'Unchanged tower must not be rebuilt');
 }
 assert.equal(dom.wrSubmit.disabled,false);
 assert.equal(dom.wrSubmit.textContent,'Build: '+w);
@@ -60,6 +68,7 @@ dom.wrTray.listeners.click({target:dom.wrTray.children[used[used.length-1]]});
 assert.equal(dom.wrSubmit.textContent,'Build: '+w);
 dom.wrSubmit.onclick();
 assert.equal(dom.wrSubmit.textContent,'Build with this word');
+for(let j=0;j<7;j++)assert.equal(dom.wrTray.children[j],originalTiles[j],'Refill updates the same button');
 state=globals.WordRescueApp.readState();
 assert(state?.blocks>=3,'Submitting a valid word should add blocks');
 assert.equal(state.rack.length,7);

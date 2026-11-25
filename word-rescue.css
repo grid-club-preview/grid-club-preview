@@ -267,3 +267,9 @@
 #wordRescueScreen .wrDock .wrAction{min-height:48px;padding:11px 7px;font-size:14px;touch-action:manipulation}
 #wordRescueScreen .wrDock .wrActionMain{min-height:48px;font-size:16px}
 @media(max-width:350px){#wordRescueScreen .wrDock .wrAction:not(.wrActionMain){font-size:12px}}
+
+/* v0.9.36: stable hitboxes and immediate visual feedback on mobile. */
+#wordRescueScreen .wrTray,#wordRescueScreen .wrLetter{touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+#wordRescueScreen .wrLetter{transition:none;transform:none;-webkit-tap-highlight-color:transparent}
+#wordRescueScreen .wrLetter[aria-pressed=true]{transform:none}
+#wordRescueScreen .wrLetter:active:not(:disabled){filter:brightness(1.14)}
