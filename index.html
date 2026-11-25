@@ -6,16 +6,17 @@
   <meta name="theme-color" content="#0e1424">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="description" content="Daily Dot Trails puzzles: connect matching dots, fill every square, pause, save progress and play offline.">
+  <meta name="description" content="Grid Club beta: Dot Trails, Pipe Shift and Word Rescue, with offline puzzle games and daily challenges.">
   <meta name="apple-mobile-web-app-title" content="Grid Club">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icons/icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
-  <title>Grid Club · Dot Trails &amp; Pipe Shift</title>
+  <title>Grid Club · Puzzle Deck</title>
   <link rel="stylesheet" href="pipe-shift.css?v=0.9.25">
   <link rel="stylesheet" href="vault-reward.css?v=0.9.25">
   <link rel="stylesheet" href="dot-daily.css?v=0.9.25">
   <link rel="stylesheet" href="home-roadmap.css?v=0.9.26">
+  <link rel="stylesheet" href="word-rescue.css?v=0.9.29">
   <style>
     :root { color-scheme: dark; --bg:#0e1424; --surface:#1a243a; --tile:#253147; --muted:#9daabe; --mint:#7be3d4; --purple:#a178ff; }
     * { box-sizing: border-box; }
@@ -333,10 +334,10 @@
 <body>
   <main class="shell">
     <section id="home">
-      <header><div><div class="eyebrow">GRID CLUB</div><h1>A pocketful of challenges.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.28</span></div></header>
+      <header><div><div class="eyebrow">GRID CLUB</div><h1>A pocketful of challenges.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.29</span></div></header>
       <div class="homeSectionHeader" aria-label="Puzzle Deck games">
         <div class="eyebrow">PUZZLE DECK</div>
-        <span class="homeSectionCount">2 playable · 3 planned</span>
+        <span class="homeSectionCount">3 playable · 3 planned</span>
       </div>
       <button class="tileButton" id="freeStart">
         <span class="tileIcon dotTrailsIcon" aria-hidden="true">
@@ -362,6 +363,11 @@
           </svg>
         </span>
         <strong>Pipe Shift</strong>
+        <span class="tileArrow" aria-hidden="true">›</span>
+      </button>
+      <button class="tileButton" id="wrEntry" type="button">
+        <span class="tileIcon" aria-hidden="true" style="background:linear-gradient(145deg,#28638a,#274b63);border:1px solid #5899a7">🔤</span>
+        <span><strong>Word Rescue</strong><small>New prototype · Build words to escape</small></span>
         <span class="tileArrow" aria-hidden="true">›</span>
       </button>
       <div class="roadmapGrid" aria-label="Planned Puzzle Deck games">
@@ -399,6 +405,74 @@
         <p id="backendCheckMessage" role="status" aria-live="polite">Checking configuration…</p>
         <button id="testBackend" type="button">Test connection</button>
       </details>
+    </section>
+    <section id="wordRescueScreen" hidden>
+      <div class="wrHeader">
+        <button class="back" id="wrBack" type="button" aria-label="Back to Word Rescue menu or Grid Club">‹</button>
+        <div><div class="eyebrow">GRID CLUB · PUZZLE DECK</div><h2>Word Rescue</h2></div>
+        <span class="clubWalletBadge" id="wrWallet" aria-label="Club Credits balance">◉ 0</span>
+      </div>
+      <div id="wrMenu">
+        <div class="wrCard wrIntro">
+          <h3>Words are your way out.</h3>
+          <p>A stranded explorer is trapped above shark-infested water. Tap letters to make words. Each letter adds a building block. Reach 24 blocks before the water catches up.</p>
+        </div>
+        <button id="wrContinue" class="wrContinue" type="button" hidden><span id="wrContinueLabel">Continue current run</span><span aria-hidden="true">›</span></button>
+        <button id="wrNewTide" class="wrMode" type="button">
+          <span class="wrModeIcon" aria-hidden="true">🦈</span>
+          <span><strong>Rising Tide</strong><small>Build upwards as the sea rises · 90-second limit</small></span>
+          <span class="tileArrow" aria-hidden="true">›</span>
+        </button>
+        <button id="wrNewSinking" class="wrMode wrModeAlt" type="button">
+          <span class="wrModeIcon" aria-hidden="true">🔡</span>
+          <span><strong>Sinking Letters</strong><small>A letter disappears every 7 seconds · keep forming words</small></span>
+          <span class="tileArrow" aria-hidden="true">›</span>
+        </button>
+        <div class="wrCard">
+          <strong>Prototype rules</strong>
+          <p class="wrFine">Words need at least 3 letters. Letters refresh after every valid word. Each letter builds one block; longer words score more points. Reshuffling costs 6 seconds. A successful first run in each mode earns 2 Club Credits per UTC day.</p>
+          <p id="wrBest" class="wrFine" aria-live="polite">Two trial modes · no ranked leaderboard yet</p>
+          <p class="wrFine">The common-word beta dictionary is still being expanded. There are no adverts, purchases or ranked results in this prototype.</p>
+        </div>
+      </div>
+      <div id="wrPlay" hidden>
+        <div class="wrStatus">
+          <div class="wrStat"><small>Time left</small><strong id="wrTime">01:30</strong></div>
+          <div class="wrStat"><small>Blocks built</small><strong id="wrBlocks">0/24</strong></div>
+          <div class="wrStat"><small>Points</small><strong id="wrScore">0</strong></div>
+        </div>
+        <div class="wrScene" role="img" aria-label="Build a tower of letter blocks above the rising water and shark">
+          <span class="wrSkyLabel" id="wrSceneLabel">SHARK ESCAPE</span>
+          <span class="wrSun" aria-hidden="true"></span>
+          <span class="wrCloud" aria-hidden="true"></span>
+          <div class="wrStack" aria-hidden="true">
+            <span class="wrAvatar" id="wrAvatar">🧍‍♀️</span>
+            <div class="wrBricks" id="wrBricks"></div>
+            <div class="wrBase"></div>
+          </div>
+          <div class="wrSea" id="wrSea"><span class="wrShark" aria-hidden="true">🦈</span></div>
+          <span class="wrBuildNotice">Make words. Build higher.</span>
+        </div>
+        <div class="wrProgress" aria-label="Escape progress"><span id="wrProgress" style="width:0"></span></div>
+        <div class="wrStatus">
+          <div><strong id="wrModeTitle">Rising Tide</strong><div class="wrFine" id="wrModeNote">Water rises steadily.</div></div>
+          <button type="button" class="wrAction" id="wrWordBack">Save &amp; back</button>
+        </div>
+        <div id="wrSelected" class="wrSelected" aria-live="polite"><small>Tap letters to make a word</small></div>
+        <div class="wrTray" id="wrTray" aria-label="Available letter tiles"></div>
+        <div class="wrActions">
+          <button id="wrBackspace" class="wrAction" type="button">⌫ Undo letter</button>
+          <button id="wrRerack" class="wrAction" type="button">↻ New letters · −6s</button>
+          <button id="wrSubmit" class="wrAction wrActionMain" type="button">Build with this word</button>
+        </div>
+        <p id="wrMessage" class="wrMessage" role="status" aria-live="polite"></p>
+        <div id="wrWordHistory" class="wrHistory">Longer words earn more points. Each letter adds one block.</div>
+        <div id="wrResult" class="wrResult" hidden role="status" aria-live="polite">
+          <h3 id="wrResultTitle">Safe at last!</h3>
+          <p id="wrResultText"></p>
+          <button id="wrTryAgain" type="button">Play again</button>
+        </div>
+      </div>
     </section>
     <section id="pipeShiftScreen" hidden>
       <div id="pipe-menu">
@@ -712,7 +786,7 @@
       </div>
       
       <div class="adSlot" id="adSlot" aria-hidden="true" hidden></div>
-      <footer>Grid Club · v0.9.28 beta</footer>
+      <footer>Grid Club · v0.9.29 beta</footer>
     </section>
   </main>
   <div class="pauseLayer" id="dotDailyCompleteLayer" hidden role="dialog" aria-modal="true" aria-labelledby="dotDailyCompleteTitle">
@@ -751,6 +825,8 @@
   <script src="pipe-engine.js?v=0.9.27"></script>
   <script src="vault-reward.js?v=0.9.25"></script>
   <script src="pipe-shift.js?v=0.9.28"></script>
+  <script src="word-rescue-engine.js?v=0.9.29"></script>
+  <script src="word-rescue.js?v=0.9.29"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol === 'https:') {
       addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
