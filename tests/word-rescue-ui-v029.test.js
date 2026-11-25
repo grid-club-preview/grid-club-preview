@@ -37,7 +37,7 @@ assert.equal(dom.home.hidden,true);
 dom.wrNewTide.onclick();
 assert.equal(dom.wrPlay.hidden,false);
 assert.equal(dom.wrTray.children.length,7,'Seven buttons should render');
-assert.equal(dom.wrSceneLabel.textContent,'SHARK ESCAPE');
+assert.equal(dom.wrSceneLabel.textContent,'RISING TIDE');
 let state=globals.WordRescueApp.readState();
 assert(engine.validState(state));
 const w=engine.possibleWords(state.rack).sort((a,b)=>b.length-a.length)[0];
