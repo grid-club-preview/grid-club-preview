@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="vault-reward.css?v=0.9.25">
   <link rel="stylesheet" href="dot-daily.css?v=0.9.25">
   <link rel="stylesheet" href="home-roadmap.css?v=0.9.26">
-  <link rel="stylesheet" href="word-rescue.css?v=0.9.31">
+  <link rel="stylesheet" href="word-rescue.css?v=0.9.32">
   <style>
     :root { color-scheme: dark; --bg:#0e1424; --surface:#1a243a; --tile:#253147; --muted:#9daabe; --mint:#7be3d4; --purple:#a178ff; }
     * { box-sizing: border-box; }
@@ -334,7 +334,7 @@
 <body>
   <main class="shell">
     <section id="home">
-      <header><div><div class="eyebrow">GRID CLUB</div><h1>A pocketful of challenges.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.31</span></div></header>
+      <header><div><div class="eyebrow">GRID CLUB</div><h1>A pocketful of challenges.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.32</span></div></header>
       <div class="homeSectionHeader" aria-label="Puzzle Deck games">
         <div class="eyebrow">PUZZLE DECK</div>
         <span class="homeSectionCount">3 playable · 3 planned</span>
@@ -415,12 +415,17 @@
       <div id="wrMenu">
         <div class="wrCard wrIntro">
           <h3>Words are your way out.</h3>
-          <p>A stranded explorer is trapped above shark-infested water. Tap letters to make words. Each letter adds a building block. Reach 24 blocks before the water catches up.</p>
+          <p>Help Gridda escape! Build upwards to survive a rising tide, or build a raft to escape a pursuing shark. Every letter in a valid word adds a block or plank.</p>
         </div>
         <button id="wrContinue" class="wrContinue" type="button" hidden><span id="wrContinueLabel">Continue current run</span><span aria-hidden="true">›</span></button>
         <button id="wrNewTide" class="wrMode" type="button">
           <span class="wrModeIcon" aria-hidden="true">🦈</span>
           <span><strong>Rising Tide</strong><small>Build above the rising water · no separate timer</small></span>
+          <span class="tileArrow" aria-hidden="true">›</span>
+        </button>
+        <button id="wrNewRaft" class="wrMode wrModeRaft" type="button">
+          <span class="wrModeIcon" aria-hidden="true">🦈</span>
+          <span><strong>Raft Escape</strong><small>Build outwards to shore · escape before the shark attacks</small></span>
           <span class="tileArrow" aria-hidden="true">›</span>
         </button>
         <button id="wrNewSinking" class="wrMode wrModeAlt" type="button">
@@ -439,11 +444,11 @@
       <div id="wrPlay" hidden>
         <div class="wrStatus">
           <div class="wrStat"><small>Elapsed time</small><strong id="wrTime">00:00</strong></div>
-          <div class="wrStat"><small>Blocks built</small><strong id="wrBlocks">0/24</strong></div>
+          <div class="wrStat wrSafetyStat"><small>Escape progress</small><strong id="wrBlocks">24 blocks to safety</strong></div>
           <div class="wrStat"><small>Points</small><strong id="wrScore">0</strong></div>
         </div>
-        <div class="wrScene" id="wrScene" data-danger="safe" role="img" aria-label="A large animated explorer waves and jumps on a tower as water rises and sharks swim below">
-          <span class="wrSkyLabel" id="wrSceneLabel">SHARK ESCAPE</span>
+        <div class="wrScene" id="wrScene" data-danger="safe" data-mode="tower" data-panic="calm" role="img" aria-label="Gridda builds an elevated escape tower above rising water, or a raft away from a pursuing shark">
+          <span class="wrSkyLabel" id="wrSceneLabel">RISING TIDE</span>
           <span class="wrSun" aria-hidden="true"></span>
           <span class="wrCloud" aria-hidden="true"></span>
           <div class="wrStack" aria-hidden="true">
@@ -483,22 +488,25 @@
             <div class="wrBricks" id="wrBricks"></div>
             <div class="wrBase"></div>
           </div>
-          <div class="wrSea" id="wrSea"><span class="wrShark" aria-hidden="true">🦈</span></div>
-          <span class="wrBuildNotice">Make words. Build higher.</span>
+          <div class="wrSea" id="wrSea"><span class="wrShark" id="wrShark" aria-hidden="true">🦈</span></div>
+          <div class="wrShore" aria-hidden="true"><span>🌴</span></div>
+          <span class="wrBuildNotice" id="wrBuildNotice">Make words. Build higher.</span>
         </div>
         <div class="wrProgress" aria-label="Escape progress"><span id="wrProgress" style="width:0"></span></div>
         <div class="wrStatus">
           <div><strong id="wrModeTitle">Rising Tide</strong><div class="wrFine" id="wrModeNote">Water rises steadily.</div></div>
           <button type="button" class="wrAction" id="wrWordBack">Save &amp; back</button>
         </div>
-        <div id="wrSelected" class="wrSelected" aria-live="polite"><small>Tap letters to make a word</small></div>
-        <div class="wrTray" id="wrTray" aria-label="Available letter tiles"></div>
-        <div class="wrActions">
-          <button id="wrBackspace" class="wrAction" type="button">⌫ Undo letter</button>
-          <button id="wrRerack" class="wrAction" type="button">↻ New letters · −6s</button>
-          <button id="wrSubmit" class="wrAction wrActionMain" type="button">Build with this word</button>
+        <div id="wrDock" class="wrDock" aria-label="Word building controls">
+          <div id="wrSelected" class="wrSelected" aria-live="polite"><small>Tap letters to make a word</small></div>
+          <div class="wrTray" id="wrTray" aria-label="Available letter tiles"></div>
+          <div class="wrActions">
+            <button id="wrBackspace" class="wrAction" type="button">⌫ Undo letter</button>
+            <button id="wrRerack" class="wrAction" type="button">↻ New letters · −6s</button>
+            <button id="wrSubmit" class="wrAction wrActionMain" type="button">Build with this word</button>
+          </div>
+          <p id="wrMessage" class="wrMessage" role="status" aria-live="polite"></p>
         </div>
-        <p id="wrMessage" class="wrMessage" role="status" aria-live="polite"></p>
         <div id="wrWordHistory" class="wrHistory">Longer words earn more points. Each letter adds one block.</div>
         <div id="wrResult" class="wrResult" hidden role="status" aria-live="polite">
           <h3 id="wrResultTitle">Safe at last!</h3>
@@ -819,7 +827,7 @@
       </div>
       
       <div class="adSlot" id="adSlot" aria-hidden="true" hidden></div>
-      <footer>Grid Club · v0.9.31 beta</footer>
+      <footer>Grid Club · v0.9.32 beta</footer>
     </section>
   </main>
   <div class="pauseLayer" id="dotDailyCompleteLayer" hidden role="dialog" aria-modal="true" aria-labelledby="dotDailyCompleteTitle">
@@ -859,8 +867,8 @@
   <script src="vault-reward.js?v=0.9.25"></script>
   <script src="pipe-shift.js?v=0.9.28"></script>
   <script src="word-rescue-lexicon.js?v=0.9.30"></script>
-  <script src="word-rescue-engine.js?v=0.9.31"></script>
-  <script src="word-rescue.js?v=0.9.31"></script>
+  <script src="word-rescue-engine.js?v=0.9.32"></script>
+  <script src="word-rescue.js?v=0.9.32"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol === 'https:') {
       addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
