@@ -74,3 +74,68 @@
 @keyframes wrWaves{from{transform:translateX(0)}to{transform:translateX(-90px)}}
 @media(max-width:390px){.wrHeader h2{font-size:24px}.wrLetter{height:42px;font-size:18px}.wrScene{height:238px}.wrStat{padding:9px}.wrStat strong{font-size:19px}}
 @media(prefers-reduced-motion:reduce){.wrShark,.wrSea:before{animation:none}.wrSea,.wrProgress span{transition:none}}
+
+
+/* v0.9.30: the rescue action is the focal point, not a small illustration. */
+#wordRescueScreen .wrHeader{margin-bottom:13px}
+#wordRescueScreen .wrStatus{gap:7px;margin-bottom:9px}
+#wordRescueScreen .wrStat{padding:9px 10px}
+#wordRescueScreen .wrStat small{margin-bottom:2px}
+#wordRescueScreen .wrScene{
+ height:clamp(340px,48svh,490px);border-radius:20px;
+ background:linear-gradient(180deg,#25539a 0%,#64b3e9 63%,#96d6df 100%);
+}
+#wordRescueScreen .wrStack{bottom:22%;width:86px}
+#wordRescueScreen .wrBrick{height:7px}
+#wordRescueScreen .wrAvatar{
+ position:absolute;bottom:100%;left:50%;transform:translateX(-50%);
+ width:92px;height:132px;display:block;
+ filter:drop-shadow(0 4px 3px #173d6566);
+}
+#wordRescueScreen .wrCharacter{width:100%;height:100%;overflow:visible}
+#wordRescueScreen .wrBody{transform-origin:48px 108px;animation:wrBounce 1.65s ease-in-out infinite}
+#wordRescueScreen .wrArmLeft{transform-origin:33px 57px;animation:wrWaveLeft 1s ease-in-out infinite alternate}
+#wordRescueScreen .wrArmRight{transform-origin:64px 57px;animation:wrWaveRight 1.2s ease-in-out infinite alternate}
+#wordRescueScreen .wrFace{transform-origin:48px 37px}
+#wordRescueScreen .wrTension{opacity:0}
+#wordRescueScreen .wrScene[data-danger="alert"] .wrBody{animation-duration:.9s}
+#wordRescueScreen .wrScene[data-danger="alert"] .wrArmLeft,
+#wordRescueScreen .wrScene[data-danger="alert"] .wrArmRight{animation-duration:.55s}
+#wordRescueScreen .wrScene[data-danger="critical"] .wrBody{animation:wrPanic .23s ease-in-out infinite alternate}
+#wordRescueScreen .wrScene[data-danger="critical"] .wrArmLeft{animation:wrFlailLeft .25s ease-in-out infinite alternate}
+#wordRescueScreen .wrScene[data-danger="critical"] .wrArmRight{animation:wrFlailRight .21s ease-in-out infinite alternate}
+#wordRescueScreen .wrScene[data-danger="critical"] .wrTension,
+#wordRescueScreen .wrScene[data-danger="alert"] .wrTension{opacity:1}
+#wordRescueScreen .wrScene[data-danger="lost"] .wrBody{animation:wrLost .75s ease-in forwards}
+#wordRescueScreen .wrScene[data-danger="lost"] .wrArmLeft,
+#wordRescueScreen .wrScene[data-danger="lost"] .wrArmRight{animation:wrFlailLeft .32s ease-in-out infinite alternate}
+#wordRescueScreen .wrScene[data-danger="won"] .wrBody{animation:wrCelebrate .65s ease-in-out infinite alternate}
+#wordRescueScreen .wrScene[data-danger="won"] .wrArmLeft,
+#wordRescueScreen .wrScene[data-danger="won"] .wrArmRight{animation:wrVictoryArms .55s ease-in-out infinite alternate}
+#wordRescueScreen .wrScene[data-danger="alert"]{border-color:#ecbd77}
+#wordRescueScreen .wrScene[data-danger="critical"]{border-color:#ff8e82;box-shadow:inset 0 0 25px #d9625650}
+#wordRescueScreen .wrScene[data-danger="lost"]{border-color:#ff8e82}
+#wordRescueScreen .wrSelected{min-height:44px;margin:8px 0 7px}
+#wordRescueScreen .wrLetter{height:51px}
+#wordRescueScreen .wrBuildNotice{bottom:14px}
+#wordRescueScreen .wrDictionaryStatus{font-size:12px;color:#9bd4d5;line-height:1.5;margin:9px 0 0}
+#wordRescueScreen .wrMode:disabled{opacity:.55;cursor:progress}
+@keyframes wrBounce{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-12px) rotate(4deg)}}
+@keyframes wrWaveLeft{0%{transform:rotate(-22deg)}100%{transform:rotate(27deg)}}
+@keyframes wrWaveRight{0%{transform:rotate(15deg)}100%{transform:rotate(-27deg)}}
+@keyframes wrPanic{0%{transform:translate(-5px,-5px) rotate(-12deg)}100%{transform:translate(5px,-1px) rotate(12deg)}}
+@keyframes wrFlailLeft{0%{transform:rotate(-60deg)}100%{transform:rotate(65deg)}}
+@keyframes wrFlailRight{0%{transform:rotate(60deg)}100%{transform:rotate(-65deg)}}
+@keyframes wrLost{from{transform:rotate(0)}to{transform:translateY(80px) rotate(30deg)}}
+@keyframes wrCelebrate{0%,100%{transform:translateY(-6px)}50%{transform:translateY(-20px)}}
+@keyframes wrVictoryArms{0%,100%{transform:rotate(-15deg)}50%{transform:rotate(-55deg)}}
+@media(max-width:390px){
+ #wordRescueScreen .wrScene{height:clamp(325px,45svh,440px)}
+ #wordRescueScreen .wrLetter{height:45px}
+ #wordRescueScreen .wrStat{padding:8px}
+}
+@media(prefers-reduced-motion:reduce){
+ #wordRescueScreen .wrBody,#wordRescueScreen .wrArmLeft,#wordRescueScreen .wrArmRight{
+  animation:none!important;
+ }
+}
