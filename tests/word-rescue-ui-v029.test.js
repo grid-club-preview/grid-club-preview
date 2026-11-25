@@ -8,7 +8,7 @@ const engine=require('../word-rescue-engine.js');
 const ids=[...html.matchAll(/id="([^"]+)"/g)].map(x=>x[1]);
 assert.equal(new Set(ids).size,ids.length,'No duplicate HTML ids');
 class Node {
- constructor(){this.hidden=false;this.children=[];this.style={setProperty:()=>{}};this.dataset={};this.attrs={};
+ constructor(){this.hidden=false;this.children=[];this.style={setProperty:(k,v)=>{this.style[k]=v;}};this.dataset={};this.attrs={};
    this.classList={toggle:()=>{},add:()=>{},remove:()=>{}};
    this.listeners={};this.textContent='';this.disabled=false;}
  append(...xs){this.children.push(...xs);}
@@ -90,6 +90,7 @@ dom.wrNewRaft.onclick();
 assert.equal(dom.wrRules.hidden,false);dom.wrRulesPlay.onclick();
 assert.equal(dom.wrScene.dataset.mode,'raft');
 assert.equal(dom.wrBlocks.textContent,'24 planks to safety');
+assert.equal(dom.wrScene.style['--wrRaftLength'],'0.000cqw');
 assert.equal(dom.wrSea.style.height,'32%','Raft mode has a fixed sea level');
 assert(dom.wrDock,'Word submission controls must have a dock');
 let iterations=0;
@@ -109,6 +110,8 @@ while(dom.wrResult.hidden&&iterations++<9){
 }
 assert.equal(dom.wrResult.hidden,false,'Building 24 planks should complete Raft Escape');
 assert.equal(dom.wrBlocks.textContent,'SAFE');assert.equal(dom.wrDock.hidden,true);
+assert.equal(dom.wrScene.style['--wrRaftLength'],'54.000cqw');
+assert.equal(dom.wrBricks.children.length,24);
 dom.wrTryAgain.onclick();assert.equal(dom.wrRules.hidden,true);assert.equal(dom.wrDock.hidden,false);
 assert.equal(calls.length,0,'Free Play must not award Club Credits');
 console.log('Word Rescue browser wiring passed: three modes, raft victory, dock, scoring, pause/continue and return home');

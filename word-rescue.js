@@ -1,4 +1,4 @@
-/* Grid Club Word Rescue v0.9.37 · responsive raft and island rescue helper. */
+/* Grid Club Word Rescue v0.9.38 · island-to-Gridda construction. */
 (function(){
 'use strict';
 const engine=globalThis.GridClubWordRescueEngine;
@@ -34,7 +34,7 @@ function records(){try{const x=JSON.parse(safeGet(STATS_KEY)||'null');return x&&
 function modeName(mode){return mode==='sinking'?'Sinking Letters':mode==='raft'?'Raft Escape':'Rising Tide';}
 const RULES={
  tide:['Raise Gridda up by making words','Hurry — the tide is rising!','Build 24 blocks before the water reaches Gridda.'],
- raft:['Build Gridda a raft by making words','Hurry — the shark is approaching!','Build 24 planks to reach shore before the shark catches Gridda.'],
+ raft:['Build towards Gridda by making words','Hurry — the shark is approaching!','Build 24 planks out from the island to reach Gridda before the shark catches her.'],
  sinking:['Raise Gridda up by making words','Hurry — the tide is rising and letters are sinking!','Build 24 blocks before the tide catches Gridda. One letter disappears every 7 seconds, but the last vowel is protected.']
 };
 function seen(mode){return rulesSeen.has(mode)||safeGet(RULES_KEY+':'+mode)==='true';}
@@ -122,7 +122,7 @@ function begin(mode,continueSaved=false){
  $('wrModeTitle').textContent=modeName(state.mode);
  $('wrModeNote').textContent=state.mode==='sinking'?
    'A letter sinks every 7 seconds. Keep building above the rising tide.':
-   state.mode==='raft'?'Build outwards to reach shore before the shark catches Gridda.':
+   state.mode==='raft'?'Build from the island towards Gridda before the shark catches her.':
    'The rising water is the danger. Build upwards to stay dry.';
  render();save();
  if(!seen(state.mode))showRules(true);else startTimer();
@@ -146,8 +146,9 @@ function render(){
  scene.dataset.panic=state.won||state.expired?'end':danger>=.92?'frantic':danger>=.78?'panicking':danger>=.48?'worried':'calm';
  scene.style.setProperty('--wrDanger',String(danger));
  scene.style.setProperty('--wrBuild',String(Math.min(24,state.blocks)));
- // The gap from starter raft to jetty is 54% of the scene width at every screen size.
- scene.style.setProperty('--wrRaftLength',(Math.min(24,state.blocks)/24*54).toFixed(3)+'%');
+ // The fixed jetty is at x=80%; the floating platform ends at x=26%.
+ // Grow the bridge left from the jetty, closing that 54% gap at 24 planks.
+ scene.style.setProperty('--wrRaftLength',(Math.min(24,state.blocks)/24*54).toFixed(3)+'cqw');
  scene.style.setProperty('--wrBodySpeed',(1.65-danger*1.22).toFixed(2)+'s');
  scene.style.setProperty('--wrArmSpeed',(1.20-danger*.88).toFixed(2)+'s');
  $('wrShark').style.left=state.mode==='raft'?(90-62*danger).toFixed(1)+'%':'5%';
@@ -159,7 +160,7 @@ function render(){
  $('wrModeTitle').textContent=modeName(state.mode);
  $('wrProgress').style.width=Math.min(100,state.blocks/24*100)+'%';
  $('wrSea').style.height=engine.waterHeight(state)+'%';
- $('wrBuildNotice').textContent=state.mode==='raft'?(state.won?'Together at last!':'Make words. Reach the jetty.'):'Make words. Build higher.';
+ $('wrBuildNotice').textContent=state.mode==='raft'?(state.won?'Together at last!':'Make words. Bring the jetty to Gridda.'):'Make words. Build higher.';
  const bricks=$('wrBricks'),count=Math.min(24,state.blocks);
  if(drawnBlocks!==count){
    bricks.replaceChildren();

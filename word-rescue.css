@@ -298,3 +298,23 @@
 @keyframes wrHelperCheer{from{transform:rotate(4deg)}to{transform:rotate(40deg)}}
 @keyframes wrHelperJump{from{transform:translateY(0)}to{transform:translateY(-7px)}}
 @media(prefers-reduced-motion:reduce){#wordRescueScreen .wrHelperArm,#wordRescueScreen .wrHelperBody{animation:none!important}#wordRescueScreen .wrScene[data-mode=raft] .wrAvatar{transition:none}}
+
+/* v0.9.38: the floating platform never grows; the jetty builds right-to-left. */
+#wordRescueScreen .wrScene[data-mode=raft] .wrStack{left:12%;width:14%;transition:none}
+#wordRescueScreen .wrScene[data-mode=raft] .wrBricks{
+ position:absolute;bottom:0;left:auto;right:-54cqw;width:var(--wrRaftLength,0cqw);
+ height:17px;flex-direction:row-reverse;transition:width .25s ease-out;
+}
+#wordRescueScreen .wrScene[data-mode=raft] .wrBrick{flex:0 0 2.25cqw;width:2.25cqw;min-width:0;box-sizing:border-box}
+#wordRescueScreen .wrScene[data-mode=raft] .wrAvatar{left:7cqw}
+#wordRescueScreen .wrScene[data-mode=raft][data-danger=won] .wrAvatar{left:61cqw;transition:left .7s ease .25s}
+#wordRescueScreen .wrScene[data-mode=raft] .wrHelper{
+ right:calc(22% + var(--wrRaftLength,0cqw));bottom:12px;transition:right .25s ease-out;
+}
+#wordRescueScreen .wrScene[data-mode=raft][data-danger=won] .wrHelper{right:22%;transition:right .7s ease .25s}
+@media(prefers-reduced-motion:reduce){
+ #wordRescueScreen .wrScene[data-mode=raft] .wrBricks,
+ #wordRescueScreen .wrScene[data-mode=raft] .wrHelper,
+ #wordRescueScreen .wrScene[data-mode=raft][data-danger=won] .wrAvatar,
+ #wordRescueScreen .wrScene[data-mode=raft][data-danger=won] .wrHelper{transition:none}
+}
