@@ -38,6 +38,18 @@ for(const noun of PLURAL_NOUNS){
  const plural=pluralFor(noun);
  if(plural.length>=3&&plural.length<=7)WORD_SET.add(plural);
 }
+// Import a broader, public-domain alphabetical word list supplied by the UI.
+// Keep this engine pure so offline tests and saved runs remain deterministic.
+function importDictionary(raw){
+ if(typeof raw!=='string'||raw.length>12000000)return {added:0,total:WORD_SET.size};
+ let added=0;
+ for(const token of raw.split(/[^A-Za-z]+/)){
+   if(token.length<3||token.length>7)continue;
+   const word=token.toUpperCase();
+   if(!WORD_SET.has(word)){WORD_SET.add(word);added++;}
+ }
+ return {added,total:WORD_SET.size};
+}
 const SEEDS='PLANET SINGER SILVER BRIDGE STREAM SHARKS GARDEN MARKET WINTER SUMMER FLOWER BRIGHT CANDLE PLANTS STONES PLAYER ROCKET LITTLE OCEANS BOTTLE FRIEND CAMERA ORANGE DRAGON TUNNEL RABBIT NATURE TRAVEL PURPLE MARBLE JACKET BANNER WIZARD CASTLE BASKET ANCHOR ARTIST PILOTS PENCIL MONKEY SHIELD LETTER SUMMIT HUNTER STRONG SUNSET CREATE CLOSER COMET BREAD TIGER FISHES WHEELS PIPES HONEY BROWN CROWN CHAIR TRAIN PLANE TABLE LEAF STAR SINK BOOK GAME RIVER LEMON WATER SCORE BRAVE PAPER ROSE CLOUD'.split(' ').filter(w=>WORD_SET.has(w));
 const FILL='EEEEEEAAAAAIIIIOOOOONNNNRRRRTTTTSSSSLLLLCCCDDDHHHMMMPPPUUUGGBBFKVWY';
 function rand(s){s.rng=(Math.imul(s.rng,1664525)+1013904223)>>>0;return s.rng/4294967296;}
@@ -126,6 +138,6 @@ function validState(s){return !!s&&s.version===1&&['tide','sinking'].includes(s.
  Array.isArray(s.used)&&Array.isArray(s.words)&&Number.isInteger(s.blocks)&&
  s.blocks>=0&&Number.isFinite(s.elapsedMs)&&s.elapsedMs>=0&&s.elapsedMs<=DURATION_MS*2&&
  typeof s.won==='boolean'&&typeof s.expired==='boolean';}
-return Object.freeze({WORD_SET,SEEDS,create,wordFor,select,removeLast,submit,rerack,
+return Object.freeze({WORD_SET,SEEDS,importDictionary,create,wordFor,select,removeLast,submit,rerack,
  possibleWords,canMake,advance,remainingMs,waterHeight,safeHeight,DURATION_MS,validState});
 });
