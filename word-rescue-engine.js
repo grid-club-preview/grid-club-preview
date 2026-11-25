@@ -14,6 +14,30 @@ const groups=[
  'absent accept access across acting action active actors actual admire advice advise afford afraid agency agenda almost always amazed amount animal annual answer anyone appeal appear apples arcade arrive artist aspect assess assist assume attack autumn avenue bakery ballet bamboo banana banner barley barrel basket battle beauty become before behalf behave behind belief belong beside better beyond bicycle bishop bitter blanket blonde border bottle bottom bounce branch breath bridge bright broken bronze budget buffer bundle burger burden burial button buying camera cancel candle canvas carbon career carpet carrot castle casual cattle center centre chance change chapel charge cheese cherry choice choose chorus chosen circle circus cities client cliffs clinic closer clouds cloudy coach coastal coffee collar combat coming common comply copper corner cotton county couple course cousin craft create credit creepy cruise crunch crying cursor custom danger daring dealer debate decade decide defect defend define degree demand depart depend deploy desert design desire detail detect device dinner direct divide doctor dollar domain double dragon drawer dreams dreamy driver driven during duties easier easily eating editor effect effort eighty eleven emerge empire enable encode energy engine enough enrich ensure entity escape estate ethics except expand expect expert expire expose extend extras fabric facing factor failed fairly family famous farmer father fellow female fences ferret fierce figure filing filled filter finale finger finish fiscal fishes flight floral flower follow forest format formal former foster fourth fragile friend fringe frozen future galaxy garage garden garlic gather gentle ginger global golden golfer gossip govern grains grants grassy ground growth guilty guitar hammer handle happen harbor harden harder hardly hazard health hearts heated height helmet hidden higher hiking holder honest honour hopper horses hotels humble humour hunger hunter impact import impose income indeed indoor inform injury inline insane insect inside insist intact intake intent invest invite island jacket jungle junior keeper kernel kindly kitten ladder ladies lagoon landed larger latest launch lawyer leader league leaves legend length letter levels lifted lights likely listen little lively living locate locked locker lonely longer loudly lovely lumber magnet mainly manage manner manual marine market marble margin marker master matter meadow medium melody member memory mental mentor method middle mighty millet mining minute mirror mobile modern module moment monkey months mostly mother motion moving muscle museum mutual narrow nation native nature nearby nearly needed needle nested nether nicely nickel ninety normal notice number object obtain occupy oceanic office offline online option orange origin outlet output oxygen packet painter palace panels parent parsed partly people pepper period person phrase picnic pieces pirate planet player please plenty poetry points police polish policy portal poster potato powder praise prefer pretty prices prince prison prized proper public puzzle quartz rabbit racing random ranked rarely rather rating reader really reason recall recent record redeem reduce region relate remain remote remove render repeat replay rescue resist retail return reveal review reward ribbon riders rising rocket roller rooted rotate routes runner safety sailor salmon sample saving scenic school screen search season second secret sector secure select seller senior sensor series server settle shadow shaking shared sheets shelter shield shifts shooter shores should signal silent silver simple singly singer sister sketch sleepy slider slides slight slowed slower smooth socket solder solved solver sounds source sparse speech speedy spiral spirit stable stages stairs stands staple starts stated static status steam steady stereo sticky stolen stored stores stormy stream street stress string strong struck studio submit subset sudden suffer summer summit sunset supply surely survey sweets switch symbol system tablet target tasted tender tennis theory theirs things thirty though thread threat throat ticket timber timing tissue titles toggle tomato tongue toward towers travel trials tricky trigger trophy tunnel turkey turned twelve twenty typing unique united unless unlock update upload upside useful valley valued values vendor verify vessel viewer violet vision visual voices volume voting walker wallet wander wanted warmer washes wasted waters wealth weekly weight wheels whilst wholly wicket wicked window winner winter wishes within wizard wonder wooden worker worlds worthy writer yellow yields yogurt zombie'
 ];
 const WORD_SET=new Set(groups.join(' ').toUpperCase().split(/\s+/).filter(w=>/^[A-Z]{3,7}$/.test(w)));
+// Only known common nouns generate regular plurals. Blindly appending S to
+// every dictionary word would admit non-words (e.g. pronouns or adjectives).
+const PLURAL_NOUNS=(
+ 'act age animal ant apple arm artist ash aunt baby bag ball bank bar barn basket bat bear bed bee bell belt bench berry bird boat body book boot bottle box boy branch bread brick bridge brother brush bug bulb bull bun bus bush button cab cake camera camp candle cap car card cart castle cat cave chair chain chance change cherry chest child chip city class cliff clock cloud club coat coin collar comet comic cone cookie coral corner couch country cow crab craft crane crate cream creek crowd crown cup curve customer cycle daisy day deer desk device diary dish doctor dog doll door dot dragon dream dress drink drum duck duty ear edge egg elephant elf elbow engine eye face fact fairy family fan farm father feather fence field file film finger fire fish flag flame flower fly foot fork forest fox friend frog fruit game garden gate gear gift girl glass glove goat goal gold goose grape grass grid group guard guest guitar hair hand hat head heart hedge hen hero hill hint home hook horn horse house hunter island jacket jar jelly jewel job joke judge jungle key kid king kite kitten knife lake lamp lane leaf leg lemon letter level lid life light line lion list loaf lock log loop lord machine man map marble market match mate meal medal menu message mile mirror model mole monkey moon morning mother mountain mouse mouth movie mug museum nail name nest night nose note noun nurse ocean office onion orange owl page paint pair palm pan paper parent park part path peach pear pea pen pencil person pet photo piano picture piece pig pill pilot pin pipe planet plane plant plate player plum pocket poem point pond pool port potato pot prize puzzle queen quiz rabbit race radio rain range rat ray reader reef result ride ring river road rock rocket role roof room root rope rose rule runner sail sailor salad salt sand scarf scene school score sea seal seat seed shark sheep shell shelf ship shirt shoe shop shore show shrimp side sign singer sink sister skate skill sky snake sock soldier son song sound soup space spark spider spin sport spot spray spring squad stage stair stamp star station step stick stone stop store storm story straw street string student studio suit summer sun sunset table tank tap task tea team tear teen temple tent term test theatre thing thorn thread ticket tide tiger tile time timer tire toe tomato tooth tool top torch tower town toy track trail train tree trick trip troll trout truck tube tulip tunnel turtle twin type uncle unit valley valve van vase veil vest video view vine visitor voice vote wagon wall wallet watch water wave week wheel whale wheat wife wind window wing winter wish witch woman wood word work world worm writer yard year zebra zoo'
+).toUpperCase().trim().split(/\s+/);
+const IRREGULAR_PLURALS=Object.freeze({
+ MAN:'MEN',WOMAN:'WOMEN',MOUSE:'MICE',GOOSE:'GEESE',
+ FOOT:'FEET',TOOTH:'TEETH',CHILD:'CHILDREN',PERSON:'PEOPLE',
+ OX:'OXEN',LOUSE:'LICE',LEAF:'LEAVES',KNIFE:'KNIVES',
+ WIFE:'WIVES',WOLF:'WOLVES',LOAF:'LOAVES',SHELF:'SHELVES',
+ CALF:'CALVES',HALF:'HALVES',QUIZ:'QUIZZES',
+ HERO:'HEROES',POTATO:'POTATOES',TOMATO:'TOMATOES',ECHO:'ECHOES'
+});
+function pluralFor(noun){
+ if(IRREGULAR_PLURALS[noun])return IRREGULAR_PLURALS[noun];
+ if(/[^AEIOU]Y$/.test(noun))return noun.slice(0,-1)+'IES';
+ if(/(S|X|Z|CH|SH)$/.test(noun))return noun+'ES';
+ return noun+'S';
+}
+for(const noun of PLURAL_NOUNS){
+ if(!WORD_SET.has(noun))continue;
+ const plural=pluralFor(noun);
+ if(plural.length>=3&&plural.length<=7)WORD_SET.add(plural);
+}
 const SEEDS='PLANET SINGER SILVER BRIDGE STREAM SHARKS GARDEN MARKET WINTER SUMMER FLOWER BRIGHT CANDLE PLANTS STONES PLAYER ROCKET LITTLE OCEANS BOTTLE FRIEND CAMERA ORANGE DRAGON TUNNEL RABBIT NATURE TRAVEL PURPLE MARBLE JACKET BANNER WIZARD CASTLE BASKET ANCHOR ARTIST PILOTS PENCIL MONKEY SHIELD LETTER SUMMIT HUNTER STRONG SUNSET CREATE CLOSER COMET BREAD TIGER FISHES WHEELS PIPES HONEY BROWN CROWN CHAIR TRAIN PLANE TABLE LEAF STAR SINK BOOK GAME RIVER LEMON WATER SCORE BRAVE PAPER ROSE CLOUD'.split(' ').filter(w=>WORD_SET.has(w));
 const FILL='EEEEEEAAAAAIIIIOOOOONNNNRRRRTTTTSSSSLLLLCCCDDDHHHMMMPPPUUUGGBBFKVWY';
 function rand(s){s.rng=(Math.imul(s.rng,1664525)+1013904223)>>>0;return s.rng/4294967296;}
@@ -70,12 +94,13 @@ function submit(s){
  return {ok:true,word,blocks:word.length,points,won:s.won};
 }
 function rerack(s){if(s.expired||s.won)return false;s.rack=freshRack(s);s.selected=[];return true;}
+// Water rises at the v0.9.29 pace, without a hard 90-second timeout.
 const DURATION_MS=90000;
 function waterHeight(s){return 8+(s.elapsedMs/DURATION_MS)*(s.mode==='sinking'?52:60);}
 function safeHeight(s){return 25+Math.min(24,s.blocks)*1.8;}
 function advance(s,ms){
  if(s.won||s.expired||!s.started)return;
- s.elapsedMs=Math.min(DURATION_MS,s.elapsedMs+Math.max(0,ms));
+ s.elapsedMs+=Math.max(0,ms);
  if(s.mode==='sinking'){
    const waves=Math.floor(s.elapsedMs/7000),old=Math.floor(s.lastErodeMs/7000);
    for(let k=old;k<waves;k++){
@@ -87,8 +112,11 @@ function advance(s,ms){
    }
    s.lastErodeMs=s.elapsedMs;
  }
- if(s.elapsedMs>=DURATION_MS||waterHeight(s)>=safeHeight(s))s.expired=true;
+ // The waterline alone ends a round. Elapsed time measures performance but
+ // is not a second, competing deadline. Once the water reaches Gridda, fail.
+ if(waterHeight(s)>=safeHeight(s))s.expired=true;
 }
+// Retained for older callers; the interface now displays elapsed time instead.
 const remainingMs=s=>Math.max(0,DURATION_MS-s.elapsedMs);
 function validState(s){return !!s&&s.version===1&&['tide','sinking'].includes(s.mode)&&
  Number.isInteger(s.rng)&&Array.isArray(s.rack)&&s.rack.length===7&&
@@ -96,7 +124,7 @@ function validState(s){return !!s&&s.version===1&&['tide','sinking'].includes(s.
  s.selected.every(i=>Number.isInteger(i)&&i>=0&&i<7&&!!s.rack[i])&&
  new Set(s.selected).size===s.selected.length&&
  Array.isArray(s.used)&&Array.isArray(s.words)&&Number.isInteger(s.blocks)&&
- s.blocks>=0&&Number.isFinite(s.elapsedMs)&&s.elapsedMs>=0&&s.elapsedMs<=DURATION_MS&&
+ s.blocks>=0&&Number.isFinite(s.elapsedMs)&&s.elapsedMs>=0&&s.elapsedMs<=DURATION_MS*2&&
  typeof s.won==='boolean'&&typeof s.expired==='boolean';}
 return Object.freeze({WORD_SET,SEEDS,create,wordFor,select,removeLast,submit,rerack,
  possibleWords,canMake,advance,remainingMs,waterHeight,safeHeight,DURATION_MS,validState});
