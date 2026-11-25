@@ -1,4 +1,4 @@
-/* Grid Club Word Rescue v0.9.40 · continuous shark pursuit. */
+/* Grid Club Word Rescue v0.9.42 · hazard-only play display. */
 (function(){
 'use strict';
 const engine=globalThis.GridClubWordRescueEngine;
@@ -141,9 +141,7 @@ function renderShark(){
 function render(){
  if(!state)return;
  const completed=state.won||state.expired;
- $('wrTime').textContent=formatMs(state.elapsedMs);
  const danger=engine.dangerFraction(state);
- $('wrTime').classList.toggle('warning',danger>=.8);
  const scene=$('wrScene');
  scene.dataset.mode=state.mode==='raft'?'raft':'tower';
  scene.dataset.danger=state.won?'won':state.expired?'lost':danger>=.90?'critical':danger>=.68?'alert':'safe';

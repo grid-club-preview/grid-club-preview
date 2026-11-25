@@ -100,7 +100,7 @@ function possibleWords(rack,used=[]){
 function create(seed=Date.now(),mode='tide'){
  if(!['tide','sinking','raft'].includes(mode))throw Error('Unknown Word Rescue mode');
  const s={version:1,mode,rng:(Number(seed)>>>0)||1,rack:[],selected:[],used:[],words:[],
- blocks:0,score:0,elapsedMs:0,expired:false,won:false,lastErodeMs:0,started:false,sharkProgress:0};
+ blocks:0,score:0,elapsedMs:0,expired:false,won:false,lastErodeMs:0,started:false,sharkProgress:0,raftPace:2};
  s.rack=freshRack(s);ensureVowel(s);
  return s;
 }
@@ -147,12 +147,12 @@ function waterHeight(s){
  return SEA_BASELINE+(s.elapsedMs/DURATION_MS)*(s.mode==='sinking'?52:60);
 }
 function safeHeight(s){return SEA_BASELINE+17+Math.min(24,s.blocks)*1.8;}
-// Each new plank buys breathing room against the pursuing shark. The
-// effective survival pace matches Rising Tide: an idle player has ~25.5s,
-// and each completed letter buys ~2.7s before the shark catches Gridda.
+// New Raft Escape rounds target roughly 40 seconds: 25.5s starting time,
+// plus 0.75s per built plank (at most 42.75s before the final word).
+// Preserve the original 2.7s allowance for unfinished saved rounds.
 function remainingSafetySeconds(s){
  if(s.mode==='raft')
-   return 25.5+Math.min(24,s.blocks)*2.7-s.elapsedMs/1000;
+   return 25.5+Math.min(24,s.blocks)*(s.raftPace===2?.75:2.7)-s.elapsedMs/1000;
  const rate=(s.mode==='sinking'?52:60)/90;
  return (safeHeight(s)-waterHeight(s))/rate;
 }

@@ -332,3 +332,8 @@
 #wordRescueScreen .wrScene[data-mode=raft][data-danger=critical] .wrShark,
 #wordRescueScreen .wrScene[data-mode=raft][data-danger=lost] .wrShark{font-size:clamp(38px,15cqw,72px);width:1.2em;margin-left:-.6em;text-align:center;transition:left .125s linear,opacity .45s ease}
 @media(prefers-reduced-motion:reduce){#wordRescueScreen .wrScene[data-mode=raft] .wrShark{transition:none!important}}
+
+/* v0.9.42: only escape progress and points remain during play. */
+#wordRescueScreen .wrStatus .wrSafetyStat:first-child{flex:2.2}
+#wordRescueScreen .wrStatus .wrStat:last-child{flex:.8}
+#wordRescueScreen #wrBlocks:not(.wrSafe){font-size:clamp(14px,4vw,20px)}
