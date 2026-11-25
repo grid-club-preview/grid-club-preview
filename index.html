@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="pipe-shift.css?v=0.9.25">
   <link rel="stylesheet" href="vault-reward.css?v=0.9.25">
   <link rel="stylesheet" href="dot-daily.css?v=0.9.25">
+  <link rel="stylesheet" href="home-roadmap.css?v=0.9.26">
   <style>
     :root { color-scheme: dark; --bg:#0e1424; --surface:#1a243a; --tile:#253147; --muted:#9daabe; --mint:#7be3d4; --purple:#a178ff; }
     * { box-sizing: border-box; }
@@ -332,13 +333,11 @@
 <body>
   <main class="shell">
     <section id="home">
-      <header><div><div class="eyebrow">GRID CLUB</div><h1>A little puzzle break.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.25</span></div></header>
-      <details class="backendCheck" aria-label="Leaderboard connection diagnostics">
-        <summary class="backendCheckTitle">Connection diagnostics (beta)</summary>
-        <p id="backendCheckMessage" role="status" aria-live="polite">Checking configuration…</p>
-        <button id="testBackend" type="button">Test connection</button>
-      </details>
-      <div class="eyebrow" style="color:var(--muted);margin:5px 0 12px">THE GAMES</div>
+      <header><div><div class="eyebrow">GRID CLUB</div><h1>A pocketful of challenges.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.26</span></div></header>
+      <div class="homeSectionHeader" aria-label="Puzzle Deck games">
+        <div class="eyebrow">PUZZLE DECK</div>
+        <span class="homeSectionCount">2 playable · 3 planned</span>
+      </div>
       <button class="tileButton" id="freeStart">
         <span class="tileIcon dotTrailsIcon" aria-hidden="true">
           <svg viewBox="0 0 56 56" width="53" height="53" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -365,7 +364,41 @@
         <strong>Pipe Shift</strong>
         <span class="tileArrow" aria-hidden="true">›</span>
       </button>
-      
+      <div class="roadmapGrid" aria-label="Planned Puzzle Deck games">
+        <article class="roadmapCard" data-game="block">
+          <div class="roadmapCardHeader"><span class="roadmapSymbol" aria-hidden="true">▦</span><strong>Block Shift</strong></div>
+          <small>Planned</small>
+        </article>
+        <article class="roadmapCard" data-game="flip">
+          <div class="roadmapCardHeader"><span class="roadmapSymbol" aria-hidden="true">◇</span><strong>Grid Flip</strong></div>
+          <small>Planned</small>
+        </article>
+        <article class="roadmapCard" data-game="word">
+          <div class="roadmapCardHeader"><span class="roadmapSymbol" aria-hidden="true">Aa</span><strong>Word game</strong></div>
+          <small>Working title · Planned</small>
+        </article>
+      </div>
+      <div class="arcadeSection" aria-label="Arcade games">
+        <div class="homeSectionHeader">
+          <div class="eyebrow">ARCADE</div>
+          <span class="homeSectionCount">2 planned</span>
+        </div>
+        <div class="roadmapGrid">
+          <article class="roadmapCard" data-game="racing">
+            <div class="roadmapCardHeader"><span class="roadmapSymbol" aria-hidden="true">🏁</span><strong>Starting Grid</strong></div>
+            <small>Planned</small>
+          </article>
+          <article class="roadmapCard" data-game="towers">
+            <div class="roadmapCardHeader"><span class="roadmapSymbol" aria-hidden="true">▥</span><strong>Towers</strong></div>
+            <small>Working title · Planned</small>
+          </article>
+        </div>
+      </div>
+      <details class="backendCheck homeDiagnostics" aria-label="Leaderboard connection diagnostics">
+        <summary class="backendCheckTitle">Connection diagnostics (beta)</summary>
+        <p id="backendCheckMessage" role="status" aria-live="polite">Checking configuration…</p>
+        <button id="testBackend" type="button">Test connection</button>
+      </details>
     </section>
     <section id="pipeShiftScreen" hidden>
       <div id="pipe-menu">
@@ -679,7 +712,7 @@
       </div>
       
       <div class="adSlot" id="adSlot" aria-hidden="true" hidden></div>
-      <footer>Grid Club · v0.9.25 beta</footer>
+      <footer>Grid Club · v0.9.26 beta</footer>
     </section>
   </main>
   <div class="pauseLayer" id="dotDailyCompleteLayer" hidden role="dialog" aria-modal="true" aria-labelledby="dotDailyCompleteTitle">
