@@ -1,5 +1,5 @@
-/* Grid Club v0.9.40 · Word Rescue continuous shark pursuit */
-const CACHE='gridclub-pwa-v0.9.40';
+/* Grid Club v0.9.41 · shared game Back swipe */
+const CACHE='gridclub-pwa-v0.9.41';
 const APP_FILES=[
   './','./index.html',
   './puzzle.js?v=0.9.9',
@@ -7,7 +7,7 @@ const APP_FILES=[
   './win-messages.js?v=0.9.5',
   './daily-journey.js?v=0.9.25',
   './club-credits.js?v=0.9.11',
-  './game.js?v=0.9.25',
+  './game.js?v=0.9.41',
   './pipe-shift.css?v=0.9.25',
   './vault-reward.css?v=0.9.25',
   './dot-daily.css?v=0.9.25',
@@ -16,9 +16,10 @@ const APP_FILES=[
   './word-rescue-lexicon.js?v=0.9.30',
   './word-rescue-engine.js?v=0.9.40',
   './word-rescue.js?v=0.9.40',
+  './edge-navigation.js?v=0.9.41',
   './vault-reward.js?v=0.9.25',
   './pipe-engine.js?v=0.9.33',
-  './pipe-shift.js?v=0.9.33',
+  './pipe-shift.js?v=0.9.41',
   './stats-utils.js?v=0.7.0',
   './ranked.js?v=0.7.0',
   './backend-config.js?v=0.7.0',

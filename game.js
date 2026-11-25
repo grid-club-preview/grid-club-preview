@@ -1421,37 +1421,6 @@
     }
     if(!$('difficultyScreen').hidden)returnHome();
   }
-  let edgeSwipe=null;
-  document.addEventListener('touchstart',event=>{
-    edgeSwipe=null;
-    if(event.touches.length!==1)return;
-    if(!$('pipeShiftScreen').hidden)return;
-    if(!$('pauseLayer').hidden||!$('timeUpLayer').hidden)return;
-    const point=event.touches[0],target=event.target;
-    if(point.clientX>90||target?.closest?.('input,select,textarea,.controls'))return;
-    if(target?.closest?.('#board,.boardWrap')&&point.clientX>28)return;
-    edgeSwipe={id:point.identifier,x:point.clientX,y:point.clientY,ready:false};
-  },{capture:true,passive:true});
-  document.addEventListener('touchmove',event=>{
-    if(!edgeSwipe)return;
-    if(event.touches.length!==1){edgeSwipe=null;return;}
-    const point=event.touches[0],dx=point.clientX-edgeSwipe.x,dy=point.clientY-edgeSwipe.y;
-    if(Math.abs(dy)>55&&Math.abs(dy)>Math.abs(dx)){edgeSwipe=null;return;}
-    if(dx>22&&dx>Math.abs(dy)*1.5){
-      edgeSwipe.ready=true;if(event.cancelable)event.preventDefault();
-    }
-  },{capture:true,passive:false});
-  document.addEventListener('touchcancel',()=>{edgeSwipe=null;},{capture:true,passive:true});
-  document.addEventListener('touchend',event=>{
-    const swipe=edgeSwipe;edgeSwipe=null;
-    if(!swipe||!event.changedTouches?.length)return;
-    const point=Array.from(event.changedTouches).find(p=>p.identifier===swipe.id);
-    if(!point)return;
-    const dx=point.clientX-swipe.x,dy=point.clientY-swipe.y;
-    if(swipe.ready&&dx>=75&&Math.abs(dy)<65&&dx>Math.abs(dy)*1.5){
-      gestureBack();if(event.cancelable)event.preventDefault();
-    }
-  },{capture:true,passive:false});
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) onBackground(); else onForeground();
   });
@@ -1471,5 +1440,5 @@
     if(game&&!$('gameScreen').hidden){render();if(!game.paused&&!game.finishedAt)persist();}
     if(!document.hidden && !($('statsScreen').hidden))renderStatsPage();
   },1000);
-  globalThis.GridDotTrailsApp={openDaily:showDailyScreen,home:returnHome};
+  globalThis.GridDotTrailsApp={openDaily:showDailyScreen,home:returnHome,back:gestureBack};
 })();

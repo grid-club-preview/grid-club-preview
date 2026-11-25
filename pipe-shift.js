@@ -1065,55 +1065,6 @@ grid.addEventListener('pointerup',ev=>{
 grid.addEventListener('pointercancel',cancelDrag);
 grid.addEventListener('lostpointercapture',cancelDrag);
 grid.addEventListener('contextmenu',ev=>ev.preventDefault());grid.addEventListener('selectstart',ev=>ev.preventDefault());
-// Match Dot Trails edge swipes, with a Pointer Events fallback for iOS PWAs.
-let edge=null,pointerEdge=null,lastEdgeBack=0;
-function swipeAllowed(target,x){
- if(root.hidden||x>100)return false;
- if(target?.closest?.('.pipeControls,#pipeExtraTime,input,select,textarea'))return false;
- if(target?.closest?.('#pipeBoard,.pipeBoardHolder')&&x>28)return false;
- return true;
-}
-function finishEdgeBack(dx,dy,ready,ev){
- if(!ready||dx<75||Math.abs(dy)>=65||dx<=Math.abs(dy)*1.5)return;
- if(performance.now()-lastEdgeBack<650)return;
- lastEdgeBack=performance.now();back();
- if(ev.cancelable)ev.preventDefault();
-}
-document.addEventListener('touchstart',ev=>{
- edge=null;
- if(ev.touches.length!==1)return;
- const t=ev.touches[0];
- if(!swipeAllowed(ev.target,t.clientX))return;
- edge={id:t.identifier,x:t.clientX,y:t.clientY,ready:false};
-},{capture:true,passive:true});
-document.addEventListener('touchmove',ev=>{
- if(!edge)return;
- if(ev.touches.length!==1){edge=null;return;}
- const t=ev.touches[0],dx=t.clientX-edge.x,dy=t.clientY-edge.y;
- if(Math.abs(dy)>55&&Math.abs(dy)>Math.abs(dx)){edge=null;return;}
- if(dx>22&&dx>Math.abs(dy)*1.5){
-   edge.ready=true;if(ev.cancelable)ev.preventDefault();
- }
-},{capture:true,passive:false});
-document.addEventListener('touchend',ev=>{
- const start=edge;edge=null;
- if(!start||!ev.changedTouches?.length)return;
- const t=Array.from(ev.changedTouches).find(p=>p.identifier===start.id);if(!t)return;
- finishEdgeBack(t.clientX-start.x,t.clientY-start.y,start.ready,ev);
-},{capture:true,passive:false});
-document.addEventListener('touchcancel',()=>{edge=null;},{capture:true,passive:true});
-document.addEventListener('pointerdown',ev=>{
- pointerEdge=null;
- if(ev.pointerType!=='touch'||ev.isPrimary===false||!swipeAllowed(ev.target,ev.clientX))return;
- pointerEdge={id:ev.pointerId,x:ev.clientX,y:ev.clientY};
-},{capture:true,passive:true});
-document.addEventListener('pointerup',ev=>{
- const start=pointerEdge;pointerEdge=null;
- if(!start||start.id!==ev.pointerId)return;
- const dx=ev.clientX-start.x,dy=ev.clientY-start.y;
- finishEdgeBack(dx,dy,dx>22&&dx>Math.abs(dy)*1.5,ev);
-},{capture:true,passive:false});
-document.addEventListener('pointercancel',()=>{pointerEdge=null;},{capture:true,passive:true});
 window.addEventListener('online',()=>{void submitDaily();if(section==='daily')void refreshDailyLeaderboard();});
 window.addEventListener('pagehide',()=>{
  cancelDrag();closeHintPreview(false);saveCurrent();timerStop();
