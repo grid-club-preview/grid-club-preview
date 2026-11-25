@@ -1,5 +1,5 @@
-/* Grid Club v0.9.39 · Word Rescue balanced characters and victory polish */
-const CACHE='gridclub-pwa-v0.9.39';
+/* Grid Club v0.9.40 · Word Rescue continuous shark pursuit */
+const CACHE='gridclub-pwa-v0.9.40';
 const APP_FILES=[
   './','./index.html',
   './puzzle.js?v=0.9.9',
@@ -12,10 +12,10 @@ const APP_FILES=[
   './vault-reward.css?v=0.9.25',
   './dot-daily.css?v=0.9.25',
   './home-roadmap.css?v=0.9.26',
-  './word-rescue.css?v=0.9.39',
+  './word-rescue.css?v=0.9.40',
   './word-rescue-lexicon.js?v=0.9.30',
-  './word-rescue-engine.js?v=0.9.32',
-  './word-rescue.js?v=0.9.39',
+  './word-rescue-engine.js?v=0.9.40',
+  './word-rescue.js?v=0.9.40',
   './vault-reward.js?v=0.9.25',
   './pipe-engine.js?v=0.9.33',
   './pipe-shift.js?v=0.9.33',

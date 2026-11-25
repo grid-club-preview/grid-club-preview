@@ -100,7 +100,7 @@ function possibleWords(rack,used=[]){
 function create(seed=Date.now(),mode='tide'){
  if(!['tide','sinking','raft'].includes(mode))throw Error('Unknown Word Rescue mode');
  const s={version:1,mode,rng:(Number(seed)>>>0)||1,rack:[],selected:[],used:[],words:[],
- blocks:0,score:0,elapsedMs:0,expired:false,won:false,lastErodeMs:0,started:false};
+ blocks:0,score:0,elapsedMs:0,expired:false,won:false,lastErodeMs:0,started:false,sharkProgress:0};
  s.rack=freshRack(s);ensureVowel(s);
  return s;
 }
@@ -124,6 +124,7 @@ function submit(s){
  if(!isAcceptedWord(word))return {ok:false,reason:'Not in the Word Rescue word list. Try another word.'};
  if(s.used.includes(word))return {ok:false,reason:'You have already used that word.'};
  const points=word.length*word.length;
+ if(s.mode==='raft')s.sharkProgress=sharkProgress(s);
  s.blocks+=word.length;s.score+=points;s.words.push({word,points});s.used.push(word);
  const taken=[...s.selected];s.selected=[];
  for(const i of taken)s.rack[i]=FILL[pick(s,FILL.length)];
@@ -155,6 +156,17 @@ function remainingSafetySeconds(s){
  const rate=(s.mode==='sinking'?52:60)/90;
  return (safeHeight(s)-waterHeight(s))/rate;
 }
+// Continuous visual pursuit: the remaining time determines how quickly the
+// shark covers its remaining distance, not its absolute position. A word
+// extends that time, slowing the shark without moving it backwards.
+function sharkProgress(s){
+ if(s.mode!=='raft')return 0;
+ if(s.expired)return 1;
+ if(Number.isFinite(s.sharkProgress))return Math.max(0,Math.min(1,s.sharkProgress));
+ // Migrate old saved attempts without resetting the shark to the beginning.
+ const elapsed=s.elapsedMs/1000,total=elapsed+Math.max(0,remainingSafetySeconds(s));
+ return total>0?Math.max(0,Math.min(1,elapsed/total)):0;
+}
 function dangerFraction(s){
  return Math.max(0,Math.min(1,1-remainingSafetySeconds(s)/32));
 }
@@ -163,7 +175,12 @@ function hazard(s){
 }
 function advance(s,ms){
  if(s.won||s.expired||!s.started)return;
- s.elapsedMs+=Math.max(0,ms);
+ const delta=Math.max(0,ms);
+ if(s.mode==='raft'){
+   const previous=sharkProgress(s),remaining=remainingSafetySeconds(s);
+   s.sharkProgress=remaining<=0?1:Math.min(1,previous+(1-previous)*Math.min(1,delta/1000/remaining));
+ }
+ s.elapsedMs+=delta;
  ensureVowel(s);
  if(s.mode==='sinking'){
    const waves=Math.floor(s.elapsedMs/7000),old=Math.floor(s.lastErodeMs/7000);
@@ -196,5 +213,5 @@ function validState(s){return !!s&&s.version===1&&['tide','sinking','raft'].incl
  s.blocks>=0&&Number.isFinite(s.elapsedMs)&&s.elapsedMs>=0&&s.elapsedMs<=DURATION_MS*2&&
  typeof s.won==='boolean'&&typeof s.expired==='boolean';}
 return Object.freeze({WORD_SET,EXCLUDED_WORDS,isAcceptedWord,SEEDS,importDictionary,create,wordFor,select,removeLast,submit,rerack,
- ensureVowel,possibleWords,canMake,advance,remainingMs,waterHeight,safeHeight,remainingSafetySeconds,dangerFraction,hazard,SEA_BASELINE,DURATION_MS,validState});
+ ensureVowel,possibleWords,canMake,advance,remainingMs,waterHeight,safeHeight,remainingSafetySeconds,sharkProgress,dangerFraction,hazard,SEA_BASELINE,DURATION_MS,validState});
 });

@@ -325,3 +325,10 @@
 #wordRescueScreen .wrScene[data-mode=raft][data-danger=won] .wrShark{opacity:0;transition:opacity .45s ease}
 #wordRescueScreen .wrScene[data-mode=raft][data-danger=won] .wrAvatar{left:59cqw}
 @media(prefers-reduced-motion:reduce){#wordRescueScreen .wrScene[data-mode=raft][data-danger=won] .wrShark{transition:none}}
+
+/* v0.9.40: smooth continuous approach, with a fixed character size. */
+#wordRescueScreen .wrScene[data-mode=raft] .wrShark,
+#wordRescueScreen .wrScene[data-mode=raft][data-danger=alert] .wrShark,
+#wordRescueScreen .wrScene[data-mode=raft][data-danger=critical] .wrShark,
+#wordRescueScreen .wrScene[data-mode=raft][data-danger=lost] .wrShark{font-size:clamp(38px,15cqw,72px);width:1.2em;margin-left:-.6em;text-align:center;transition:left .125s linear,opacity .45s ease}
+@media(prefers-reduced-motion:reduce){#wordRescueScreen .wrScene[data-mode=raft] .wrShark{transition:none!important}}

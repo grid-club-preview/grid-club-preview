@@ -1,4 +1,4 @@
-/* Grid Club Word Rescue v0.9.39 · balanced rescue characters and end-state labels. */
+/* Grid Club Word Rescue v0.9.40 · continuous shark pursuit. */
 (function(){
 'use strict';
 const engine=globalThis.GridClubWordRescueEngine;
@@ -102,6 +102,7 @@ function tick(){
  lastTick=now;
  const previousCount=state.rack.filter(Boolean).length;
  engine.advance(state,delta);
+ if(state.mode==='raft')renderShark();
  if(state.expired){finished();render();return;}
  const second=Math.floor(state.elapsedMs/1000);
  if(second!==lastSecond){
@@ -134,6 +135,9 @@ function back(){
 function message(text,error){
  flash=text;const box=$('wrMessage');box.textContent=text||' ';box.dataset.error=String(!!error);
 }
+function renderShark(){
+ if(state.mode==='raft')$('wrShark').style.left=(94-75*engine.sharkProgress(state)).toFixed(3)+'%';
+}
 function render(){
  if(!state)return;
  const completed=state.won||state.expired;
@@ -151,7 +155,7 @@ function render(){
  scene.style.setProperty('--wrRaftLength',(Math.min(24,state.blocks)/24*54).toFixed(3)+'cqw');
  scene.style.setProperty('--wrBodySpeed',(1.65-danger*1.22).toFixed(2)+'s');
  scene.style.setProperty('--wrArmSpeed',(1.20-danger*.88).toFixed(2)+'s');
- $('wrShark').style.left=state.mode==='raft'?(90-62*danger).toFixed(1)+'%':'5%';
+ renderShark();
  const remaining=Math.max(0,24-state.blocks);
  $('wrBlocks').textContent=state.won?'SAFE':state.expired?'CAUGHT':remaining+' '+(state.mode==='raft'?(remaining===1?'plank':'planks'):(remaining===1?'block':'blocks'))+' to safety';
  $('wrBlocks').classList.toggle('wrSafe',state.won);
