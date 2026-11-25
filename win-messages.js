@@ -34,6 +34,14 @@
       tide: ['High and dry!','You turned the tide.'],
       sinking: ['High and dry!','You turned the tide.','Not a letter too late!']
     },
+    wordRescueLoss: {
+      general: ['This is awkward.','Poor Gridda.','Better luck next time, Gridda.',
+        'Oh no!','So close.','Well, that didn’t go to plan.','A word too late!',
+        'Back to the drawing board.'],
+      raft: ['Shark meat.','The shark caught Gridda!','Lunch is served.','The shark wins this round.'],
+      tide: ['The water caught up!','Not quite high enough.','A bit of a washout.'],
+      sinking: ['The water caught up!','Not quite high enough.','Lost for words.']
+    },
     pipeShift: {
       general: [
         'Flow restored!',

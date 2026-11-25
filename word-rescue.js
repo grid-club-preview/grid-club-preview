@@ -98,6 +98,24 @@ function victoryTitle(mode){
  winRotation[mode]=(i+1)%n;winRotation.last=title;safeSave(WIN_KEY,winRotation);
  return title;
 }
+const LOSS_KEY='gridclub-word-rescue-loss-messages-v1';
+let lossRotation=null;
+function defeatTitle(mode){
+ if(!lossRotation){
+   try{lossRotation=JSON.parse(safeGet(LOSS_KEY)||'null');}catch(_){}
+   if(!lossRotation||typeof lossRotation!=='object'||Array.isArray(lossRotation))lossRotation={};
+ }
+ const catalog=globalThis.GridClubWinMessages?.wordRescueLoss;
+ const general=catalog?.general||['This is awkward.','Poor Gridda.','Better luck next time, Gridda.','Oh no!'];
+ const specific=catalog?.[mode]||(mode==='raft'?['Shark meat.']:['The water caught up!']);
+ const pool=general.flatMap((phrase,i)=>i<specific.length?[phrase,specific[i]]:[phrase]);
+ const n=pool.length;
+ let i=Number.isInteger(lossRotation[mode])&&lossRotation[mode]>=0?lossRotation[mode]%n:0;
+ if(n>1&&pool[i]===lossRotation.last)i=(i+1)%n;
+ const title=pool[i];
+ lossRotation[mode]=(i+1)%n;lossRotation.last=title;safeSave(LOSS_KEY,lossRotation);
+ return title;
+}
 function finished(){
  stop();state.selected=[];rulesOpen=false;$('wrRules').hidden=true;$('wrDock').inert=false;
  if(state.won){
@@ -109,7 +127,7 @@ function finished(){
      ' words in '+Math.round(state.elapsedMs/1000)+' seconds. Score: '+state.score+'. '+
      'Results saved.';
  }else{
-   $('wrResultTitle').textContent=state.mode==='raft'?'The shark caught Gridda!':'The water caught up!';
+   $('wrResultTitle').textContent=defeatTitle(state.mode);
    $('wrResultText').textContent='You built '+state.blocks+' of 24 '+(state.mode==='raft'?'planks':'blocks')+'. Try quicker words or a different letter combination.';
  }
  $('wrResult').dataset.outcome=state.won?'won':'lost';

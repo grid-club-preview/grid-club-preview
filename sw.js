@@ -1,10 +1,10 @@
-/* Grid Club v0.9.44 · rotating Word Rescue victory messages */
-const CACHE='gridclub-pwa-v0.9.44';
+/* Grid Club v0.9.45 · rotating Word Rescue defeat messages */
+const CACHE='gridclub-pwa-v0.9.45';
 const APP_FILES=[
   './','./index.html',
   './puzzle.js?v=0.9.9',
   './levels.js?v=0.9.25',
-  './win-messages.js?v=0.9.44',
+  './win-messages.js?v=0.9.45',
   './daily-journey.js?v=0.9.25',
   './club-credits.js?v=0.9.11',
   './game.js?v=0.9.41',
@@ -15,7 +15,7 @@ const APP_FILES=[
   './word-rescue.css?v=0.9.43',
   './word-rescue-lexicon.js?v=0.9.30',
   './word-rescue-engine.js?v=0.9.42',
-  './word-rescue.js?v=0.9.44',
+  './word-rescue.js?v=0.9.45',
   './edge-navigation.js?v=0.9.41',
   './vault-reward.js?v=0.9.25',
   './pipe-engine.js?v=0.9.33',
