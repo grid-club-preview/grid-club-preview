@@ -334,7 +334,7 @@
 <body>
   <main class="shell">
     <section id="home">
-      <header><div><div class="eyebrow">GRID CLUB</div><h1>A pocketful of challenges.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.61</span></div></header>
+      <header><div><div class="eyebrow">GRID CLUB</div><h1>A pocketful of challenges.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.62</span></div></header>
       <div class="homeSectionHeader" aria-label="Puzzle Deck games">
         <div class="eyebrow">PUZZLE DECK</div>
         <span class="homeSectionCount">3 playable · 3 planned</span>
@@ -499,7 +499,7 @@
           </div>
           <table class="wrBoardTable"><thead><tr><th scope="col">Rank</th><th scope="col">Player</th><th scope="col">Score</th></tr></thead><tbody id="wrBoardRows"></tbody></table>
           <p id="wrBoardEmpty" class="wrFine" role="status">Loading global rankings…</p><p id="wrBoardRank" class="wrFine" aria-live="polite"></p><button id="wrBoardRefresh" class="wrAction" type="button">Refresh</button>
-          <p class="wrFine">Top 10 players, one best verified rescue each under the current letter rules. Paid reshuffles, friend lifelines, paused or offline rounds are personal practice only. Highest score first. In Raft Escape, faster time breaks ties; otherwise the earliest result ranks higher. Day and Month use UTC calendar dates.</p>
+          <details class="wrMenuRules"><summary>About rankings</summary><p class="wrFine">Top 10 players, one best verified rescue each under the current rules. Paid reshuffles, friend lifelines, paused or offline rounds are personal practice only. Highest score first. In Raft Escape, faster time breaks ties; otherwise the earliest result ranks higher. Day and Month use UTC calendar dates.</p><p id="wrBoardLastResult" class="wrFine" aria-live="polite"></p></details>
         </div>
       </div>
       <div id="wrStats" hidden>
@@ -617,7 +617,7 @@
         <div id="wrResult" class="wrResult" hidden role="dialog" aria-labelledby="wrResultTitle">
           <div class="wrResultCopy">
             <h3 id="wrResultTitle" tabindex="-1">Safe at last!</h3>
-            <p id="wrResultText"></p><p id="wrResultRankNote" class="wrFine"></p>
+            <p id="wrResultText"></p>
           </div>
           <div class="wrResultActions">
             <button id="wrResultBoard" class="wrSecondary" type="button">Leaderboard</button>
@@ -952,7 +952,7 @@
       </div>
       
       <div class="adSlot" id="adSlot" aria-hidden="true" hidden></div>
-      <footer>Grid Club · v0.9.61 beta</footer>
+      <footer>Grid Club · v0.9.62 beta</footer>
     </section>
   </main>
   <div class="pauseLayer" id="dotDailyCompleteLayer" hidden role="dialog" aria-modal="true" aria-labelledby="dotDailyCompleteTitle">
@@ -993,7 +993,7 @@
   <script src="pipe-shift.js?v=0.9.41"></script>
   <script src="word-rescue-lexicon.js?v=0.9.30"></script>
   <script src="word-rescue-engine.js?v=0.9.60"></script>
-  <script src="word-rescue.js?v=0.9.61"></script>
+  <script src="word-rescue.js?v=0.9.62"></script>
   <script src="edge-navigation.js?v=0.9.49"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol === 'https:') {

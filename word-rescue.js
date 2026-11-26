@@ -23,16 +23,26 @@ const balance=()=>globalThis.GridClubCredits?.balance?.()||0;
 const RERACK_COST=5;
 const SCORE_KEY='gridclub-word-rescue-scores-v1';
 let boardMode='tide',boardPeriod='day',statsMode='all';
-let rankStarting=false,boardRequest=0,rankStatus='';
+let rankStarting=false,boardRequest=0;
+const RANK_HISTORY_KEY='gridclub-word-rescue-ranking-status-v1';
 let resultReadyAt=0;
 const RESULT_TAP_GUARD_MS=900;
 const rankedReady=()=>!!globalThis.GridRanked?.configured&&globalThis.navigator?.onLine!==false;
-function unrank(){if(state){state.rankEligible=false;state.rankAttempt=null;}rankStarting=false;}
-function rankNote(value){
- rankStatus=value;
- // Routine online status is not part of the result. Retain notices only
- // when the player needs to know their score is not on the global board.
- $('wrResultRankNote').textContent=/^Global result could not/.test(value)?'Score saved locally. Global leaderboard unavailable.':/^Personal result/.test(value)?'Not entered in the global leaderboard.':'';
+function unrank(reason='Round was saved or paused.'){
+ if(state){state.rankEligible=false;state.rankAttempt=null;state.rankReason=state.rankReason||reason;}
+ rankStarting=false;
+}
+function rankHistory(){try{return JSON.parse(safeGet(RANK_HISTORY_KEY)||'{}')||{};}catch(_){return {};}}
+function renderRankDetails(){
+ const item=rankHistory()[boardMode];
+ $('wrBoardLastResult').textContent=item?'Last successful rescue: '+item.score+'. '+item.note:'No submission details recorded for this mode yet.';
+}
+function rememberRank(run,note){
+ const all=rankHistory(),existing=all[run.mode];
+ if(!existing||existing.id===run.attemptId||existing.at<=run.rankFinishedAt){
+   all[run.mode]={id:run.attemptId,at:run.rankFinishedAt,score:run.score,note};safeSave(RANK_HISTORY_KEY,all);
+ }
+ if(screen==='leaderboard')renderRankDetails();
 }
 const makeAttempt=()=>`word:${Date.now()}:${Math.random().toString(36).slice(2,12)}`;
 function ensureDictionary(){
@@ -57,18 +67,18 @@ function startTimer(){
  if(!state||state.won||state.expired||rulesOpen||document.hidden||timer!==null||rankStarting)return;
  if(state.rankEligible===undefined&&state.elapsedMs===0&&state.words.length===0&&rankedReady()){
    const original=state;rankStarting=true;state.rankEligible=false;
-   $('wrDock').inert=true;render();rankNote('Connecting for global ranking…');
+   $('wrDock').inert=true;render();
    const request=globalThis.GridRanked.call('word_start',{mode:state.mode,rackRules:3,raftPace:3,sinkRules:2});
    let timeout;
-   Promise.race([request,new Promise((_,reject)=>{timeout=setTimeout(()=>reject(Error('Connection timeout')),6000);})]).then(reply=>{
+   Promise.race([request,new Promise((_,reject)=>{timeout=setTimeout(()=>reject(Error('Connection timeout')),10000);})]).then(reply=>{
      if(state!==original||screen!=='play'||!rankStarting)return;
      if(!reply.attemptId||!Number.isInteger(reply.seed)||reply.rules!==(original.mode==='raft'?6:original.mode==='sinking'?7:5))throw Error('Ranked rescue unavailable');
      state=engine.create(reply.seed,original.mode,3,3,2);
      state.attemptId=original.attemptId;state.reracks=0;state.started=true;
      state.rankEligible=true;state.rankAttempt=reply.attemptId;state.rankEvents=[];
-     rankNote('Global ranking enabled');
+     delete state.rankReason;
    }).catch(()=>{
-     if(state===original&&screen==='play'&&rankStarting)rankNote('Offline practice · personal stats only');
+     if(state===original&&screen==='play'&&rankStarting)state.rankReason='Could not establish an online ranking session at the start.';
    }).finally(()=>{
      clearTimeout(timeout);
      if(!rankStarting||screen!=='play'||state.attemptId!==original.attemptId)return;
@@ -76,12 +86,12 @@ function startTimer(){
    });
    return;
  }
- if(state.rankEligible===undefined){state.rankEligible=false;rankNote('Practice · personal stats only');}
+ if(state.rankEligible===undefined){state.rankEligible=false;state.rankReason='An online ranking session was unavailable at the start.';}
  lastTick=performance.now();timer=setInterval(tick,125);
 }
 function showRules(first=false){
  if(!state||rulesOpen||rankStarting)return;
- if(!first&&!state.won&&!state.expired&&state.rankEligible){if(!confirm('Opening instructions pauses this round and makes it personal practice only. Continue?'))return;unrank();rankNote('Practice · rules opened');}
+ if(!first&&!state.won&&!state.expired&&state.rankEligible){if(!confirm('Opening instructions pauses this round and makes it personal practice only. Continue?'))return;unrank('Instructions were opened during the round.');}
  stop();rulesOpen=true;firstRules=first;
  const [lead,warning,detail]=RULES[state.mode];
  $('wrRulesMode').textContent=modeName(state.mode);
@@ -128,6 +138,7 @@ function scoreRows(mode,period,now=Date.now()){
 async function renderScoreboard(){
  for(const [id,value] of [['wrBoardTide','tide'],['wrBoardRaft','raft'],['wrBoardSinking','sinking']])$(id).setAttribute('aria-pressed',String(boardMode===value));
  for(const [id,value] of [['wrBoardDay','day'],['wrBoardMonth','month'],['wrBoardAll','all']])$(id).setAttribute('aria-pressed',String(boardPeriod===value));
+ renderRankDetails();
  const list=$('wrBoardRows'),request=++boardRequest;
  list.replaceChildren();$('wrBoardEmpty').hidden=false;$('wrBoardRank').textContent='';
  $('wrBoardEmpty').textContent='Loading global rankings…';
@@ -239,13 +250,15 @@ function defeatTitle(mode){
  return title;
 }
 function publishRank(run){
- if(!run.rankEligible||!run.rankAttempt){rankNote('Personal result · not ranked');return;}
+ run.rankFinishedAt=Date.now();
+ if(!run.rankEligible||!run.rankAttempt){rememberRank(run,run.rankReason||'No online ranking session was established.');return;}
  const payload={attemptId:run.rankAttempt,events:run.rankEvents,elapsedMs:Math.round(run.elapsedMs)};
- rankNote('Verifying global result…');
+ rememberRank(run,'Submitting to the global leaderboard…');
  const submit=()=>globalThis.GridRanked.call('word_submit',payload);
  submit().catch(()=>submit()).then(result=>{
-   if(state===run){rankNote(result.verified?'Global result verified':'Personal result · not ranked');if(screen==='leaderboard')renderScoreboard();}
- }).catch(()=>{if(state===run)rankNote('Global result could not be verified · personal result kept');});
+   rememberRank(run,result.verified?'Accepted by the global leaderboard. Only your best score in each period is shown.':'The server did not verify this result.');
+   if(screen==='leaderboard'&&boardMode===run.mode)renderScoreboard();
+ }).catch(()=>{rememberRank(run,'The server could not accept this result. Your personal score is retained.');});
 }
 function finished(){
  stop();state.selected=[];rulesOpen=false;$('wrRules').hidden=true;$('wrDock').inert=false;
@@ -255,14 +268,14 @@ function finished(){
    // Daily Challenge can award Club Credits separately.
    $('wrResultTitle').textContent=victoryTitle(state.mode);
    publishRank(state);
-   $('wrResultText').textContent=(state.mode==='raft'?'You built ':'You stacked ')+(state.mode==='raft'?Math.min(24,state.blocks):state.blocks)+(state.mode==='raft'?' planks':' pieces of wreckage')+' using '+state.words.length+
+   $('wrResultText').textContent='You saved Gridda! '+(state.mode==='raft'?'You built ':'You stacked ')+(state.mode==='raft'?Math.min(24,state.blocks):state.blocks)+(state.mode==='raft'?' planks':' pieces of wreckage')+' using '+state.words.length+
      (state.words.length===1?' word':' words')+(state.mode==='raft'?' in '+Math.round(state.elapsedMs/1000)+' seconds':'')+'. Score: '+state.score+'.';
  }else{
    $('wrResultTitle').textContent=defeatTitle(state.mode);
    const count=state.mode==='raft'?Math.min(24,state.blocks):state.blocks;
    const material=state.mode==='raft'?(count===1?' plank':' planks'):(count===1?' piece of wreckage':' pieces of wreckage');
-   $('wrResultText').textContent=(state.mode==='raft'?'You built ':'You stacked ')+count+material+' using '+state.words.length+(state.words.length===1?' word':' words')+'. Score: '+state.score+'.';
-   rankNote('');
+   $('wrResultText').textContent='You didn’t save Gridda. '+(state.mode==='raft'?'You built ':'You stacked ')+count+material+' using '+state.words.length+(state.words.length===1?' word':' words')+'. Score: '+state.score+'.';
+
  }
  $('wrResult').dataset.outcome=state.won?'won':'lost';
  $('wrResultBoard').hidden=!state.won;
@@ -300,9 +313,9 @@ function begin(mode,continueSaved=false){
  if(!continueSaved){
    if(readState()&&!confirm('Start a new run? Your unfinished Word Rescue attempt will be replaced.'))return;
    state=engine.create(Date.now(),mode);
- }else {state=readState();if(state)unrank();}
+ }else {state=readState();if(state)unrank('A saved round was resumed.');}
  if(!state)return menu();
- rankNote(continueSaved?'Practice · resumed round':'');
+
  if(typeof state.attemptId!=='string'||!state.attemptId)state.attemptId=makeAttempt();
  if(!Number.isInteger(state.reracks)||state.reracks<0)state.reracks=0;
  $('wrWallet').textContent='◉ '+balance();
@@ -449,7 +462,7 @@ function callFriend(){
  if(!globalThis.GridClubCredits?.spend?.(10,'word-friend',state.attemptId)){
    message('You need 10 Club Credits to call a friend.',true);return;
  }
- state=next;unrank();rankNote('Practice · friend lifeline used');
+ state=next;unrank('The friend lifeline was used.');
  save();$('wrWallet').textContent='◉ '+balance();
  render();message('A friend distracts the shark! +10 seconds',false);
 }
@@ -464,7 +477,7 @@ function rerack(){
    return;
  }
  next.reracks=(state.reracks||0)+1;state=next;
- if(paid&&state.rankEligible){unrank();rankNote('Practice · paid reshuffle used');}
+ if(paid&&state.rankEligible){unrank('A paid reshuffle was used.');}
  else if(state.rankEligible)state.rankEvents.push({type:'shuffle',at:state.elapsedMs});
  save();$('wrWallet').textContent='◉ '+balance();
  renderLetters();message(paid?'New letters · 5 credits used':'New letters',false);
@@ -522,9 +535,9 @@ document.addEventListener('keydown',event=>{
 });
 document.addEventListener('visibilitychange',()=>{
  if(root.hidden||screen!=='play'||!state)return;
- if(document.hidden){if(rankStarting||state.rankEligible){unrank();$('wrDock').inert=false;rankNote('');}if(lastTick&&!rulesOpen&&!(state.won||state.expired))engine.advance(state,Math.max(0,Math.min(1000,performance.now()-lastTick)));stop();if(state.expired||state.won){finished();render();}else save();}
+ if(document.hidden){if(state.won||state.expired)return;if(rankStarting||state.rankEligible){unrank('The game was backgrounded during the round.');$('wrDock').inert=false;}if(lastTick&&!rulesOpen&&!(state.won||state.expired))engine.advance(state,Math.max(0,Math.min(1000,performance.now()-lastTick)));stop();if(state.expired||state.won){finished();render();}else save();}
  else if(!state.won&&!state.expired&&!rulesOpen){startTimer();render();}
 });
-window.addEventListener('pagehide',()=>{if(rankStarting||state?.rankEligible&&!state.won)unrank();save();stop();});
+window.addEventListener('pagehide',()=>{if(rankStarting||state?.rankEligible&&!state.won)unrank('The game was closed during the round.');save();stop();});
 globalThis.WordRescueApp=Object.freeze({open,menu,begin,back,readState:readState});
 })();
