@@ -24,6 +24,8 @@ const RERACK_COST=5;
 const SCORE_KEY='gridclub-word-rescue-scores-v1';
 let boardMode='tide',boardPeriod='day',statsMode='all';
 let rankStarting=false,boardRequest=0,rankStatus='';
+let resultReadyAt=0;
+const RESULT_TAP_GUARD_MS=900;
 const rankedReady=()=>!!globalThis.GridRanked?.configured&&globalThis.navigator?.onLine!==false;
 function unrank(){if(state){state.rankEligible=false;state.rankAttempt=null;}rankStarting=false;}
 function rankNote(value){rankStatus=value;$('wrRankNote').textContent=value;$('wrResultRankNote').textContent=value;}
@@ -133,7 +135,7 @@ async function renderScoreboard(){
    for(const row of rows){
      const tr=document.createElement('tr');
      if(row.isYou)tr.className='wrBoardYou';
-     for(const value of [String(row.rank<=3?['🥇','🥈','🥉'][row.rank-1]:row.rank),row.isYou?'You':row.name,String(row.score),(row.elapsedMs/1000).toFixed(1)+'s']){
+     for(const value of [String(row.rank<=3?['🥇','🥈','🥉'][row.rank-1]:row.rank),row.isYou?'You':row.name,String(row.score)]){
        const td=document.createElement('td');td.textContent=value;tr.append(td);
      }
      list.append(tr);
@@ -256,7 +258,16 @@ function finished(){
  }
  $('wrResult').dataset.outcome=state.won?'won':'lost';
  $('wrResultBoard').hidden=!state.won;
- $('wrResult').hidden=false;$('wrDock').hidden=true;$('wrTryAgain').focus?.();
+ // Leave the former letter row free of result controls. Also ignore taps
+ // still in flight when the rescue ends, including a rapid Build double-tap.
+ resultReadyAt=performance.now()+RESULT_TAP_GUARD_MS;
+ const finishedRun=state;
+ $('wrResult').hidden=false;$('wrDock').hidden=true;
+ $('wrTryAgain').disabled=true;
+ if(typeof globalThis.setTimeout==='function')globalThis.setTimeout(()=>{
+   if(state===finishedRun&&screen==='play'&&(state.won||state.expired))$('wrTryAgain').disabled=false;
+ },RESULT_TAP_GUARD_MS);
+ $('wrResultTitle').focus?.({preventScroll:true});
  save();
  $('wrWallet').textContent='◉ '+balance();
 }
@@ -286,7 +297,7 @@ function begin(mode,continueSaved=false){
  if(!Number.isInteger(state.reracks)||state.reracks<0)state.reracks=0;
  $('wrWallet').textContent='◉ '+balance();
  screen='play';$('wrMenu').hidden=true;$('wrPlay').hidden=false;$('wrLeaderboard').hidden=true;$('wrStats').hidden=true;
- $('wrResult').hidden=true;$('wrDock').hidden=false;$('wrRules').hidden=true;$('wrInfo').hidden=false;rulesOpen=false;firstRules=false;flash='';lastSecond=-1;
+ $('wrResult').hidden=true;$('wrTryAgain').disabled=false;resultReadyAt=0;$('wrDock').hidden=false;$('wrRules').hidden=true;$('wrInfo').hidden=false;rulesOpen=false;firstRules=false;flash='';lastSecond=-1;
  state.started=seen(state.mode);
  $('wrModeTitle').textContent=modeName(state.mode);
  $('wrModeNote').textContent=state.mode==='sinking'?
@@ -431,7 +442,7 @@ $('wrNewTide').onclick=()=>begin('tide');
 $('wrNewSinking').onclick=()=>begin('sinking');
 $('wrNewRaft').onclick=()=>begin('raft');
 $('wrContinue').onclick=()=>begin('tide',true);
-$('wrTryAgain').onclick=()=>{safeDel(KEY);begin(state?.mode||'tide');};
+$('wrTryAgain').onclick=()=>{if(screen!=='play'||!state||!(state.won||state.expired)||performance.now()<resultReadyAt)return;safeDel(KEY);begin(state.mode);};
 $('wrResultModes').onclick=menu;
 $('wrBoardEntry').onclick=()=>showScoreboard();
 $('wrBoardRefresh').onclick=renderScoreboard;

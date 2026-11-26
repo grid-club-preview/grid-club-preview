@@ -111,6 +111,9 @@ while(dom.wrResult.hidden&&iterations++<9){
 }
 assert.equal(dom.wrResult.hidden,false,'Building 24 planks should complete Raft Escape');
 assert.equal(dom.wrBlocks.textContent,'SAFE');assert.equal(dom.wrDock.hidden,true);
+assert.equal(dom.wrTryAgain.disabled,true);dom.wrTryAgain.onclick();assert.equal(dom.wrResult.hidden,false,'A tap at completion must not restart');
+assert(html.indexOf('id="wrResultModes"')<html.indexOf('id="wrTryAgain"'),'Play again stays below secondary actions');
+assert(!html.match(/<table class="wrBoardTable">.*?<th scope="col">Time<\/th>/),'Word Rescue leaderboard is score-only');
 assert.equal(dom.wrSceneLabel.textContent,'GRIDDA IS SAFE');
 assert(dom.wrResultText.textContent.includes('24 planks'));assert(!dom.wrResultText.textContent.includes('Results saved'));assert.equal(dom.wrRescueBoat.attrs['data-visible'],'false');
 assert.equal(dom.wrScene.style['--wrRaftLength'],'54.000cqw');
@@ -155,10 +158,15 @@ assert.equal(dom.wrInfo.disabled,false);dom.wrInfo.onclick();assert.equal(dom.wr
 dom.wrResultModes.onclick();dom.wrNewTide.onclick();
 for(let i=0;i<35&&tick;i++){now+=1000;tick();}
 assert.equal(dom.wrResult.dataset.outcome,'lost');assert.equal(dom.wrRescueBoat.attrs['data-visible'],'false');
+dom.wrTryAgain.onclick();assert.equal(dom.wrResult.hidden,false,'Loss also blocks immediate restart');
 dom.wrResultModes.onclick();dom.wrStatsEntry.onclick();dom.wrStatsTide.onclick();
 assert.equal(dom.wrStatsGrid.children[0].children[1].textContent,'1');
 assert.equal(dom.wrStatsGrid.children[1].children[1].textContent,'2');
 assert.equal(dom.wrStatsGrid.children[2].children[1].textContent,'1');
 assert.equal(dom.wrStatsGrid.children[3].children[1].textContent,'50%');
 globals.WordRescueApp.back();dom.wrBoardEntry.onclick();dom.wrBoardTide.onclick();dom.wrBoardAll.onclick();assert.equal(dom.wrBoardRows.children.length,0,'Offline results must not masquerade as global rankings');
+dom.wrBack.onclick();dom.wrNewTide.onclick();
+for(let i=0;i<35&&tick;i++){now+=1000;tick();}
+assert.equal(dom.wrResult.hidden,false);
+now+=901;dom.wrTryAgain.onclick();assert.equal(dom.wrResult.hidden,true,'Intentional restart allowed after guard');
 console.log('Word Rescue browser wiring passed: three modes, raft victory, dock, scoring, pause/continue and return home');

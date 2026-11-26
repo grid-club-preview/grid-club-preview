@@ -382,3 +382,17 @@
 #wordRescueScreen .wrHelp{flex:0 0 72px;min-height:56px;padding:12px 9px;align-self:center;font-size:26px;line-height:1;font-weight:800;touch-action:manipulation;scroll-margin-bottom:235px}
 #wordRescueScreen .wrHelp:focus-visible{outline:2px solid #7de0ce;outline-offset:3px}
 @media(max-width:390px){#wordRescueScreen .wrHeadingTop .eyebrow{font-size:9px;letter-spacing:.6px}}
+
+/* v0.9.55: result actions occupy only the lower control area, never the former letter row. */
+#wordRescueScreen .wrResult:not([hidden]){display:flex;flex-direction:column;overflow:hidden;gap:8px;padding-bottom:calc(8px + env(safe-area-inset-bottom))}
+#wordRescueScreen .wrResultCopy{min-height:0;overflow:auto;flex:1 1 auto}
+#wordRescueScreen .wrResultCopy p{margin:5px 0}
+#wordRescueScreen .wrResultActions{display:grid;grid-template-columns:1fr 1fr;gap:6px;flex:none}
+#wordRescueScreen .wrResultActions button{margin:0;min-height:44px;height:44px;padding:5px 6px;font-size:13px;line-height:1.1;touch-action:manipulation}
+#wordRescueScreen #wrResultModes{grid-column:2}
+#wordRescueScreen #wrResult[data-outcome=lost] #wrResultModes{grid-column:1/-1}
+#wordRescueScreen #wrTryAgain{grid-column:1/-1;font-size:16px}
+#wordRescueScreen #wrTryAgain:disabled{opacity:.55}
+#wordRescueScreen .wrBoardTable td:nth-child(2){font-weight:600;color:inherit}
+#wordRescueScreen .wrBoardTable th:last-child,#wordRescueScreen .wrBoardTable td:last-child{text-align:right}
+#wordRescueScreen .wrBoardTable td:last-child{font-weight:800;color:#7de0ce}
