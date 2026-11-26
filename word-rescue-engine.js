@@ -165,10 +165,10 @@ function possibleWords(rack,used=[]){
  const excluded=new Set(used),count=rack.filter(Boolean).length;
  return [...WORD_SET].filter(w=>w.length<=count&&!excluded.has(w)&&isAcceptedWord(w)&&canMake(rack,w));
 }
-function create(seed=Date.now(),mode='tide',rackRules=3,raftPace=3){
+function create(seed=Date.now(),mode='tide',rackRules=3,raftPace=3,sinkRules=2){
  if(!['tide','sinking','raft'].includes(mode))throw Error('Unknown Word Rescue mode');
  const s={version:1,mode,rng:(Number(seed)>>>0)||1,rack:[],selected:[],used:[],words:[],
- blocks:0,score:0,elapsedMs:0,expired:false,won:false,lastErodeMs:0,started:false,sharkProgress:0,raftPace,rescueRules:mode==='raft'?2:3,rackRules};
+ blocks:0,score:0,elapsedMs:0,expired:false,won:false,lastErodeMs:0,started:false,sharkProgress:0,raftPace,sinkRules,rescueRules:mode==='raft'?2:3,rackRules};
  rollTriple(s);s.rack=freshRack(s);
  return s;
 }
@@ -243,6 +243,29 @@ function dangerFraction(s){
 function hazard(s){
  return s.mode==='raft'?'shark':'drowning';
 }
+// Choose the doomed slot at the start of its warning, not at removal.
+// Schedule is based on active time and independent of timer tick size.
+function sinkWarning(s){
+ if(s.mode!=='sinking'||s.sinkRules!==2||!Number.isInteger(s.sinkSlot)||s.won||s.expired)return null;
+ return {index:s.sinkSlot,progress:Math.max(0,Math.min(1,(s.elapsedMs-s.sinkWarnAt)/3000))};
+}
+function advanceSinking(s){
+ for(let drop=10000;drop<=30000;drop+=10000){
+   const warn=drop-3000;
+   if(s.lastErodeMs<warn&&s.elapsedMs>=warn&&s.rack.filter(Boolean).length>4){
+     const present=s.rack.map((v,i)=>v?i:-1).filter(i=>i>=0);
+     const options=present.filter(i=>{const rack=s.rack.slice();rack[i]='';return balanced(rack,s.rackRules,s.allowTriple)&&familiarWord(rack,s.used);});
+     const candidates=options.length?options:present;
+     s.sinkSlot=candidates[pick(s,candidates.length)];s.sinkWarnAt=warn;
+   }
+   if(s.lastErodeMs<drop&&s.elapsedMs>=drop&&Number.isInteger(s.sinkSlot)){
+     const i=s.sinkSlot;s.rack[i]='';s.selected=s.selected.filter(x=>x!==i);
+     delete s.sinkSlot;delete s.sinkWarnAt;
+     ensurePlayable(s);
+   }
+ }
+ s.lastErodeMs=s.elapsedMs;
+}
 function advance(s,ms){
  if(s.won||s.expired||!s.started)return;
  const delta=s.mode!=='raft'&&s.rescueRules>=2?Math.min(Math.max(0,ms),Math.max(0,RESCUE_MS-s.elapsedMs)):Math.max(0,ms);
@@ -252,7 +275,8 @@ function advance(s,ms){
  }
  s.elapsedMs+=delta;
  if(!balanced(s.rack,s.rackRules,s.allowTriple))ensurePlayable(s);
- if(s.mode==='sinking'){
+ if(s.mode==='sinking'&&s.sinkRules===2)advanceSinking(s);
+ else if(s.mode==='sinking'){
    const waves=Math.floor(s.elapsedMs/7000),old=Math.floor(s.lastErodeMs/7000);
    for(let k=old;k<waves;k++){
      const present=s.rack.map((v,i)=>v?i:-1).filter(i=>i>=0);
@@ -289,5 +313,5 @@ function validState(s){return !!s&&s.version===1&&['tide','sinking','raft'].incl
  s.blocks>=0&&Number.isFinite(s.elapsedMs)&&s.elapsedMs>=0&&s.elapsedMs<=DURATION_MS*2&&
  typeof s.won==='boolean'&&typeof s.expired==='boolean';}
 return Object.freeze({WORD_SET,EXCLUDED_WORDS,isAcceptedWord,SEEDS,importDictionary,create,wordFor,select,removeLast,submit,rerack,
- ensureVowel,ensurePlayable,hasPlayable,familiarWord,possibleWords,canMake,advance,remainingMs,waterHeight,safeHeight,remainingSafetySeconds,callFriend,sharkProgress,rescueProgress,dangerFraction,hazard,SEA_BASELINE,DURATION_MS,validState});
+ ensureVowel,ensurePlayable,hasPlayable,familiarWord,possibleWords,canMake,advance,remainingMs,waterHeight,safeHeight,remainingSafetySeconds,callFriend,sharkProgress,rescueProgress,sinkWarning,dangerFraction,hazard,SEA_BASELINE,DURATION_MS,validState});
 });

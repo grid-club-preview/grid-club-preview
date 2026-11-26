@@ -68,7 +68,7 @@ const original=e.waterHeight(tower);
 e.advance(tower,2000);
 assert(e.waterHeight(tower)>original,'Water must rise in Rising Tide');
 assert.equal(e.hazard(tower),'drowning');
-const erode=e.create(1,'sinking');erode.started=true;
+const erode=e.create(1,'sinking',3,3,1);erode.started=true;
 e.advance(erode,7000);
 assert.equal(erode.rack.filter(Boolean).length,6,'Sinking Letters still loses tiles');
 const win=e.create(11,'raft');win.blocks=23;
@@ -111,7 +111,7 @@ const oldRack=e.create(4,'sinking');oldRack.rack=['E','','E','U','','O','I'];ass
 console.log('Playable racks: 120 seeded rounds, impossible saved rack repair, erosion and free/paid shuffle engine checks passed');
 
 // v0.9.52: each seven-second erosion removes a permanent slot until three remain.
-const permanent=e.create(91,'sinking');permanent.started=true;permanent.blocks=24;
+const permanent=e.create(91,'sinking',3,3,1);permanent.started=true;permanent.blocks=24;
 for(let n=6;n>=3;n--){
  e.advance(permanent,7000);assert.equal(permanent.rack.filter(Boolean).length,n);playable(permanent);
  const slots=permanent.rack.map(Boolean);
@@ -134,3 +134,13 @@ for(const mode of ['tide','sinking','raft'])for(let seed=1;seed<=45;seed++){cons
 const friend=e.create(7,'raft');friend.started=true;e.advance(friend,20000);const beforeFriend=e.remainingSafetySeconds(friend),shark=e.sharkProgress(friend);assert(e.callFriend(friend));assert.equal(e.remainingSafetySeconds(friend),beforeFriend+10);assert.equal(e.sharkProgress(friend),shark);assert(!e.callFriend(friend));assert(!e.callFriend(e.create(2,'tide')));e.advance(friend,1000);assert(e.sharkProgress(friend)>shark);console.log('Rare triples '+triples+'/'+totalRacks+' and friend lifeline passed');
 const moderate=e.create(20,'raft');moderate.started=true;e.advance(moderate,27000);assert(!moderate.expired);e.advance(moderate,1500);assert(moderate.expired);
 const old=e.create(20,'raft',3,2);old.started=true;e.advance(old,27000);assert(old.expired);console.log('Raft moderate pace, legacy timing and idle defeat passed');
+const sinking=e.create(91,'sinking');sinking.started=true;sinking.blocks=24;
+for(let n=6;n>=4;n--){
+ e.advance(sinking,7000);const warning=e.sinkWarning(sinking);assert(warning);assert.equal(warning.progress,0);assert.equal(sinking.rack.filter(Boolean).length,n+1);
+ const target=warning.index;e.advance(sinking,1500);assert.equal(e.sinkWarning(sinking).progress,.5);
+ e.rerack(sinking);assert.equal(e.sinkWarning(sinking).index,target);
+ const word=e.possibleWords(sinking.rack,sinking.used)[0];assert(playWord(sinking,word).ok);assert.equal(e.sinkWarning(sinking).index,target);
+ e.advance(sinking,1500);assert.equal(sinking.rack[target],'');assert.equal(sinking.rack.filter(Boolean).length,n);assert.equal(e.sinkWarning(sinking),null);fairRack(sinking);
+}
+e.advance(sinking,10000);assert.equal(sinking.rack.filter(Boolean).length,4);assert.equal(e.sinkWarning(sinking),null);
+console.log('Sinking Letters warnings, permanent four-slot floor and reshuffle consistency passed');

@@ -182,3 +182,10 @@ console.log('Word Rescue browser wiring passed: three modes, raft victory, dock,
 const rankSource=js.slice(js.indexOf('function rankNote(value){'),js.indexOf('}',js.indexOf('function rankNote(value){'))+1);
 new Function('$','let rankStatus;'+rankSource+';rankNote("Global result verified");')(id=>dom[id]);assert.equal(dom.wrResultRankNote.textContent,'');
 new Function('$','let rankStatus;'+rankSource+';rankNote("Global result could not be verified · personal result kept");')(id=>dom[id]);assert(dom.wrResultRankNote.textContent.includes('could not be verified'));
+assert(html.includes('id="wrClear"'));dom.wrBack.onclick();dom.wrNewTide.onclick();if(!dom.wrRules.hidden)dom.wrRulesPlay.onclick();
+const first=dom.wrTray.children[0],second=dom.wrTray.children[1];
+dom.wrTray.listeners.click({target:first,detail:0});dom.wrTray.listeners.click({target:second,detail:0});
+assert.equal(globals.WordRescueApp.readState().selected.length,0,'Saved selection is not changed until tick');
+assert.equal(dom.wrClear.disabled,false);dom.wrBackspace.onclick();assert.equal(first.attrs['aria-pressed'],'true');assert.equal(second.attrs['aria-pressed'],'false');
+dom.wrClear.onclick();assert.equal(first.attrs['aria-pressed'],'false');assert.equal(dom.wrClear.disabled,true);assert.equal(dom.wrSubmit.disabled,true);
+console.log('Undo and clear controls passed');

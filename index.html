@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="vault-reward.css?v=0.9.25">
   <link rel="stylesheet" href="dot-daily.css?v=0.9.25">
   <link rel="stylesheet" href="home-roadmap.css?v=0.9.26">
-  <link rel="stylesheet" href="word-rescue.css?v=0.9.58">
+  <link rel="stylesheet" href="word-rescue.css?v=0.9.60">
   <style>
     :root { color-scheme: dark; --bg:#0e1424; --surface:#1a243a; --tile:#253147; --muted:#9daabe; --mint:#7be3d4; --purple:#a178ff; }
     * { box-sizing: border-box; }
@@ -334,7 +334,7 @@
 <body>
   <main class="shell">
     <section id="home">
-      <header><div><div class="eyebrow">GRID CLUB</div><h1>A pocketful of challenges.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.59</span></div></header>
+      <header><div><div class="eyebrow">GRID CLUB</div><h1>A pocketful of challenges.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.60</span></div></header>
       <div class="homeSectionHeader" aria-label="Puzzle Deck games">
         <div class="eyebrow">PUZZLE DECK</div>
         <span class="homeSectionCount">3 playable · 3 planned</span>
@@ -605,7 +605,8 @@
           <span id="wrSelected" class="wrWordAnnouncement" aria-live="polite" aria-atomic="true"></span>
           <div class="wrTray" id="wrTray" aria-label="Available letter tiles"></div>
           <div class="wrActions">
-            <button id="wrBackspace" class="wrAction" type="button">⌫ Undo letter</button>
+            <button id="wrBackspace" class="wrAction" type="button" aria-label="Undo last letter">⌫ Undo</button>
+            <button id="wrClear" class="wrAction" type="button" aria-label="Clear selected word">Clear</button>
             <button id="wrRerack" class="wrAction" type="button">↻ New letters</button>
             <button id="wrSubmit" class="wrAction wrActionMain" type="button">Build with this word</button>
           </div>
@@ -951,7 +952,7 @@
       </div>
       
       <div class="adSlot" id="adSlot" aria-hidden="true" hidden></div>
-      <footer>Grid Club · v0.9.59 beta</footer>
+      <footer>Grid Club · v0.9.60 beta</footer>
     </section>
   </main>
   <div class="pauseLayer" id="dotDailyCompleteLayer" hidden role="dialog" aria-modal="true" aria-labelledby="dotDailyCompleteTitle">
@@ -991,8 +992,8 @@
   <script src="vault-reward.js?v=0.9.25"></script>
   <script src="pipe-shift.js?v=0.9.41"></script>
   <script src="word-rescue-lexicon.js?v=0.9.30"></script>
-  <script src="word-rescue-engine.js?v=0.9.57"></script>
-  <script src="word-rescue.js?v=0.9.59"></script>
+  <script src="word-rescue-engine.js?v=0.9.60"></script>
+  <script src="word-rescue.js?v=0.9.60"></script>
   <script src="edge-navigation.js?v=0.9.49"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol === 'https:') {

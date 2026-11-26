@@ -425,3 +425,9 @@
 #wordRescueScreen .wrMenuRules p{margin:8px 0}
 #wordRescueScreen #wrMenu{padding-bottom:20px}
 #wordRescueScreen:has(#wrMenu:not([hidden])){padding-bottom:env(safe-area-inset-bottom)}
+
+/* v0.9.60: three controls in one row, with the Build button beneath. */
+#wordRescueScreen .wrDock .wrActions{grid-template-columns: minmax(0,1fr) minmax(0,.85fr) minmax(0,1.65fr);gap:6px}
+#wordRescueScreen .wrDock .wrActions .wrActionMain{grid-column:1/-1}
+#wordRescueScreen .wrDock .wrActions .wrAction:not(.wrActionMain){padding-inline:4px;font-size:clamp(11px,3.2vw,14px)}
+#wordRescueScreen .wrLetter[data-sinking=true]:not(:disabled){opacity:var(--wrSinkOpacity,1);outline:2px dashed #f4d58c;outline-offset:-3px}
