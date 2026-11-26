@@ -347,3 +347,13 @@
 #wordRescueScreen .wrHeader:has(.wrInfo:not([hidden])) h2{font-size:26px}
 #wordRescueScreen .wrHeader .clubWalletBadge{flex:none}
 @media(max-width:390px){#wordRescueScreen .wrHeader:has(.wrInfo:not([hidden])) h2{font-size:24px}#wordRescueScreen .wrHeadingTop .eyebrow{font-size:9px;letter-spacing:.6px}}
+
+/* v0.9.47 personal score rankings */
+#wordRescueScreen .wrScoreboard h3{margin:0 0 5px}
+#wordRescueScreen .wrBoardTabs{display:flex;gap:5px;margin:12px 0}
+#wordRescueScreen .wrBoardTabs button{flex:1;min-width:0;min-height:42px;padding:6px 4px;font-size:12px;background:#273e50;border-radius:9px;color:#d8e8f0}
+#wordRescueScreen .wrBoardTabs button[aria-pressed=true]{background:#7de0ce;color:#08283b;font-weight:800}
+#wordRescueScreen .wrBoardTable{width:100%;border-collapse:collapse;font-size:12px;text-align:left;font-variant-numeric:tabular-nums}
+#wordRescueScreen .wrBoardTable th,#wordRescueScreen .wrBoardTable td{padding:10px 4px;border-bottom:1px solid #34475e}
+#wordRescueScreen .wrBoardTable th{color:#a9bacb;font-weight:600}
+#wordRescueScreen .wrBoardTable td:nth-child(2){font-weight:800;color:#7de0ce}

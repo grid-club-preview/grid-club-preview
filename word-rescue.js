@@ -21,6 +21,8 @@ const readState=()=>{try{const s=JSON.parse(safeGet(KEY)||'null');if(!engine.val
  }catch(_){return null;}};
 const balance=()=>globalThis.GridClubCredits?.balance?.()||0;
 const RERACK_COST=5;
+const SCORE_KEY='gridclub-word-rescue-scores-v1';
+let boardMode='tide',boardPeriod='day';
 const makeAttempt=()=>`word:${Date.now()}:${Math.random().toString(36).slice(2,12)}`;
 function ensureDictionary(){
  // All words are loaded synchronously from the PWA bundle before this app
@@ -59,20 +61,60 @@ function closeRules(){
 }
 function menu(){
  rulesOpen=false;firstRules=false;$('wrRules').hidden=true;$('wrDock').inert=false;$('wrInfo').hidden=true;
- stop();screen='menu';$('wrMenu').hidden=false;$('wrPlay').hidden=true;
+ stop();screen='menu';$('wrMenu').hidden=false;$('wrPlay').hidden=true;$('wrLeaderboard').hidden=true;
  const saved=readState();$('wrContinue').hidden=!saved;
  ensureDictionary();
  if(saved)$('wrContinueLabel').textContent='Continue '+modeName(saved.mode)+' · '+formatMs(saved.elapsedMs)+' played';
  $('wrWallet').textContent='◉ '+balance();
  const best=records();
  $('wrBest').textContent=['tide','raft','sinking'].map(mode=>best[mode]?'Best '+modeName(mode)+': '+best[mode].seconds+'s':'').filter(Boolean).join(' · ')||
-   'Three trial modes · no ranked leaderboard yet';
+   'Complete a rescue to set your first personal best.';
 }
 function homeScreen(){save();stop();root.hidden=true;home.hidden=false;}
 function open(){
  home.hidden=true;root.hidden=false;menu();
 }
+function scoreHistory(){
+ try{const items=JSON.parse(safeGet(SCORE_KEY)||'[]');return Array.isArray(items)?items.filter(x=>x&&typeof x.id==='string'&&['tide','raft','sinking'].includes(x.mode)&&Number.isFinite(x.score)&&Number.isFinite(x.ms)&&Number.isFinite(x.at)):[];}catch(_){return [];}
+}
+function scoreRows(mode,period,now=Date.now()){
+ const date=new Date(now).toISOString().slice(0,10);
+ return scoreHistory().filter(x=>{
+   if(x.mode!==mode)return false;
+   const completed=new Date(x.at).toISOString().slice(0,10);
+   return period==='all'||(period==='day'?completed===date:completed.slice(0,7)===date.slice(0,7));
+ }).sort((a,b)=>b.score-a.score||a.ms-b.ms||a.at-b.at).slice(0,10);
+}
+function renderScoreboard(){
+ for(const [id,value] of [['wrBoardTide','tide'],['wrBoardRaft','raft'],['wrBoardSinking','sinking']]){
+   $(id).setAttribute('aria-pressed',String(boardMode===value));
+ }
+ for(const [id,value] of [['wrBoardDay','day'],['wrBoardMonth','month'],['wrBoardAll','all']]){
+   $(id).setAttribute('aria-pressed',String(boardPeriod===value));
+ }
+ const list=$('wrBoardRows');list.replaceChildren();
+ const rows=scoreRows(boardMode,boardPeriod);
+ $('wrBoardEmpty').hidden=rows.length>0;
+ for(const [i,row] of rows.entries()){
+   const tr=document.createElement('tr');
+   for(const value of [String(i+1),String(row.score),(row.ms/1000).toFixed(1)+'s',new Date(row.at).toISOString().slice(0,10)]){
+     const td=document.createElement('td');td.textContent=value;tr.append(td);
+   }
+   list.append(tr);
+ }
+}
+function showScoreboard(mode=boardMode){
+ if(screen==='play')save();
+ stop();screen='leaderboard';boardMode=mode;
+ $('wrMenu').hidden=true;$('wrPlay').hidden=true;$('wrLeaderboard').hidden=false;$('wrInfo').hidden=true;
+ renderScoreboard();
+}
 function persistRecord(){
+ const entries=scoreHistory();
+ if(!entries.some(x=>x.id===state.attemptId)){
+   entries.push({id:state.attemptId,mode:state.mode,score:state.score,ms:state.elapsedMs,at:Date.now(),reracks:state.reracks||0});
+   safeSave(SCORE_KEY,entries);
+ }
  const previous=records(),time=Math.round(state.elapsedMs/1000),mode=state.mode;
  if(!previous[mode]||time<previous[mode].seconds){
    previous[mode]={seconds:time,score:state.score,words:state.words.length};
@@ -133,6 +175,7 @@ function finished(){
    $('wrResultText').textContent='You built '+state.blocks+' of 24 '+(state.mode==='raft'?'planks':'blocks')+'. Try quicker words or a different letter combination.';
  }
  $('wrResult').dataset.outcome=state.won?'won':'lost';
+ $('wrResultBoard').hidden=!state.won;
  $('wrResult').hidden=false;$('wrDock').hidden=true;$('wrTryAgain').focus?.();
  save();
  $('wrWallet').textContent='◉ '+balance();
@@ -161,7 +204,7 @@ function begin(mode,continueSaved=false){
  if(typeof state.attemptId!=='string'||!state.attemptId)state.attemptId=makeAttempt();
  if(!Number.isInteger(state.reracks)||state.reracks<0)state.reracks=0;
  $('wrWallet').textContent='◉ '+balance();
- screen='play';$('wrMenu').hidden=true;$('wrPlay').hidden=false;
+ screen='play';$('wrMenu').hidden=true;$('wrPlay').hidden=false;$('wrLeaderboard').hidden=true;
  $('wrResult').hidden=true;$('wrDock').hidden=false;$('wrRules').hidden=true;$('wrInfo').hidden=false;rulesOpen=false;firstRules=false;flash='';lastSecond=-1;
  state.started=seen(state.mode);
  $('wrModeTitle').textContent=modeName(state.mode);
@@ -174,6 +217,7 @@ function begin(mode,continueSaved=false){
 }
 function back(){
  if(screen==='play'){save();menu();}
+ else if(screen==='leaderboard')menu();
  else homeScreen();
 }
 function message(text,error){
@@ -290,6 +334,10 @@ $('wrContinue').onclick=()=>begin('tide',true);
 $('wrWordBack').onclick=back;
 $('wrTryAgain').onclick=()=>{safeDel(KEY);begin(state?.mode||'tide');};
 $('wrResultModes').onclick=menu;
+$('wrBoardEntry').onclick=()=>showScoreboard();
+$('wrResultBoard').onclick=()=>showScoreboard(state.mode);
+for(const [id,value] of [['wrBoardTide','tide'],['wrBoardRaft','raft'],['wrBoardSinking','sinking']])$(id).onclick=()=>{boardMode=value;renderScoreboard();};
+for(const [id,value] of [['wrBoardDay','day'],['wrBoardMonth','month'],['wrBoardAll','all']])$(id).onclick=()=>{boardPeriod=value;renderScoreboard();};
 $('wrInfo').onclick=()=>showRules(false);
 $('wrRulesPlay').onclick=closeRules;
 $('wrRulesBack').onclick=back;
