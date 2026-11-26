@@ -16,7 +16,7 @@ const safeDel=key=>{try{localStorage.removeItem(key);}catch(_){}};
 const readState=()=>{try{const s=JSON.parse(safeGet(KEY)||'null');if(!engine.validState(s)||s.won||s.expired)return null;
   // Repair impossible old racks without consuming a free shuffle, credits
   // or time. Keep construction, score, elapsed time and sunk slots.
-  if(!s.rankEligible&&s.rackRules!==3){s.rackRules=3;s.allowTriple=false;engine.ensurePlayable(s);safeSave(KEY,s);}else if(engine.ensurePlayable(s))safeSave(KEY,s);
+  if(!s.rackRules){s.rackRules=3;s.allowTriple=false;}if(engine.ensurePlayable(s))safeSave(KEY,s);
   return s;
  }catch(_){return null;}};
 const balance=()=>globalThis.GridClubCredits?.balance?.()||0;
@@ -68,12 +68,12 @@ function startTimer(){
  if(state.rankEligible===undefined&&state.elapsedMs===0&&state.words.length===0&&rankedReady()){
    const original=state;rankStarting=true;state.rankEligible=false;
    $('wrDock').inert=true;render();
-   const request=globalThis.GridRanked.call('word_start',{mode:state.mode,rackRules:3,raftPace:3,sinkRules:3});
+   const request=globalThis.GridRanked.call('word_start',{mode:state.mode,rackRules:4,raftPace:3,sinkRules:3});
    let timeout;
    Promise.race([request,new Promise((_,reject)=>{timeout=setTimeout(()=>reject(Error('Connection timeout')),10000);})]).then(reply=>{
      if(state!==original||screen!=='play'||!rankStarting)return;
-     if(!reply.attemptId||!Number.isInteger(reply.seed)||reply.rules!==(original.mode==='raft'?6:original.mode==='sinking'?8:5))throw Error('Ranked rescue unavailable');
-     state=engine.create(reply.seed,original.mode,3,3,3);
+     if(!reply.attemptId||!Number.isInteger(reply.seed)||reply.rules!==9)throw Error('Ranked rescue unavailable');
+     state=engine.create(reply.seed,original.mode,4,3,3);
      state.attemptId=original.attemptId;state.reracks=0;state.started=true;
      state.rankEligible=true;state.rankAttempt=reply.attemptId;state.rankEvents=[];
      delete state.rankReason;
@@ -144,7 +144,7 @@ async function renderScoreboard(){
  $('wrBoardEmpty').textContent='Loading global rankings…';
  if(!rankedReady()){$('wrBoardEmpty').textContent='Global leaderboard unavailable offline. Your stats remain available.';return;}
  try{
-   const result=await globalThis.GridRanked.call('word_leaderboard',{mode:boardMode,period:boardPeriod,rackRules:3,raftPace:3,sinkRules:3});
+   const result=await globalThis.GridRanked.call('word_leaderboard',{mode:boardMode,period:boardPeriod,rackRules:4,raftPace:3,sinkRules:3});
    if(request!==boardRequest||screen!=='leaderboard')return;
    const rows=result.entries||[];
    $('wrBoardEmpty').hidden=rows.length>0;$('wrBoardEmpty').textContent='No ranked rescues in this period yet.';

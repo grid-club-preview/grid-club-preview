@@ -133,7 +133,70 @@ function freshBalancedRack(s,count){
  }
  return shuffleLetters(s,rack);
 }
+// Index familiar short words by letter multiset. A tray needs several
+// plausible short choices, not merely a dictionary-valid permutation.
+const shortIndex=new Map();
+for(const word of COMMON_WORDS)if(word.length===3||word.length===4){
+ const key=[...word].sort().join('');
+ if(!shortIndex.has(key))shortIndex.set(key,[]);
+ shortIndex.get(key).push(word);
+}
+function shortChoices(rack,used=[]){
+ const letters=rack.filter(Boolean).sort(),excluded=new Set(used),seen=new Set(),counts={3:0,4:0};
+ function visit(start,key){
+   if(key.length>=3&&!seen.has(key)){
+     seen.add(key);
+     for(const word of shortIndex.get(key)||[])if(!excluded.has(word))counts[key.length]++;
+   }
+   if(key.length===4)return;
+   for(let i=start;i<letters.length;i++)if(i===start||letters[i]!==letters[i-1])visit(i+1,key+letters[i]);
+ }
+ visit(0,'');return counts;
+}
+function friendlyRack(rack,used=[]){
+ const n=rack.filter(Boolean).length,c=shortChoices(rack,used);
+ return n>=7?c[3]>=3&&c[4]>=2:n>=5?c[3]>=2&&c[4]>=1:n===4?c[3]>=1&&c[3]+c[4]>=2:familiarWord(rack,used);
+}
+const OPENING_WORDS='PLASTER STAPLER GARDENS PAINTER TRAINER PLAYERS FLOWERS HUNTERS TANGLED SHARPEN PLANETS ANCHORS PIRATES SAILORS REPAIRS PARENTS SPARKLE CANDLES BRUSHES BASKETS BLANKET MARKETS THREADS ROASTED CLIMATE ANIMALS ORANGES PASTURE HARVEST STEAMER STAINED STREAMS DANCERS BREADTH STRETCH CHEESES PEPPERS SUCCESS'.split(' ').filter(isAcceptedWord);
+const FRIENDLY_SEEDS=[...new Set([...TRIPLE_SEEDS,...SEEDS,...'STAR RATE CARE TAPE STOP EAST SEAT TEAR PEAR PART POST SAND STARE PLANE STONE CRATE HEART TRAIN SMART SHARE SPEAR CLEAN SLATE STEAM SPARE TEARS RATES PEARS STAPLE PLANET STRAIN STREAM'.split(' ')])].filter(isAcceptedWord);
+function openingRack(s){
+ const choices=OPENING_WORDS.filter(w=>balanced(w.split(''),s.rackRules,s.allowTriple)&&friendlyRack(w.split(''),s.used));
+ const triples=choices.filter(w=>new Set(w).size<w.length-1&&[...w].some(c=>w.split(c).length-1===3));
+ const pool=s.allowTriple&&triples.length?triples:choices.filter(w=>![...w].some(c=>w.split(c).length-1===3));
+ if(!pool.length)throw Error('No friendly opening rack');
+ return shuffleLetters(s,pool[pick(s,pool.length)].split(''));
+}
+function friendlyFreshRack(s,count){
+ // Keep ordinary refills based on short seeds, rather than guaranteeing
+ // another long word. Bounded retries preserve interactive responsiveness.
+ const eligible=w=>w.length<=count&&balanced(w.split(''),s.rackRules,s.allowTriple)&&!s.used.includes(w);
+ const pool=FRIENDLY_SEEDS.filter(w=>eligible(w)&&w.length<=5);
+ for(let attempt=0;attempt<24;attempt++){
+   let rack;
+   if(pool.length&&count>=4){
+     const triplePool=s.allowTriple?TRIPLE_SEEDS.filter(eligible):[];
+     const candidates=triplePool.length?triplePool:pool;
+     rack=candidates[pick(s,candidates.length)].split('');
+     while(rack.length<count){
+       const next=[...FILL].filter(c=>{
+         const copies=rack.filter(x=>x===c).length;
+         if(copies>=2&&(!s.allowTriple||copies>=3||rack.some(x=>rack.filter(y=>y===x).length===3)))return false;
+         const vowels=rack.filter(x=>VOWELS.includes(x)).length+(VOWELS.includes(c)?1:0),remaining=count-rack.length-1;
+         return vowels<=Math.min(3,count-2)&&vowels+remaining>=(count>=6?2:1);
+       });
+       if(!next.length)break;
+       rack.push(next[pick(s,next.length)]);
+     }
+   }else rack=freshBalancedRack(s,count);
+   if(rack.length===count&&balanced(rack,s.rackRules,s.allowTriple)&&friendlyRack(rack,s.used))return shuffleLetters(s,rack);
+ }
+ // Deterministic fallback for unusually depleted word lists; never strand
+ // the player if all preferred familiar options have already been used.
+ for(const w of FRIENDLY_SEEDS)if(w.length===count&&eligible(w)&&friendlyRack(w.split(''),s.used))return shuffleLetters(s,w.split(''));
+ return freshBalancedRack(s,count);
+}
 function freshRack(s,count=7){
+ if(s.rackRules>=4)return friendlyFreshRack(s,count);
  if(s.rackRules>=2)return freshBalancedRack(s,count);
  const used=new Set(s.used||[]);
  const allowed=w=>w.length<=count&&!used.has(w)&&balanced(w.split(''))&&isAcceptedWord(w);
@@ -146,7 +209,7 @@ function freshRack(s,count=7){
  return shuffleLetters(s,rack);
 }
 function ensurePlayable(s){
- if(balanced(s.rack,s.rackRules,s.allowTriple)&&(s.rackRules>=2?familiarWord(s.rack,s.used):hasPlayable(s.rack,s.used)))return false;
+ if(balanced(s.rack,s.rackRules,s.allowTriple)&&(s.rackRules>=4?friendlyRack(s.rack,s.used):s.rackRules>=2?familiarWord(s.rack,s.used):hasPlayable(s.rack,s.used)))return false;
  // Preserve empty slots in Sinking Letters and all existing gameplay progress.
  const count=Math.max(3,s.rack.filter(Boolean).length),letters=freshRack(s,count);
  const indices=s.rack.map((c,i)=>c?i:-1).filter(i=>i>=0);
@@ -165,11 +228,11 @@ function possibleWords(rack,used=[]){
  const excluded=new Set(used),count=rack.filter(Boolean).length;
  return [...WORD_SET].filter(w=>w.length<=count&&!excluded.has(w)&&isAcceptedWord(w)&&canMake(rack,w));
 }
-function create(seed=Date.now(),mode='tide',rackRules=3,raftPace=3,sinkRules=3){
+function create(seed=Date.now(),mode='tide',rackRules=4,raftPace=3,sinkRules=3){
  if(!['tide','sinking','raft'].includes(mode))throw Error('Unknown Word Rescue mode');
  const s={version:1,mode,rng:(Number(seed)>>>0)||1,rack:[],selected:[],used:[],words:[],
  blocks:0,score:0,elapsedMs:0,expired:false,won:false,lastErodeMs:0,started:false,sharkProgress:0,raftPace,sinkRules,rescueRules:mode==='raft'?2:3,rackRules};
- rollTriple(s);s.rack=freshRack(s);
+ rollTriple(s);s.rack=s.rackRules>=4?openingRack(s):freshRack(s);
  return s;
 }
 function wordFor(s,indices=s.selected){
@@ -255,7 +318,7 @@ function advanceSinking(s){
    const warn=drop-sinkFadeMs(s);
    if(s.lastErodeMs<warn&&s.elapsedMs>=warn&&s.rack.filter(Boolean).length>4){
      const present=s.rack.map((v,i)=>v?i:-1).filter(i=>i>=0);
-     const options=present.filter(i=>{const rack=s.rack.slice();rack[i]='';return balanced(rack,s.rackRules,s.allowTriple)&&familiarWord(rack,s.used);});
+     const options=present.filter(i=>{const rack=s.rack.slice();rack[i]='';return balanced(rack,s.rackRules,s.allowTriple)&&(s.rackRules>=4?friendlyRack(rack,s.used):familiarWord(rack,s.used));});
      const candidates=options.length?options:present;
      s.sinkSlot=candidates[pick(s,candidates.length)];s.sinkWarnAt=warn;
    }
@@ -314,5 +377,5 @@ function validState(s){return !!s&&s.version===1&&['tide','sinking','raft'].incl
  s.blocks>=0&&Number.isFinite(s.elapsedMs)&&s.elapsedMs>=0&&s.elapsedMs<=DURATION_MS*2&&
  typeof s.won==='boolean'&&typeof s.expired==='boolean';}
 return Object.freeze({WORD_SET,EXCLUDED_WORDS,isAcceptedWord,SEEDS,importDictionary,create,wordFor,select,removeLast,submit,rerack,
- ensureVowel,ensurePlayable,hasPlayable,familiarWord,possibleWords,canMake,advance,remainingMs,waterHeight,safeHeight,remainingSafetySeconds,callFriend,sharkProgress,rescueProgress,sinkWarning,dangerFraction,hazard,SEA_BASELINE,DURATION_MS,validState});
+ ensureVowel,ensurePlayable,hasPlayable,familiarWord,friendlyRack,shortChoices,possibleWords,canMake,advance,remainingMs,waterHeight,safeHeight,remainingSafetySeconds,callFriend,sharkProgress,rescueProgress,sinkWarning,dangerFraction,hazard,SEA_BASELINE,DURATION_MS,validState});
 });
