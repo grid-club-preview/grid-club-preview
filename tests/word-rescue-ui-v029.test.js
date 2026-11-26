@@ -7,7 +7,7 @@ const js=fs.readFileSync(path.join(__dirname,'..','word-rescue.js'),'utf8');
 const engine=require('../word-rescue-engine.js');
 const ids=[...html.matchAll(/id="([^"]+)"/g)].map(x=>x[1]);
 assert.equal(new Set(ids).size,ids.length,'No duplicate HTML ids');
-assert(html.includes('Gridda’s been shipwrecked!'));assert(html.includes('class="wrHeroCharacter"'));assert(html.includes('id="wrRankNote" class="wrWordAnnouncement"'));assert(html.includes('id="wrResultRankNote"'));
+assert(html.includes('Gridda’s been shipwrecked!'));assert(html.includes('class="wrHeroCharacter"'));assert(!html.includes('id="wrRankNote"'));assert(html.includes('id="wrResultRankNote"'));
 class Node {
  constructor(){this.hidden=false;this.children=[];this.style={setProperty:(k,v)=>{this.style[k]=v;}};this.dataset={};this.attrs={};
    this.classList={toggle:()=>{},add:()=>{},remove:()=>{}};
@@ -159,6 +159,7 @@ assert.equal(dom.wrInfo.disabled,false);dom.wrInfo.onclick();assert.equal(dom.wr
 dom.wrResultModes.onclick();dom.wrNewTide.onclick();
 for(let i=0;i<35&&tick;i++){now+=1000;tick();}
 assert.equal(dom.wrResult.dataset.outcome,'lost');assert.equal(dom.wrRescueBoat.attrs['data-visible'],'false');
+assert(dom.wrResultText.textContent.includes('Score: '));assert(!dom.wrResultText.textContent.includes('Try quicker'));assert.equal(dom.wrResultRankNote.textContent,'');
 dom.wrTryAgain.onclick();assert.equal(dom.wrResult.hidden,false,'Loss also blocks immediate restart');
 dom.wrResultModes.onclick();dom.wrStatsEntry.onclick();dom.wrStatsTide.onclick();
 assert.equal(dom.wrStatsGrid.children[0].children[1].textContent,'1');
@@ -181,7 +182,7 @@ console.log('Word Rescue browser wiring passed: three modes, raft victory, dock,
 
 const rankSource=js.slice(js.indexOf('function rankNote(value){'),js.indexOf('}',js.indexOf('function rankNote(value){'))+1);
 new Function('$','let rankStatus;'+rankSource+';rankNote("Global result verified");')(id=>dom[id]);assert.equal(dom.wrResultRankNote.textContent,'');
-new Function('$','let rankStatus;'+rankSource+';rankNote("Global result could not be verified · personal result kept");')(id=>dom[id]);assert(dom.wrResultRankNote.textContent.includes('could not be verified'));
+new Function('$','let rankStatus;'+rankSource+';rankNote("Global result could not be verified · personal result kept");')(id=>dom[id]);assert(dom.wrResultRankNote.textContent.includes('Global leaderboard unavailable'));
 assert(html.includes('id="wrClear"'));dom.wrBack.onclick();dom.wrNewTide.onclick();if(!dom.wrRules.hidden)dom.wrRulesPlay.onclick();
 const first=dom.wrTray.children[0],second=dom.wrTray.children[1];
 dom.wrTray.listeners.click({target:first,detail:0});dom.wrTray.listeners.click({target:second,detail:0});

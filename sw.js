@@ -1,5 +1,5 @@
-/* Grid Club v0.9.60 · sinking warnings and clear control */
-const CACHE='gridclub-pwa-v0.9.60';
+/* Grid Club v0.9.61 · cleaner defeat and ranking notices */
+const CACHE='gridclub-pwa-v0.9.61';
 const APP_FILES=[
   './','./index.html',
   './puzzle.js?v=0.9.9',
@@ -15,7 +15,7 @@ const APP_FILES=[
   './word-rescue.css?v=0.9.60',
   './word-rescue-lexicon.js?v=0.9.30',
   './word-rescue-engine.js?v=0.9.60',
-  './word-rescue.js?v=0.9.60',
+  './word-rescue.js?v=0.9.61',
   './edge-navigation.js?v=0.9.49',
   './vault-reward.js?v=0.9.25',
   './pipe-engine.js?v=0.9.33',

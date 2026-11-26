@@ -29,10 +29,10 @@ const RESULT_TAP_GUARD_MS=900;
 const rankedReady=()=>!!globalThis.GridRanked?.configured&&globalThis.navigator?.onLine!==false;
 function unrank(){if(state){state.rankEligible=false;state.rankAttempt=null;}rankStarting=false;}
 function rankNote(value){
- rankStatus=value;$('wrRankNote').textContent=value;
+ rankStatus=value;
  // Routine online status is not part of the result. Retain notices only
  // when the player needs to know their score is not on the global board.
- $('wrResultRankNote').textContent=/^Personal result|^Global result could not/.test(value)?value:'';
+ $('wrResultRankNote').textContent=/^Global result could not/.test(value)?'Score saved locally. Global leaderboard unavailable.':/^Personal result/.test(value)?'Not entered in the global leaderboard.':'';
 }
 const makeAttempt=()=>`word:${Date.now()}:${Math.random().toString(36).slice(2,12)}`;
 function ensureDictionary(){
@@ -259,7 +259,10 @@ function finished(){
      (state.words.length===1?' word':' words')+(state.mode==='raft'?' in '+Math.round(state.elapsedMs/1000)+' seconds':'')+'. Score: '+state.score+'.';
  }else{
    $('wrResultTitle').textContent=defeatTitle(state.mode);
-   $('wrResultText').textContent=(state.mode==='raft'?'You built ':'You stacked ')+(state.mode==='raft'?Math.min(24,state.blocks):state.blocks)+' '+(state.mode==='raft'?'planks':'pieces of wreckage')+'. Try quicker words or a different letter combination.';
+   const count=state.mode==='raft'?Math.min(24,state.blocks):state.blocks;
+   const material=state.mode==='raft'?(count===1?' plank':' planks'):(count===1?' piece of wreckage':' pieces of wreckage');
+   $('wrResultText').textContent=(state.mode==='raft'?'You built ':'You stacked ')+count+material+' using '+state.words.length+(state.words.length===1?' word':' words')+'. Score: '+state.score+'.';
+   rankNote('');
  }
  $('wrResult').dataset.outcome=state.won?'won':'lost';
  $('wrResultBoard').hidden=!state.won;
@@ -519,7 +522,7 @@ document.addEventListener('keydown',event=>{
 });
 document.addEventListener('visibilitychange',()=>{
  if(root.hidden||screen!=='play'||!state)return;
- if(document.hidden){if(rankStarting||state.rankEligible){unrank();$('wrDock').inert=false;rankNote('Practice · interrupted round');}if(lastTick&&!rulesOpen&&!(state.won||state.expired))engine.advance(state,Math.max(0,Math.min(1000,performance.now()-lastTick)));stop();if(state.expired||state.won){finished();render();}else save();}
+ if(document.hidden){if(rankStarting||state.rankEligible){unrank();$('wrDock').inert=false;rankNote('');}if(lastTick&&!rulesOpen&&!(state.won||state.expired))engine.advance(state,Math.max(0,Math.min(1000,performance.now()-lastTick)));stop();if(state.expired||state.won){finished();render();}else save();}
  else if(!state.won&&!state.expired&&!rulesOpen){startTimer();render();}
 });
 window.addEventListener('pagehide',()=>{if(rankStarting||state?.rankEligible&&!state.won)unrank();save();stop();});
