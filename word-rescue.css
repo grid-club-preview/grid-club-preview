@@ -401,3 +401,27 @@
 #wordRescueScreen .wrDock .wrFriend{width:100%;margin-top:6px;min-height:44px;background:#314857;color:#f4d58c;font-size:13px;touch-action:manipulation}
 #wordRescueScreen:has(.wrDock[data-mode=raft]:not([hidden])){padding-bottom:calc(275px + env(safe-area-inset-bottom))}
 #wordRescueScreen .wrTray,#wordRescueScreen .wrLetter{touch-action:none}
+
+/* v0.9.58: character-led Word Rescue menu and unobtrusive rank status. */
+#wordRescueScreen .wrHero{padding:0;overflow:hidden;background:#192e45;border-color:#46708c}
+#wordRescueScreen .wrHeroScene{position:relative;height:146px;overflow:hidden;background:linear-gradient(155deg,#3067a0,#89c8df)}
+#wordRescueScreen .wrHeroSun{position:absolute;right:11%;top:15%;width:37px;height:37px;background:#fff2ae;border-radius:50%;box-shadow:0 0 21px #ffe89a88}
+#wordRescueScreen .wrHeroCloud{position:absolute;left:12%;top:27%;width:59px;height:13px;border-radius:18px;background:#e0f5ffb8}
+#wordRescueScreen .wrHeroCloud:before{content:"";position:absolute;left:17px;bottom:0;width:27px;height:24px;border-radius:50% 50% 0 0;background:#e0f5ffb8}
+#wordRescueScreen .wrHeroSea{position:absolute;bottom:0;left:0;right:0;height:31%;background:linear-gradient(180deg,#168bc4,#125b9c);border-top:2px solid #a5e6f2}
+#wordRescueScreen .wrHeroWreck{position:absolute;left:50%;bottom:27%;transform:translateX(-50%) rotate(-3deg);width:92px;height:13px;border:2px solid #885738;border-radius:3px 5px 40% 20%;background:linear-gradient(#e5bf8a,#a06a3d);box-sizing:border-box}
+#wordRescueScreen .wrHeroGridda{position:absolute;bottom:100%;left:50%;width:80px;height:108px;transform:translateX(-50%) rotate(3deg)}
+#wordRescueScreen .wrHeroCharacter{width:100%;height:100%;overflow:visible}
+#wordRescueScreen .wrHeroCharacter .wrTension{opacity:1}
+#wordRescueScreen .wrHeroDebris{position:absolute;bottom:20%;height:7px;width:35px;border:1px solid #855d40;background:#d3a269;border-radius:2px}
+#wordRescueScreen .wrHeroDebrisLeft{left:18%;transform:rotate(12deg)}
+#wordRescueScreen .wrHeroDebrisRight{right:16%;bottom:15%;transform:rotate(-15deg);width:23px}
+#wordRescueScreen .wrHeroCopy{padding:15px 16px 17px}
+#wordRescueScreen .wrHeroCopy h3{font-size:clamp(21px,5.8vw,27px);line-height:1.15;margin:0 0 8px;color:#f3f7fb}
+#wordRescueScreen .wrHeroCopy p{font-size:13px;line-height:1.45;margin:0}
+#wordRescueScreen .wrHeroCopy .wrHeroTagline{margin-top:9px;color:#a0e7d6;font-weight:800}
+#wordRescueScreen .wrMenuSection{font-size:14px;color:#a8c5d5;margin:18px 2px 4px;letter-spacing:.3px}
+#wordRescueScreen .wrMenuRules summary{cursor:pointer;font-weight:800;min-height:28px;line-height:28px}
+#wordRescueScreen .wrMenuRules p{margin:8px 0}
+#wordRescueScreen #wrMenu{padding-bottom:20px}
+#wordRescueScreen:has(#wrMenu:not([hidden])){padding-bottom:env(safe-area-inset-bottom)}

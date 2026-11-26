@@ -7,6 +7,7 @@ const js=fs.readFileSync(path.join(__dirname,'..','word-rescue.js'),'utf8');
 const engine=require('../word-rescue-engine.js');
 const ids=[...html.matchAll(/id="([^"]+)"/g)].map(x=>x[1]);
 assert.equal(new Set(ids).size,ids.length,'No duplicate HTML ids');
+assert(html.includes('Gridda’s been shipwrecked!'));assert(html.includes('class="wrHeroCharacter"'));assert(html.includes('id="wrRankNote" class="wrWordAnnouncement"'));assert(html.includes('id="wrResultRankNote"'));
 class Node {
  constructor(){this.hidden=false;this.children=[];this.style={setProperty:(k,v)=>{this.style[k]=v;}};this.dataset={};this.attrs={};
    this.classList={toggle:()=>{},add:()=>{},remove:()=>{}};

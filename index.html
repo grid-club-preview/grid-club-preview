@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="vault-reward.css?v=0.9.25">
   <link rel="stylesheet" href="dot-daily.css?v=0.9.25">
   <link rel="stylesheet" href="home-roadmap.css?v=0.9.26">
-  <link rel="stylesheet" href="word-rescue.css?v=0.9.56">
+  <link rel="stylesheet" href="word-rescue.css?v=0.9.58">
   <style>
     :root { color-scheme: dark; --bg:#0e1424; --surface:#1a243a; --tile:#253147; --muted:#9daabe; --mint:#7be3d4; --purple:#a178ff; }
     * { box-sizing: border-box; }
@@ -334,7 +334,7 @@
 <body>
   <main class="shell">
     <section id="home">
-      <header><div><div class="eyebrow">GRID CLUB</div><h1>A pocketful of challenges.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.57</span></div></header>
+      <header><div><div class="eyebrow">GRID CLUB</div><h1>A pocketful of challenges.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.58</span></div></header>
       <div class="homeSectionHeader" aria-label="Puzzle Deck games">
         <div class="eyebrow">PUZZLE DECK</div>
         <span class="homeSectionCount">3 playable · 3 planned</span>
@@ -416,35 +416,76 @@
         <span class="clubWalletBadge" id="wrWallet" aria-label="Club Credits balance">◉ 0</span>
       </div>
       <div id="wrMenu">
-        <div class="wrCard wrIntro">
-          <h3>Words are your way out.</h3>
-          <p>Help Gridda escape! Salvage wreckage to survive a rising tide until help arrives, or build a jetty to escape a pursuing shark. Every letter in a valid word adds a block or plank.</p>
+        <div class="wrCard wrIntro wrHero">
+          <div class="wrHeroScene" aria-hidden="true">
+            <span class="wrHeroSun"></span><span class="wrHeroCloud"></span>
+            <div class="wrHeroSea"></div>
+            <div class="wrHeroWreck"><div class="wrHeroGridda"><svg class="wrHeroCharacter" viewBox="0 0 96 132" xmlns="http://www.w3.org/2000/svg" role="presentation" aria-hidden="true">
+                <ellipse cx="48" cy="129" rx="24" ry="3" fill="#27466c" opacity=".25"/>
+                <g class="wrBody">
+                  <path d="M39 97 L35 119" stroke="#304c75" stroke-width="11" stroke-linecap="round"/>
+                  <path d="M57 97 L62 119" stroke="#304c75" stroke-width="11" stroke-linecap="round"/>
+                  <path d="M34 120 Q33 127 20 128" stroke="#3a314e" stroke-width="8" stroke-linecap="round"/>
+                  <path d="M63 120 Q65 126 78 126" stroke="#3a314e" stroke-width="8" stroke-linecap="round"/>
+                  <g class="wrArmLeft">
+                    <path d="M34 60 Q21 52 17 37" stroke="#f3b18e" stroke-width="11" stroke-linecap="round"/>
+                    <ellipse cx="16" cy="33" rx="7" ry="9" fill="#f5b999" transform="rotate(-18 16 33)"/>
+                  </g>
+                  <g class="wrArmRight">
+                    <path d="M63 60 Q80 51 82 32" stroke="#f3b18e" stroke-width="11" stroke-linecap="round"/>
+                    <ellipse cx="82" cy="29" rx="7" ry="9" fill="#f5b999" transform="rotate(22 82 29)"/>
+                  </g>
+                  <path d="M35 55 Q48 51 62 56 L70 95 Q49 109 27 95 Z" fill="#734dbe" stroke="#51368e" stroke-width="2.5"/>
+                  <path d="M42 55 L48 70 L55 55" fill="#d4b8f9" opacity=".8"/>
+                  <path d="M34 91 Q48 98 64 91" fill="none" stroke="#9f83d8" stroke-width="3.5" stroke-linecap="round"/>
+                  <path d="M30 36 Q22 3 49 5 Q73 3 70 34 L72 54 Q58 48 48 50 Q37 50 26 53 Z" fill="#382b43"/>
+                  <ellipse class="wrFace" cx="48" cy="35" rx="22" ry="26" fill="#f2b28f"/>
+                  <path d="M26 33 Q25 8 46 8 Q65 6 69 27 Q61 18 50 21 Q39 25 30 21 Z" fill="#392d48"/>
+                  <path d="M29 23 Q19 39 27 53" fill="none" stroke="#392d48" stroke-width="9" stroke-linecap="round"/>
+                  <path d="M68 22 Q78 41 69 54" fill="none" stroke="#392d48" stroke-width="9" stroke-linecap="round"/>
+                  <circle cx="40" cy="36" r="3" fill="#272637"/>
+                  <circle cx="57" cy="36" r="3" fill="#272637"/>
+                  <path d="M42 50 Q48 44 55 50" fill="none" stroke="#963e50" stroke-width="2.7" stroke-linecap="round"/>
+                  <path class="wrTension" d="M35 29 L43 32 M54 32 L62 29" stroke="#5e3945" stroke-width="2.6" stroke-linecap="round"/>
+                  <circle cx="29" cy="44" r="3" fill="#dc847c" opacity=".55"/>
+                  <circle cx="66" cy="44" r="3" fill="#dc847c" opacity=".55"/>
+                </g>
+              </svg></div></div>
+            <span class="wrHeroDebris wrHeroDebrisLeft"></span><span class="wrHeroDebris wrHeroDebrisRight"></span>
+          </div>
+          <div class="wrHeroCopy">
+            <h3>Gridda’s been shipwrecked!</h3>
+            <p>Stranded at sea, with the wreckage of her boat and danger closing in, Gridda needs your help.</p>
+            <p class="wrHeroTagline">Make words. Build her escape. Save Gridda!</p>
+          </div>
         </div>
         <button id="wrContinue" class="wrContinue" type="button" hidden><span id="wrContinueLabel">Continue current run</span><span aria-hidden="true">›</span></button>
+        <h3 class="wrMenuSection">Choose a rescue</h3>
         <button id="wrNewTide" class="wrMode" type="button">
           <span class="wrModeIcon" aria-hidden="true">🌊</span>
-          <span><strong>Rising Tide</strong><small>Stack wreckage until the rescue boat arrives</small></span>
+          <span><strong>Rising Tide</strong><small>Keep Gridda above the rising water until help arrives</small></span>
           <span class="tileArrow" aria-hidden="true">›</span>
         </button>
         <button id="wrNewRaft" class="wrMode wrModeRaft" type="button">
           <span class="wrModeIcon" aria-hidden="true">🦈</span>
-          <span><strong>Raft Escape</strong><small>Build from the island to Gridda · escape before the shark attacks</small></span>
+          <span><strong>Raft Escape</strong><small>Build a jetty to Gridda before the shark catches her</small></span>
           <span class="tileArrow" aria-hidden="true">›</span>
         </button>
         <button id="wrNewSinking" class="wrMode wrModeAlt" type="button">
           <span class="wrModeIcon" aria-hidden="true">🔡</span>
-          <span><strong>Sinking Letters</strong><small>Stack wreckage · your letter tray shrinks permanently</small></span>
+          <span><strong>Sinking Letters</strong><small>Save Gridda as her remaining wreckage drifts away</small></span>
           <span class="tileArrow" aria-hidden="true">›</span>
         </button>
+        <h3 class="wrMenuSection">Records &amp; rankings</h3>
         <button id="wrBoardEntry" class="wrMode" type="button"><span class="wrModeIcon" aria-hidden="true">🏆</span><span><strong>Leaderboard</strong><small>Day · Month · All Time</small></span><span class="tileArrow" aria-hidden="true">›</span></button>
         <button id="wrStatsEntry" class="wrMode" type="button"><span class="wrModeIcon" aria-hidden="true">▥</span><span><strong>Your stats</strong><small>Personal records and rescue history</small></span><span class="tileArrow" aria-hidden="true">›</span></button>
-        <div class="wrCard">
-          <strong>Prototype rules</strong>
+        <details class="wrCard wrMenuRules">
+          <summary>How to play</summary>
           <p class="wrFine">Words need at least 3 letters. Regular plurals are accepted. Every tray contains a familiar unused word, at least one vowel and two consonants. Full trays contain two or three vowels. A third copy of a letter is rare; four copies are never dealt. Letters refresh after every valid word. Each letter builds one block; longer words score more points. The first reshuffle in each round is free; subsequent reshuffles cost 5 Club Credits. Credits are not earned in Free Play.</p>
           <p id="wrBest" class="wrFine" aria-live="polite">Complete a rescue to set your first personal best.</p>
           <p id="wrDictionaryStatus" class="wrDictionaryStatus" role="status" aria-live="polite">Expanded English word list ready offline.</p>
-          <p class="wrFine">The larger English dictionary is bundled with the game, so common words and plurals work immediately, including offline. There are no adverts or purchases in this prototype. Online unassisted rescues can qualify for global rankings.</p>
-        </div>
+          <p class="wrFine">Play offline or compete in the global rankings with an online, unassisted rescue.</p>
+        </details>
       </div>
       <div id="wrLeaderboard" hidden>
         <div class="wrCard wrScoreboard">
@@ -472,7 +513,7 @@
           <p class="wrFine">Rescue totals and averages use saved score history. Older personal bests are retained where available. Round totals, defeats, success rate and longest word are tracked from v0.9.49; abandoned rounds are not counted.</p>
         </div>
       </div>
-      <div id="wrPlay" hidden><p id="wrRankNote" class="wrFine wrRankNote" role="status"></p>
+      <div id="wrPlay" hidden><p id="wrRankNote" class="wrWordAnnouncement" role="status"></p>
         <div class="wrStatus">
           <div class="wrStat wrSafetyStat"><small>Gridda’s status</small><strong id="wrBlocks">Holding steady</strong></div>
           <div class="wrStat"><small>Score</small><strong id="wrScore">0</strong></div>
@@ -910,7 +951,7 @@
       </div>
       
       <div class="adSlot" id="adSlot" aria-hidden="true" hidden></div>
-      <footer>Grid Club · v0.9.57 beta</footer>
+      <footer>Grid Club · v0.9.58 beta</footer>
     </section>
   </main>
   <div class="pauseLayer" id="dotDailyCompleteLayer" hidden role="dialog" aria-modal="true" aria-labelledby="dotDailyCompleteTitle">

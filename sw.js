@@ -1,5 +1,5 @@
-/* Grid Club v0.9.57 · moderate Raft Escape pacing */
-const CACHE='gridclub-pwa-v0.9.57';
+/* Grid Club v0.9.58 · shipwreck story and cleaner game screen */
+const CACHE='gridclub-pwa-v0.9.58';
 const APP_FILES=[
   './','./index.html',
   './puzzle.js?v=0.9.9',
@@ -12,7 +12,7 @@ const APP_FILES=[
   './vault-reward.css?v=0.9.25',
   './dot-daily.css?v=0.9.25',
   './home-roadmap.css?v=0.9.26',
-  './word-rescue.css?v=0.9.56',
+  './word-rescue.css?v=0.9.58',
   './word-rescue-lexicon.js?v=0.9.30',
   './word-rescue-engine.js?v=0.9.57',
   './word-rescue.js?v=0.9.57',
