@@ -1,5 +1,5 @@
-/* Grid Club v0.9.66 · Dot Trails Hard and Expert Free Play */
-const CACHE='gridclub-pwa-v0.9.66';
+/* Grid Club v0.9.67 · simplified Dot Trails difficulty cards */
+const CACHE='gridclub-pwa-v0.9.67';
 const APP_FILES=[
   './','./index.html',
   './puzzle.js?v=0.9.66',
