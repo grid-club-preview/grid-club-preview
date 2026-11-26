@@ -22,7 +22,7 @@ const readState=()=>{try{const s=JSON.parse(safeGet(KEY)||'null');if(!engine.val
 const balance=()=>globalThis.GridClubCredits?.balance?.()||0;
 const RERACK_COST=5;
 const SCORE_KEY='gridclub-word-rescue-scores-v1';
-let boardMode='tide',boardPeriod='day';
+let boardMode='tide',boardPeriod='day',statsMode='all';
 const makeAttempt=()=>`word:${Date.now()}:${Math.random().toString(36).slice(2,12)}`;
 function ensureDictionary(){
  // All words are loaded synchronously from the PWA bundle before this app
@@ -61,7 +61,7 @@ function closeRules(){
 }
 function menu(){
  rulesOpen=false;firstRules=false;$('wrRules').hidden=true;$('wrDock').inert=false;$('wrInfo').hidden=true;
- stop();screen='menu';$('wrMenu').hidden=false;$('wrPlay').hidden=true;$('wrLeaderboard').hidden=true;
+ stop();screen='menu';$('wrMenu').hidden=false;$('wrPlay').hidden=true;$('wrLeaderboard').hidden=true;$('wrStats').hidden=true;
  const saved=readState();$('wrContinue').hidden=!saved;
  ensureDictionary();
  if(saved)$('wrContinueLabel').textContent='Continue '+modeName(saved.mode)+' · '+formatMs(saved.elapsedMs)+' played';
@@ -80,7 +80,7 @@ function scoreHistory(){
 function scoreRows(mode,period,now=Date.now()){
  const date=new Date(now).toISOString().slice(0,10);
  return scoreHistory().filter(x=>{
-   if(x.mode!==mode)return false;
+   if(x.mode!==mode||x.won===false)return false;
    const completed=new Date(x.at).toISOString().slice(0,10);
    return period==='all'||(period==='day'?completed===date:completed.slice(0,7)===date.slice(0,7));
  }).sort((a,b)=>b.score-a.score||a.ms-b.ms||a.at-b.at).slice(0,10);
@@ -106,15 +106,48 @@ function renderScoreboard(){
 function showScoreboard(mode=boardMode){
  if(screen==='play')save();
  stop();screen='leaderboard';boardMode=mode;
- $('wrMenu').hidden=true;$('wrPlay').hidden=true;$('wrLeaderboard').hidden=false;$('wrInfo').hidden=true;
+ $('wrMenu').hidden=true;$('wrPlay').hidden=true;$('wrLeaderboard').hidden=false;$('wrStats').hidden=true;$('wrInfo').hidden=true;
  renderScoreboard();
+}
+function personalStats(mode){
+ const rows=scoreHistory().filter(x=>mode==='all'||x.mode===mode);
+ const wins=rows.filter(x=>x.won!==false),tracked=rows.filter(x=>typeof x.won==='boolean');
+ const trackedWins=tracked.filter(x=>x.won).length;
+ const older=Object.entries(records()).filter(([key])=>mode==='all'||key===mode).map(([,x])=>x).filter(x=>x&&Number.isFinite(x.seconds));
+ const bestTimes=wins.map(x=>x.ms).concat(older.map(x=>x.seconds*1000));
+ const scores=wins.map(x=>x.score).concat(older.map(x=>x.score).filter(Number.isFinite));
+ return {
+   rescues:wins.length,rounds:tracked.length,defeats:tracked.length-trackedWins,
+   success:tracked.length?Math.round(trackedWins/tracked.length*100):null,
+   score:scores.length?Math.max(...scores):null,
+   fastest:bestTimes.length?Math.min(...bestTimes):null,
+   average:wins.length?wins.reduce((sum,x)=>sum+x.score,0)/wins.length:null,
+   longest:tracked.reduce((max,x)=>Math.max(max,x.longest||0),0)
+ };
+}
+function renderPersonalStats(){
+ for(const [id,value] of [['wrStatsAll','all'],['wrStatsTide','tide'],['wrStatsRaft','raft'],['wrStatsSinking','sinking']])$(id).setAttribute('aria-pressed',String(statsMode===value));
+ const s=personalStats(statsMode);
+ const values=[
+   ['Successful rescues',s.rescues],['Rounds tracked',s.rounds],['Defeats',s.defeats],
+   ['Success rate',s.success===null?'—':s.success+'%'],
+   ['Highest recorded score',s.score??'—'],['Fastest rescue',s.fastest===null?'—':(s.fastest/1000).toFixed(1)+'s'],
+   ['Average rescue score',s.average===null?'—':s.average.toFixed(1)],['Longest word',s.longest?s.longest+' letters':'—']
+ ];
+ const grid=$('wrStatsGrid');grid.replaceChildren();
+ for(const [label,value] of values){const card=document.createElement('div');card.className='wrStat';const name=document.createElement('small');name.textContent=label;const number=document.createElement('strong');number.textContent=String(value);card.append(name,number);grid.append(card);}
+}
+function showStats(){
+ stop();screen='stats';$('wrMenu').hidden=true;$('wrPlay').hidden=true;$('wrLeaderboard').hidden=true;$('wrStats').hidden=false;$('wrInfo').hidden=true;
+ renderPersonalStats();
 }
 function persistRecord(){
  const entries=scoreHistory();
  if(!entries.some(x=>x.id===state.attemptId)){
-   entries.push({id:state.attemptId,mode:state.mode,score:state.score,ms:state.elapsedMs,at:Date.now(),reracks:state.reracks||0});
+   entries.push({id:state.attemptId,mode:state.mode,score:state.score,ms:state.elapsedMs,at:Date.now(),reracks:state.reracks||0,won:state.won,words:state.words.length,longest:state.words.reduce((max,x)=>Math.max(max,x.word.length),0)});
    safeSave(SCORE_KEY,entries);
  }
+ if(!state.won)return;
  const previous=records(),time=Math.round(state.elapsedMs/1000),mode=state.mode;
  if(!previous[mode]||time<previous[mode].seconds){
    previous[mode]={seconds:time,score:state.score,words:state.words.length};
@@ -162,17 +195,16 @@ function defeatTitle(mode){
 }
 function finished(){
  stop();state.selected=[];rulesOpen=false;$('wrRules').hidden=true;$('wrDock').inert=false;
+ persistRecord();
  if(state.won){
-   persistRecord();
    // Ordinary Free Play rounds do not award credits. A future verified
    // Daily Challenge can award Club Credits separately.
    $('wrResultTitle').textContent=victoryTitle(state.mode);
-   $('wrResultText').textContent='You built '+Math.min(24,state.blocks)+(state.mode==='raft'?' planks':' blocks')+' using '+state.words.length+
-     ' words in '+Math.round(state.elapsedMs/1000)+' seconds. Score: '+state.score+'. '+
-     'Results saved.';
+   $('wrResultText').textContent=(state.mode==='raft'?'You built ':'You stacked ')+Math.min(24,state.blocks)+(state.mode==='raft'?' planks':' pieces of wreckage')+' using '+state.words.length+
+     (state.words.length===1?' word in ':' words in ')+Math.round(state.elapsedMs/1000)+' seconds. Score: '+state.score+'.';
  }else{
    $('wrResultTitle').textContent=defeatTitle(state.mode);
-   $('wrResultText').textContent='You built '+state.blocks+' of 24 '+(state.mode==='raft'?'planks':'blocks')+'. Try quicker words or a different letter combination.';
+   $('wrResultText').textContent=(state.mode==='raft'?'You built ':'You stacked ')+state.blocks+' of 24 '+(state.mode==='raft'?'planks':'pieces of wreckage')+'. Try quicker words or a different letter combination.';
  }
  $('wrResult').dataset.outcome=state.won?'won':'lost';
  $('wrResultBoard').hidden=!state.won;
@@ -204,7 +236,7 @@ function begin(mode,continueSaved=false){
  if(typeof state.attemptId!=='string'||!state.attemptId)state.attemptId=makeAttempt();
  if(!Number.isInteger(state.reracks)||state.reracks<0)state.reracks=0;
  $('wrWallet').textContent='◉ '+balance();
- screen='play';$('wrMenu').hidden=true;$('wrPlay').hidden=false;$('wrLeaderboard').hidden=true;
+ screen='play';$('wrMenu').hidden=true;$('wrPlay').hidden=false;$('wrLeaderboard').hidden=true;$('wrStats').hidden=true;
  $('wrResult').hidden=true;$('wrDock').hidden=false;$('wrRules').hidden=true;$('wrInfo').hidden=false;rulesOpen=false;firstRules=false;flash='';lastSecond=-1;
  state.started=seen(state.mode);
  $('wrModeTitle').textContent=modeName(state.mode);
@@ -217,7 +249,7 @@ function begin(mode,continueSaved=false){
 }
 function back(){
  if(screen==='play'){save();menu();}
- else if(screen==='leaderboard')menu();
+ else if(screen==='leaderboard'||screen==='stats')menu();
  else homeScreen();
 }
 function message(text,error){
@@ -232,7 +264,7 @@ function render(){
  const danger=engine.dangerFraction(state);
  const scene=$('wrScene');
  scene.dataset.mode=state.mode==='raft'?'raft':'tower';
- $('wrRescueBoat').hidden=state.mode==='raft'||!state.won;
+ $('wrRescueBoat').setAttribute('data-visible',String(state.mode!=='raft'&&state.won));
  scene.style.setProperty('--wrWater',engine.waterHeight(state)+'%');
  scene.dataset.danger=state.won?'won':state.expired?'lost':danger>=.90?'critical':danger>=.68?'alert':'safe';
  scene.dataset.panic=state.won||state.expired?'end':danger>=.92?'frantic':danger>=.78?'panicking':danger>=.48?'worried':'calm';
@@ -337,6 +369,8 @@ $('wrWordBack').onclick=back;
 $('wrTryAgain').onclick=()=>{safeDel(KEY);begin(state?.mode||'tide');};
 $('wrResultModes').onclick=menu;
 $('wrBoardEntry').onclick=()=>showScoreboard();
+$('wrStatsEntry').onclick=showStats;
+for(const [id,value] of [['wrStatsAll','all'],['wrStatsTide','tide'],['wrStatsRaft','raft'],['wrStatsSinking','sinking']])$(id).onclick=()=>{statsMode=value;renderPersonalStats();};
 $('wrResultBoard').onclick=()=>showScoreboard(state.mode);
 for(const [id,value] of [['wrBoardTide','tide'],['wrBoardRaft','raft'],['wrBoardSinking','sinking']])$(id).onclick=()=>{boardMode=value;renderScoreboard();};
 for(const [id,value] of [['wrBoardDay','day'],['wrBoardMonth','month'],['wrBoardAll','all']])$(id).onclick=()=>{boardPeriod=value;renderScoreboard();};

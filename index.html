@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="vault-reward.css?v=0.9.25">
   <link rel="stylesheet" href="dot-daily.css?v=0.9.25">
   <link rel="stylesheet" href="home-roadmap.css?v=0.9.26">
-  <link rel="stylesheet" href="word-rescue.css?v=0.9.48">
+  <link rel="stylesheet" href="word-rescue.css?v=0.9.49">
   <style>
     :root { color-scheme: dark; --bg:#0e1424; --surface:#1a243a; --tile:#253147; --muted:#9daabe; --mint:#7be3d4; --purple:#a178ff; }
     * { box-sizing: border-box; }
@@ -334,7 +334,7 @@
 <body>
   <main class="shell">
     <section id="home">
-      <header><div><div class="eyebrow">GRID CLUB</div><h1>A pocketful of challenges.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.48</span></div></header>
+      <header><div><div class="eyebrow">GRID CLUB</div><h1>A pocketful of challenges.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.49</span></div></header>
       <div class="homeSectionHeader" aria-label="Puzzle Deck games">
         <div class="eyebrow">PUZZLE DECK</div>
         <span class="homeSectionCount">3 playable · 3 planned</span>
@@ -437,6 +437,7 @@
           <span class="tileArrow" aria-hidden="true">›</span>
         </button>
         <button id="wrBoardEntry" class="wrMode" type="button"><span class="wrModeIcon" aria-hidden="true">🏆</span><span><strong>Leaderboard</strong><small>Day · Month · All Time</small></span><span class="tileArrow" aria-hidden="true">›</span></button>
+        <button id="wrStatsEntry" class="wrMode" type="button"><span class="wrModeIcon" aria-hidden="true">▥</span><span><strong>Your stats</strong><small>Personal records and rescue history</small></span><span class="tileArrow" aria-hidden="true">›</span></button>
         <div class="wrCard">
           <strong>Prototype rules</strong>
           <p class="wrFine">Words need at least 3 letters. Regular plurals are accepted. At least one vowel is always available. Letters refresh after every valid word. Each letter builds one block; longer words score more points. The first reshuffle in each round is free; subsequent reshuffles cost 5 Club Credits. Credits are not earned in Free Play.</p>
@@ -458,6 +459,17 @@
           <table class="wrBoardTable"><thead><tr><th scope="col">Rank</th><th scope="col">Score</th><th scope="col">Time</th><th scope="col">Date (UTC)</th></tr></thead><tbody id="wrBoardRows"></tbody></table>
           <p id="wrBoardEmpty" class="wrFine" role="status">No completed rescues in this period yet.</p>
           <p class="wrFine">Top 10 successful rescues. Highest score first; faster time breaks ties. Day and Month use UTC calendar dates.</p>
+        </div>
+      </div>
+      <div id="wrStats" hidden>
+        <div class="wrCard wrScoreboard">
+          <h3>Your stats</h3>
+          <p class="wrFine">Your Word Rescue records · this device only</p>
+          <div class="wrBoardTabs wrStatsTabs" role="group" aria-label="Game mode">
+            <button id="wrStatsAll" type="button">All modes</button><button id="wrStatsTide" type="button">Rising Tide</button><button id="wrStatsRaft" type="button">Raft Escape</button><button id="wrStatsSinking" type="button">Sinking Letters</button>
+          </div>
+          <div id="wrStatsGrid" class="wrStatsGrid"></div>
+          <p class="wrFine">Rescue totals and averages use saved score history. Older personal bests are retained where available. Round totals, defeats, success rate and longest word are tracked from v0.9.49; abandoned rounds are not counted.</p>
         </div>
       </div>
       <div id="wrPlay" hidden>
@@ -507,7 +519,7 @@
             <div class="wrBase"></div>
           </div>
           <div class="wrSea" id="wrSea"><span class="wrShark" id="wrShark" aria-hidden="true">🦈</span></div>
-          <svg id="wrRescueBoat" class="wrRescueBoat" viewBox="0 0 160 110" aria-hidden="true" hidden>
+          <svg id="wrRescueBoat" class="wrRescueBoat" viewBox="0 0 160 110" aria-hidden="true" data-visible="false">
  <path d="M7 83 Q39 79 76 84 T154 83" fill="none" stroke="#d7f8ff" stroke-width="4" stroke-linecap="round"/>
  <path d="M9 61 L155 61 L141 82 Q83 90 25 82 Z" fill="#d85b38" stroke="#8a382d" stroke-width="2"/>
  <path d="M13 62 H151 L146 69 H18 Z" fill="#fff1cd"/>
@@ -564,7 +576,7 @@
           <p id="wrResultText"></p>
           <button id="wrTryAgain" type="button">Play again</button>
           <button id="wrResultBoard" class="wrSecondary" type="button">Leaderboard</button>
-          <button id="wrResultModes" class="wrSecondary" type="button">Back to modes</button>
+          <button id="wrResultModes" class="wrSecondary" type="button">Back to game menu</button>
         </div>
         <div id="wrRules" class="wrRules" hidden role="dialog" aria-modal="true" aria-labelledby="wrRulesTitle">
           <div class="wrRulesCard">
@@ -577,7 +589,7 @@
               <ul><li>Tap letters to make a word of at least 3 letters, then build with it.</li><li>Every letter adds one block or plank. A 4-letter word scores 16 points; a 5-letter word scores 25.</li><li>Letters refill after each valid word. You cannot repeat a word in the same run.</li><li>The first reshuffle is free. Further reshuffles cost 5 Club Credits. The hazard keeps moving.</li></ul>
             </div>
             <button class="wrAction wrActionMain" id="wrRulesPlay" type="button">Play</button>
-            <button class="wrRulesBack" id="wrRulesBack" type="button">Back to modes</button>
+            <button class="wrRulesBack" id="wrRulesBack" type="button">Back to game menu</button>
           </div>
         </div>
       </div>
@@ -893,7 +905,7 @@
       </div>
       
       <div class="adSlot" id="adSlot" aria-hidden="true" hidden></div>
-      <footer>Grid Club · v0.9.48 beta</footer>
+      <footer>Grid Club · v0.9.49 beta</footer>
     </section>
   </main>
   <div class="pauseLayer" id="dotDailyCompleteLayer" hidden role="dialog" aria-modal="true" aria-labelledby="dotDailyCompleteTitle">
@@ -934,8 +946,8 @@
   <script src="pipe-shift.js?v=0.9.41"></script>
   <script src="word-rescue-lexicon.js?v=0.9.30"></script>
   <script src="word-rescue-engine.js?v=0.9.42"></script>
-  <script src="word-rescue.js?v=0.9.48"></script>
-  <script src="edge-navigation.js?v=0.9.47"></script>
+  <script src="word-rescue.js?v=0.9.49"></script>
+  <script src="edge-navigation.js?v=0.9.49"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol === 'https:') {
       addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));

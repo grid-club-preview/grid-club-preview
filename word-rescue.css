@@ -366,6 +366,12 @@
 #wordRescueScreen .wrScene[data-mode=tower] .wrBrick:nth-child(3n){background:linear-gradient(180deg,#c4d3d6,#7a969e)}
 #wordRescueScreen .wrScene[data-mode=tower] .wrAvatar{height:min(26cqh,112px);width:auto;aspect-ratio:96/132}
 #wordRescueScreen .wrRescueBoat{display:none}
-#wordRescueScreen .wrScene[data-mode=tower][data-danger=won] .wrRescueBoat:not([hidden]){display:block;position:absolute;z-index:5;bottom:calc(var(--wrWater,22%) - 8cqh);right:0;width:44cqw;height:auto;animation:wrBoatArrive 1.1s ease-out both;filter:drop-shadow(0 3px 3px #12467266)}
+#wordRescueScreen .wrScene[data-mode=tower][data-danger=won] .wrRescueBoat[data-visible=true]{display:block;position:absolute;z-index:5;bottom:calc(var(--wrWater,22%) - 8cqh);right:0;width:44cqw;height:auto;animation:wrBoatArrive 1.1s ease-out both;filter:drop-shadow(0 3px 3px #12467266)}
 @keyframes wrBoatArrive{from{transform:translateX(110%)}to{transform:translateX(0)}}
 @media(prefers-reduced-motion:reduce){#wordRescueScreen .wrScene[data-mode=tower][data-danger=won] .wrRescueBoat{animation:none!important}}
+
+/* v0.9.49 personal statistics */
+#wordRescueScreen .wrStatsGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:14px 0}
+#wordRescueScreen .wrStatsGrid .wrStat{padding:12px;min-width:0}
+#wordRescueScreen .wrStatsGrid .wrStat strong{font-size:22px;color:#7de0ce}
+#wordRescueScreen .wrStatsTabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}

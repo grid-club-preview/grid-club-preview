@@ -111,7 +111,7 @@ while(dom.wrResult.hidden&&iterations++<9){
 assert.equal(dom.wrResult.hidden,false,'Building 24 planks should complete Raft Escape');
 assert.equal(dom.wrBlocks.textContent,'SAFE');assert.equal(dom.wrDock.hidden,true);
 assert.equal(dom.wrSceneLabel.textContent,'GRIDDA IS SAFE');
-assert(dom.wrResultText.textContent.includes('24 planks'));
+assert(dom.wrResultText.textContent.includes('24 planks'));assert(!dom.wrResultText.textContent.includes('Results saved'));assert.equal(dom.wrRescueBoat.attrs['data-visible'],'false');
 assert.equal(dom.wrScene.style['--wrRaftLength'],'54.000cqw');
 assert.equal(dom.wrBricks.children.length,24);
 const scores=JSON.parse(local.get('gridclub-word-rescue-scores-v1'));assert.equal(scores.length,1);assert.equal(scores[0].mode,'raft');
@@ -138,4 +138,24 @@ const blocked=globals.WordRescueApp.readState();dom.wrRerack.onclick();
 assert.deepEqual(globals.WordRescueApp.readState(),blocked,'Insufficient credit must not change the rack');
 assert.equal(spends.length,2);assert(dom.wrMessage.textContent.includes('5 Club Credits'));
 assert.equal(calls.length,0,'Free Play must not award Club Credits');
+dom.wrWordBack.onclick();dom.wrStatsEntry.onclick();assert.equal(dom.wrStats.hidden,false);assert.equal(dom.wrStatsGrid.children.length,8);
+dom.wrStatsRaft.onclick();assert.equal(dom.wrStatsGrid.children[0].children[1].textContent,'1');
+globals.WordRescueApp.back();assert.equal(dom.wrMenu.hidden,false);
+dom.wrNewTide.onclick();let rounds=0;
+while(dom.wrResult.hidden&&rounds++<10){
+ const run=globals.WordRescueApp.readState();const word=engine.possibleWords(run.rack,run.used).sort((a,b)=>b.length-a.length)[0];const used=[];
+ for(const ch of word){const i=run.rack.findIndex((x,j)=>x===ch&&!used.includes(j));used.push(i);dom.wrTray.listeners.click({target:dom.wrTray.children[i]});}
+ dom.wrSubmit.onclick();
+}
+assert(dom.wrResultText.textContent.startsWith('You stacked 24 pieces of wreckage'));
+assert.equal(dom.wrRescueBoat.attrs['data-visible'],'true');
+dom.wrResultModes.onclick();dom.wrNewTide.onclick();
+for(let i=0;i<35&&tick;i++){now+=1000;tick();}
+assert.equal(dom.wrResult.dataset.outcome,'lost');assert.equal(dom.wrRescueBoat.attrs['data-visible'],'false');
+dom.wrResultModes.onclick();dom.wrStatsEntry.onclick();dom.wrStatsTide.onclick();
+assert.equal(dom.wrStatsGrid.children[0].children[1].textContent,'1');
+assert.equal(dom.wrStatsGrid.children[1].children[1].textContent,'2');
+assert.equal(dom.wrStatsGrid.children[2].children[1].textContent,'1');
+assert.equal(dom.wrStatsGrid.children[3].children[1].textContent,'50%');
+globals.WordRescueApp.back();dom.wrBoardEntry.onclick();dom.wrBoardTide.onclick();dom.wrBoardAll.onclick();assert.equal(dom.wrBoardRows.children.length,1,'Defeats excluded from leaderboard');
 console.log('Word Rescue browser wiring passed: three modes, raft victory, dock, scoring, pause/continue and return home');

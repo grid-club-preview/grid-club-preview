@@ -1,5 +1,5 @@
-/* Grid Club v0.9.48 · Rising Tide rescue boat */
-const CACHE='gridclub-pwa-v0.9.48';
+/* Grid Club v0.9.49 · Word Rescue personal statistics and results */
+const CACHE='gridclub-pwa-v0.9.49';
 const APP_FILES=[
   './','./index.html',
   './puzzle.js?v=0.9.9',
@@ -12,11 +12,11 @@ const APP_FILES=[
   './vault-reward.css?v=0.9.25',
   './dot-daily.css?v=0.9.25',
   './home-roadmap.css?v=0.9.26',
-  './word-rescue.css?v=0.9.48',
+  './word-rescue.css?v=0.9.49',
   './word-rescue-lexicon.js?v=0.9.30',
   './word-rescue-engine.js?v=0.9.42',
-  './word-rescue.js?v=0.9.48',
-  './edge-navigation.js?v=0.9.47',
+  './word-rescue.js?v=0.9.49',
+  './edge-navigation.js?v=0.9.49',
   './vault-reward.js?v=0.9.25',
   './pipe-engine.js?v=0.9.33',
   './pipe-shift.js?v=0.9.41',
