@@ -60,7 +60,7 @@ function modeName(mode){return mode==='sinking'?'Sinking Letters':mode==='raft'?
 const RULES={
  tide:['Raise Gridda up by making words','Hurry — the tide is rising!','Gridda’s boat has broken apart. Stack pieces of wreckage to stay above the water until the approaching rescue boat arrives.'],
  raft:['Build towards Gridda by making words','Hurry — the shark is approaching!','Build out from the island to reach Gridda before the shark catches her. Call a friend once for 10 Club Credits to distract the shark and gain 10 seconds. This makes the result personal practice only.'],
- sinking:['Raise Gridda up by making words','Hurry — the tide is rising and letters are sinking!','Gridda’s boat has broken apart. Stack wreckage until the approaching rescue boat arrives. A letter slot is lost permanently every 10 seconds, down to four letters. The endangered slot fades over three seconds before disappearing. Making words or reshuffling cannot recover lost slots. At least one vowel, two consonants and a valid word remain.']
+ sinking:['Raise Gridda up by making words','Hurry — the tide is rising and letters are sinking!','Gridda’s boat has broken apart. Stack wreckage until the approaching rescue boat arrives. A letter slot is lost permanently every 10 seconds, down to four letters. The endangered slot fades over six seconds before disappearing. Making words or reshuffling cannot recover lost slots. At least one vowel, two consonants and a valid word remain.']
 };
 function seen(mode){return rulesSeen.has(mode)||safeGet(RULES_KEY+':'+mode)==='true';}
 function startTimer(){
@@ -68,12 +68,12 @@ function startTimer(){
  if(state.rankEligible===undefined&&state.elapsedMs===0&&state.words.length===0&&rankedReady()){
    const original=state;rankStarting=true;state.rankEligible=false;
    $('wrDock').inert=true;render();
-   const request=globalThis.GridRanked.call('word_start',{mode:state.mode,rackRules:3,raftPace:3,sinkRules:2});
+   const request=globalThis.GridRanked.call('word_start',{mode:state.mode,rackRules:3,raftPace:3,sinkRules:3});
    let timeout;
    Promise.race([request,new Promise((_,reject)=>{timeout=setTimeout(()=>reject(Error('Connection timeout')),10000);})]).then(reply=>{
      if(state!==original||screen!=='play'||!rankStarting)return;
-     if(!reply.attemptId||!Number.isInteger(reply.seed)||reply.rules!==(original.mode==='raft'?6:original.mode==='sinking'?7:5))throw Error('Ranked rescue unavailable');
-     state=engine.create(reply.seed,original.mode,3,3,2);
+     if(!reply.attemptId||!Number.isInteger(reply.seed)||reply.rules!==(original.mode==='raft'?6:original.mode==='sinking'?8:5))throw Error('Ranked rescue unavailable');
+     state=engine.create(reply.seed,original.mode,3,3,3);
      state.attemptId=original.attemptId;state.reracks=0;state.started=true;
      state.rankEligible=true;state.rankAttempt=reply.attemptId;state.rankEvents=[];
      delete state.rankReason;
@@ -144,7 +144,7 @@ async function renderScoreboard(){
  $('wrBoardEmpty').textContent='Loading global rankings…';
  if(!rankedReady()){$('wrBoardEmpty').textContent='Global leaderboard unavailable offline. Your stats remain available.';return;}
  try{
-   const result=await globalThis.GridRanked.call('word_leaderboard',{mode:boardMode,period:boardPeriod,rackRules:3,raftPace:3,sinkRules:2});
+   const result=await globalThis.GridRanked.call('word_leaderboard',{mode:boardMode,period:boardPeriod,rackRules:3,raftPace:3,sinkRules:3});
    if(request!==boardRequest||screen!=='leaderboard')return;
    const rows=result.entries||[];
    $('wrBoardEmpty').hidden=rows.length>0;$('wrBoardEmpty').textContent='No ranked rescues in this period yet.';
@@ -305,7 +305,7 @@ function tick(){
  if(second!==lastSecond){
    lastSecond=second;save();render();
    if(engine.sinkWarning(state)&&!previousWarning)message('Wreckage is drifting away!',false);
-   if(previousCount>state.rack.filter(Boolean).length)message(state.rescueRules>=3?(state.sinkRules===2?'Wreckage is sinking!':state.rack.filter(Boolean).length%2===0?'Wreckage is drifting away!':'Wreckage is sinking!'):'A letter sank. Complete a word to refill the tray.',false);
+   if(previousCount>state.rack.filter(Boolean).length)message(state.rescueRules>=3?(state.sinkRules>=2?'Wreckage is sinking!':state.rack.filter(Boolean).length%2===0?'Wreckage is drifting away!':'Wreckage is sinking!'):'A letter sank. Complete a word to refill the tray.',false);
  }
 }
 function begin(mode,continueSaved=false){
@@ -324,7 +324,7 @@ function begin(mode,continueSaved=false){
  state.started=seen(state.mode);
  $('wrModeTitle').textContent=modeName(state.mode);
  $('wrModeNote').textContent=state.mode==='sinking'?
-   (state.sinkRules===2?'Wreckage drifts away every 10 seconds until four letters remain.':'Wreckage drifts away every 7 seconds. Lost letter slots cannot be recovered.'):
+   (state.sinkRules>=2?'Wreckage drifts away every 10 seconds until four letters remain.':'Wreckage drifts away every 7 seconds. Lost letter slots cannot be recovered.'):
    state.mode==='raft'?'Build from the island towards Gridda before the shark catches her.':
    'Stack the wreckage to stay above the water until the rescue boat arrives.';
  render();save();

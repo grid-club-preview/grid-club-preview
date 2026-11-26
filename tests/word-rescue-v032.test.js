@@ -136,11 +136,12 @@ const moderate=e.create(20,'raft');moderate.started=true;e.advance(moderate,2700
 const old=e.create(20,'raft',3,2);old.started=true;e.advance(old,27000);assert(old.expired);console.log('Raft moderate pace, legacy timing and idle defeat passed');
 const sinking=e.create(91,'sinking');sinking.started=true;sinking.blocks=24;
 for(let n=6;n>=4;n--){
- e.advance(sinking,7000);const warning=e.sinkWarning(sinking);assert(warning);assert.equal(warning.progress,0);assert.equal(sinking.rack.filter(Boolean).length,n+1);
- const target=warning.index;e.advance(sinking,1500);assert.equal(e.sinkWarning(sinking).progress,.5);
+ e.advance(sinking,3999);assert.equal(e.sinkWarning(sinking),null);e.advance(sinking,1);const warning=e.sinkWarning(sinking);assert(warning);assert.equal(warning.progress,0);assert.equal(sinking.rack.filter(Boolean).length,n+1);
+ const target=warning.index;e.advance(sinking,3000);assert.equal(e.sinkWarning(sinking).progress,.5);
  e.rerack(sinking);assert.equal(e.sinkWarning(sinking).index,target);
  const word=e.possibleWords(sinking.rack,sinking.used)[0];assert(playWord(sinking,word).ok);assert.equal(e.sinkWarning(sinking).index,target);
- e.advance(sinking,1500);assert.equal(sinking.rack[target],'');assert.equal(sinking.rack.filter(Boolean).length,n);assert.equal(e.sinkWarning(sinking),null);fairRack(sinking);
+ e.advance(sinking,3000);assert.equal(sinking.rack[target],'');assert.equal(sinking.rack.filter(Boolean).length,n);assert.equal(e.sinkWarning(sinking),null);fairRack(sinking);
 }
 e.advance(sinking,10000);assert.equal(sinking.rack.filter(Boolean).length,4);assert.equal(e.sinkWarning(sinking),null);
 console.log('Sinking Letters warnings, permanent four-slot floor and reshuffle consistency passed');
+const oldFade=e.create(91,'sinking',3,3,2);oldFade.started=true;oldFade.blocks=24;e.advance(oldFade,6999);assert.equal(e.sinkWarning(oldFade),null);e.advance(oldFade,1);assert.equal(e.sinkWarning(oldFade).progress,0);e.advance(oldFade,1500);assert.equal(e.sinkWarning(oldFade).progress,.5);e.advance(oldFade,1500);assert.equal(oldFade.rack.filter(Boolean).length,6);console.log('Six-second warnings, legacy three-second warnings and unchanged drop times passed');

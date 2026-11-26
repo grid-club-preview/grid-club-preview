@@ -1,5 +1,5 @@
-/* Grid Club v0.9.64 · Dot Trails Free Play objective */
-const CACHE='gridclub-pwa-v0.9.64';
+/* Grid Club v0.9.65 · six-second sinking letter warnings */
+const CACHE='gridclub-pwa-v0.9.65';
 const APP_FILES=[
   './','./index.html',
   './puzzle.js?v=0.9.9',
@@ -12,10 +12,10 @@ const APP_FILES=[
   './vault-reward.css?v=0.9.25',
   './dot-daily.css?v=0.9.25',
   './home-roadmap.css?v=0.9.26',
-  './word-rescue.css?v=0.9.60',
+  './word-rescue.css?v=0.9.65',
   './word-rescue-lexicon.js?v=0.9.30',
-  './word-rescue-engine.js?v=0.9.60',
-  './word-rescue.js?v=0.9.62',
+  './word-rescue-engine.js?v=0.9.65',
+  './word-rescue.js?v=0.9.65',
   './edge-navigation.js?v=0.9.49',
   './vault-reward.js?v=0.9.25',
   './pipe-engine.js?v=0.9.33',

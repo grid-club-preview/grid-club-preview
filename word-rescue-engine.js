@@ -165,7 +165,7 @@ function possibleWords(rack,used=[]){
  const excluded=new Set(used),count=rack.filter(Boolean).length;
  return [...WORD_SET].filter(w=>w.length<=count&&!excluded.has(w)&&isAcceptedWord(w)&&canMake(rack,w));
 }
-function create(seed=Date.now(),mode='tide',rackRules=3,raftPace=3,sinkRules=2){
+function create(seed=Date.now(),mode='tide',rackRules=3,raftPace=3,sinkRules=3){
  if(!['tide','sinking','raft'].includes(mode))throw Error('Unknown Word Rescue mode');
  const s={version:1,mode,rng:(Number(seed)>>>0)||1,rack:[],selected:[],used:[],words:[],
  blocks:0,score:0,elapsedMs:0,expired:false,won:false,lastErodeMs:0,started:false,sharkProgress:0,raftPace,sinkRules,rescueRules:mode==='raft'?2:3,rackRules};
@@ -245,13 +245,14 @@ function hazard(s){
 }
 // Choose the doomed slot at the start of its warning, not at removal.
 // Schedule is based on active time and independent of timer tick size.
+function sinkFadeMs(s){return s.sinkRules===3?6000:3000;}
 function sinkWarning(s){
- if(s.mode!=='sinking'||s.sinkRules!==2||!Number.isInteger(s.sinkSlot)||s.won||s.expired)return null;
- return {index:s.sinkSlot,progress:Math.max(0,Math.min(1,(s.elapsedMs-s.sinkWarnAt)/3000))};
+ if(s.mode!=='sinking'||!(s.sinkRules>=2)||!Number.isInteger(s.sinkSlot)||s.won||s.expired)return null;
+ return {index:s.sinkSlot,progress:Math.max(0,Math.min(1,(s.elapsedMs-s.sinkWarnAt)/sinkFadeMs(s)))};
 }
 function advanceSinking(s){
  for(let drop=10000;drop<=30000;drop+=10000){
-   const warn=drop-3000;
+   const warn=drop-sinkFadeMs(s);
    if(s.lastErodeMs<warn&&s.elapsedMs>=warn&&s.rack.filter(Boolean).length>4){
      const present=s.rack.map((v,i)=>v?i:-1).filter(i=>i>=0);
      const options=present.filter(i=>{const rack=s.rack.slice();rack[i]='';return balanced(rack,s.rackRules,s.allowTriple)&&familiarWord(rack,s.used);});
@@ -275,7 +276,7 @@ function advance(s,ms){
  }
  s.elapsedMs+=delta;
  if(!balanced(s.rack,s.rackRules,s.allowTriple))ensurePlayable(s);
- if(s.mode==='sinking'&&s.sinkRules===2)advanceSinking(s);
+ if(s.mode==='sinking'&&s.sinkRules>=2)advanceSinking(s);
  else if(s.mode==='sinking'){
    const waves=Math.floor(s.elapsedMs/7000),old=Math.floor(s.lastErodeMs/7000);
    for(let k=old;k<waves;k++){
