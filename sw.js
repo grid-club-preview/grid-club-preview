@@ -1,5 +1,5 @@
-/* Grid Club v0.9.63 · Word Rescue boat icon */
-const CACHE='gridclub-pwa-v0.9.63';
+/* Grid Club v0.9.64 · Dot Trails Free Play objective */
+const CACHE='gridclub-pwa-v0.9.64';
 const APP_FILES=[
   './','./index.html',
   './puzzle.js?v=0.9.9',
