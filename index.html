@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="vault-reward.css?v=0.9.25">
   <link rel="stylesheet" href="dot-daily.css?v=0.9.25">
   <link rel="stylesheet" href="home-roadmap.css?v=0.9.26">
-  <link rel="stylesheet" href="word-rescue.css?v=0.9.50">
+  <link rel="stylesheet" href="word-rescue.css?v=0.9.53">
   <style>
     :root { color-scheme: dark; --bg:#0e1424; --surface:#1a243a; --tile:#253147; --muted:#9daabe; --mint:#7be3d4; --purple:#a178ff; }
     * { box-sizing: border-box; }
@@ -334,7 +334,7 @@
 <body>
   <main class="shell">
     <section id="home">
-      <header><div><div class="eyebrow">GRID CLUB</div><h1>A pocketful of challenges.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.52</span></div></header>
+      <header><div><div class="eyebrow">GRID CLUB</div><h1>A pocketful of challenges.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.53</span></div></header>
       <div class="homeSectionHeader" aria-label="Puzzle Deck games">
         <div class="eyebrow">PUZZLE DECK</div>
         <span class="homeSectionCount">3 playable · 3 planned</span>
@@ -443,22 +443,22 @@
           <p class="wrFine">Words need at least 3 letters. Regular plurals are accepted. At least one vowel, two consonants and an unused valid word are always available. Letters refresh after every valid word. Each letter builds one block; longer words score more points. The first reshuffle in each round is free; subsequent reshuffles cost 5 Club Credits. Credits are not earned in Free Play.</p>
           <p id="wrBest" class="wrFine" aria-live="polite">Complete a rescue to set your first personal best.</p>
           <p id="wrDictionaryStatus" class="wrDictionaryStatus" role="status" aria-live="polite">Expanded English word list ready offline.</p>
-          <p class="wrFine">The larger English dictionary is bundled with the game, so common words and plurals work immediately, including offline. There are no adverts, purchases or ranked results in this prototype.</p>
+          <p class="wrFine">The larger English dictionary is bundled with the game, so common words and plurals work immediately, including offline. There are no adverts or purchases in this prototype. Online unassisted rescues can qualify for global rankings.</p>
         </div>
       </div>
       <div id="wrLeaderboard" hidden>
         <div class="wrCard wrScoreboard">
           <h3>Leaderboard</h3>
-          <p class="wrFine">Personal scores · this device only</p>
+          <p class="wrFine">Global rankings · all players</p>
           <div class="wrBoardTabs" role="group" aria-label="Game mode">
             <button id="wrBoardTide" type="button">Rising Tide</button><button id="wrBoardRaft" type="button">Raft Escape</button><button id="wrBoardSinking" type="button">Sinking Letters</button>
           </div>
           <div class="wrBoardTabs" role="group" aria-label="Ranking period">
             <button id="wrBoardDay" type="button">Day</button><button id="wrBoardMonth" type="button">Month</button><button id="wrBoardAll" type="button">All Time</button>
           </div>
-          <table class="wrBoardTable"><thead><tr><th scope="col">Rank</th><th scope="col">Score</th><th scope="col">Time</th><th scope="col">Date (UTC)</th></tr></thead><tbody id="wrBoardRows"></tbody></table>
-          <p id="wrBoardEmpty" class="wrFine" role="status">No completed rescues in this period yet.</p>
-          <p class="wrFine">Top 10 successful rescues under the current rules. Earlier Rising Tide and Sinking Letters scores remain in personal statistics. Highest score first; faster time breaks ties. Day and Month use UTC calendar dates.</p>
+          <table class="wrBoardTable"><thead><tr><th scope="col">Rank</th><th scope="col">Player</th><th scope="col">Score</th><th scope="col">Time</th></tr></thead><tbody id="wrBoardRows"></tbody></table>
+          <p id="wrBoardEmpty" class="wrFine" role="status">Loading global rankings…</p><p id="wrBoardRank" class="wrFine" aria-live="polite"></p><button id="wrBoardRefresh" class="wrAction" type="button">Refresh</button>
+          <p class="wrFine">Top 10 players, one best verified rescue each. Paid reshuffles, paused or offline rounds are personal practice only. Highest score first; faster time breaks ties. Day and Month use UTC calendar dates.</p>
         </div>
       </div>
       <div id="wrStats" hidden>
@@ -472,7 +472,7 @@
           <p class="wrFine">Rescue totals and averages use saved score history. Older personal bests are retained where available. Round totals, defeats, success rate and longest word are tracked from v0.9.49; abandoned rounds are not counted.</p>
         </div>
       </div>
-      <div id="wrPlay" hidden>
+      <div id="wrPlay" hidden><p id="wrRankNote" class="wrFine wrRankNote" role="status"></p>
         <div class="wrStatus">
           <div class="wrStat wrSafetyStat"><small>Gridda’s status</small><strong id="wrBlocks">Holding steady</strong></div>
           <div class="wrStat"><small>Score</small><strong id="wrScore">0</strong></div>
@@ -573,7 +573,7 @@
         <div id="wrWordHistory" class="wrHistory">Longer words earn more points. Each letter adds one block.</div>
         <div id="wrResult" class="wrResult" hidden role="dialog" aria-labelledby="wrResultTitle">
           <h3 id="wrResultTitle">Safe at last!</h3>
-          <p id="wrResultText"></p>
+          <p id="wrResultText"></p><p id="wrResultRankNote" class="wrFine"></p>
           <button id="wrTryAgain" type="button">Play again</button>
           <button id="wrResultBoard" class="wrSecondary" type="button">Leaderboard</button>
           <button id="wrResultModes" class="wrSecondary" type="button">Back to game menu</button>
@@ -905,7 +905,7 @@
       </div>
       
       <div class="adSlot" id="adSlot" aria-hidden="true" hidden></div>
-      <footer>Grid Club · v0.9.52 beta</footer>
+      <footer>Grid Club · v0.9.53 beta</footer>
     </section>
   </main>
   <div class="pauseLayer" id="dotDailyCompleteLayer" hidden role="dialog" aria-modal="true" aria-labelledby="dotDailyCompleteTitle">
@@ -946,7 +946,7 @@
   <script src="pipe-shift.js?v=0.9.41"></script>
   <script src="word-rescue-lexicon.js?v=0.9.30"></script>
   <script src="word-rescue-engine.js?v=0.9.52"></script>
-  <script src="word-rescue.js?v=0.9.52"></script>
+  <script src="word-rescue.js?v=0.9.53"></script>
   <script src="edge-navigation.js?v=0.9.49"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol === 'https:') {

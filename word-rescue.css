@@ -381,3 +381,8 @@
 #wordRescueScreen .wrScene[data-mode=tower] .wrRescueBoat[data-visible=true]{display:block;position:absolute;z-index:5;bottom:calc(var(--wrWater,22%) - 6cqh);right:var(--wrBoatRight);width:var(--wrBoatWidth);height:auto;animation:none;transition:right 1s linear,width 1s linear,bottom 1s linear;filter:drop-shadow(0 3px 3px #12467266)}
 #wordRescueScreen .wrScene[data-mode=tower][data-danger=won] .wrRescueBoat[data-visible=true]{animation:none;right:0;width:44cqw}
 @media(prefers-reduced-motion:reduce){#wordRescueScreen .wrRescueBoat{transition:none!important}}
+
+#wordRescueScreen .wrBoardYou{background:#214a4a;color:#a4f2dc}
+#wordRescueScreen .wrRankNote{font-size:11px;margin:0 0 5px}
+#wordRescueScreen .wrRankNote:empty,#wordRescueScreen #wrResultRankNote:empty{display:none}
+#wordRescueScreen #wrBoardRefresh{width:100%;margin-top:6px}

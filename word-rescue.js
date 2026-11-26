@@ -23,6 +23,10 @@ const balance=()=>globalThis.GridClubCredits?.balance?.()||0;
 const RERACK_COST=5;
 const SCORE_KEY='gridclub-word-rescue-scores-v1';
 let boardMode='tide',boardPeriod='day',statsMode='all';
+let rankStarting=false,boardRequest=0,rankStatus='';
+const rankedReady=()=>!!globalThis.GridRanked?.configured&&globalThis.navigator?.onLine!==false;
+function unrank(){if(state){state.rankEligible=false;state.rankAttempt=null;}rankStarting=false;}
+function rankNote(value){rankStatus=value;$('wrRankNote').textContent=value;$('wrResultRankNote').textContent=value;}
 const makeAttempt=()=>`word:${Date.now()}:${Math.random().toString(36).slice(2,12)}`;
 function ensureDictionary(){
  // All words are loaded synchronously from the PWA bundle before this app
@@ -42,9 +46,35 @@ const RULES={
  sinking:['Raise Gridda up by making words','Hurry — the tide is rising and letters are sinking!','Gridda’s boat has broken apart. Stack wreckage until the approaching rescue boat arrives. A letter slot is lost permanently every 7 seconds, down to three letters. Making words or reshuffling cannot recover lost slots. At least one vowel, two consonants and a valid word remain.']
 };
 function seen(mode){return rulesSeen.has(mode)||safeGet(RULES_KEY+':'+mode)==='true';}
-function startTimer(){if(!state||state.won||state.expired||rulesOpen||document.hidden||timer!==null)return;lastTick=performance.now();timer=setInterval(tick,125);}
+function startTimer(){
+ if(!state||state.won||state.expired||rulesOpen||document.hidden||timer!==null||rankStarting)return;
+ if(state.rankEligible===undefined&&state.elapsedMs===0&&state.words.length===0&&rankedReady()){
+   const original=state;rankStarting=true;state.rankEligible=false;
+   $('wrDock').inert=true;render();rankNote('Connecting for global ranking…');
+   const request=globalThis.GridRanked.call('word_start',{mode:state.mode});
+   let timeout;
+   Promise.race([request,new Promise((_,reject)=>{timeout=setTimeout(()=>reject(Error('Connection timeout')),6000);})]).then(reply=>{
+     if(state!==original||screen!=='play'||!rankStarting)return;
+     if(!reply.attemptId||!Number.isInteger(reply.seed)||reply.rules!==(original.mode==='raft'?2:3))throw Error('Ranked rescue unavailable');
+     state=engine.create(reply.seed,original.mode);
+     state.attemptId=original.attemptId;state.reracks=0;state.started=true;
+     state.rankEligible=true;state.rankAttempt=reply.attemptId;state.rankEvents=[];
+     rankNote('Global ranking enabled');
+   }).catch(()=>{
+     if(state===original&&screen==='play'&&rankStarting)rankNote('Offline practice · personal stats only');
+   }).finally(()=>{
+     clearTimeout(timeout);
+     if(!rankStarting||screen!=='play'||state.attemptId!==original.attemptId)return;
+     rankStarting=false;$('wrDock').inert=false;render();save();startTimer();
+   });
+   return;
+ }
+ if(state.rankEligible===undefined){state.rankEligible=false;rankNote('Practice · personal stats only');}
+ lastTick=performance.now();timer=setInterval(tick,125);
+}
 function showRules(first=false){
  if(!state||state.won||state.expired||rulesOpen)return;
+ if(!first&&state.rankEligible){unrank();rankNote('Practice · rules opened');}
  stop();rulesOpen=true;firstRules=first;
  const [lead,warning,detail]=RULES[state.mode];
  $('wrRulesMode').textContent=modeName(state.mode);
@@ -60,6 +90,8 @@ function closeRules(){
  state.started=true;render();save();startTimer();
 }
 function menu(){
+ if(rankStarting||state?.rankEligible&&!state.won){unrank();save();}
+ boardRequest++;
  rulesOpen=false;firstRules=false;$('wrRules').hidden=true;$('wrDock').inert=false;$('wrInfo').hidden=true;
  stop();screen='menu';$('wrMenu').hidden=false;$('wrPlay').hidden=true;$('wrLeaderboard').hidden=true;$('wrStats').hidden=true;
  const saved=readState();$('wrContinue').hidden=!saved;
@@ -70,7 +102,7 @@ function menu(){
  $('wrBest').textContent=['tide','raft','sinking'].map(mode=>best[mode]?'Best '+modeName(mode)+': '+best[mode].seconds+'s':'').filter(Boolean).join(' · ')||
    'Complete a rescue to set your first personal best.';
 }
-function homeScreen(){save();stop();root.hidden=true;home.hidden=false;}
+function homeScreen(){if(rankStarting||state?.rankEligible&&!state.won)unrank();save();stop();root.hidden=true;home.hidden=false;}
 function open(){
  home.hidden=true;root.hidden=false;menu();
 }
@@ -85,23 +117,28 @@ function scoreRows(mode,period,now=Date.now()){
    return period==='all'||(period==='day'?completed===date:completed.slice(0,7)===date.slice(0,7));
  }).sort((a,b)=>b.score-a.score||a.ms-b.ms||a.at-b.at).slice(0,10);
 }
-function renderScoreboard(){
- for(const [id,value] of [['wrBoardTide','tide'],['wrBoardRaft','raft'],['wrBoardSinking','sinking']]){
-   $(id).setAttribute('aria-pressed',String(boardMode===value));
- }
- for(const [id,value] of [['wrBoardDay','day'],['wrBoardMonth','month'],['wrBoardAll','all']]){
-   $(id).setAttribute('aria-pressed',String(boardPeriod===value));
- }
- const list=$('wrBoardRows');list.replaceChildren();
- const rows=scoreRows(boardMode,boardPeriod);
- $('wrBoardEmpty').hidden=rows.length>0;
- for(const [i,row] of rows.entries()){
-   const tr=document.createElement('tr');
-   for(const value of [String(i+1),String(row.score),(row.ms/1000).toFixed(1)+'s',new Date(row.at).toISOString().slice(0,10)]){
-     const td=document.createElement('td');td.textContent=value;tr.append(td);
+async function renderScoreboard(){
+ for(const [id,value] of [['wrBoardTide','tide'],['wrBoardRaft','raft'],['wrBoardSinking','sinking']])$(id).setAttribute('aria-pressed',String(boardMode===value));
+ for(const [id,value] of [['wrBoardDay','day'],['wrBoardMonth','month'],['wrBoardAll','all']])$(id).setAttribute('aria-pressed',String(boardPeriod===value));
+ const list=$('wrBoardRows'),request=++boardRequest;
+ list.replaceChildren();$('wrBoardEmpty').hidden=false;$('wrBoardRank').textContent='';
+ $('wrBoardEmpty').textContent='Loading global rankings…';
+ if(!rankedReady()){$('wrBoardEmpty').textContent='Global leaderboard unavailable offline. Your stats remain available.';return;}
+ try{
+   const result=await globalThis.GridRanked.call('word_leaderboard',{mode:boardMode,period:boardPeriod});
+   if(request!==boardRequest||screen!=='leaderboard')return;
+   const rows=result.entries||[];
+   $('wrBoardEmpty').hidden=rows.length>0;$('wrBoardEmpty').textContent='No ranked rescues in this period yet.';
+   for(const row of rows){
+     const tr=document.createElement('tr');
+     if(row.isYou)tr.className='wrBoardYou';
+     for(const value of [String(row.rank<=3?['🥇','🥈','🥉'][row.rank-1]:row.rank),row.isYou?'You':row.name,String(row.score),(row.elapsedMs/1000).toFixed(1)+'s']){
+       const td=document.createElement('td');td.textContent=value;tr.append(td);
+     }
+     list.append(tr);
    }
-   list.append(tr);
- }
+   $('wrBoardRank').textContent=result.yourRank?'Your position: '+result.yourRank+' of '+result.total+' · Score '+result.yourScore:result.total+' ranked player'+(result.total===1?'':'s');
+ }catch(_){if(request===boardRequest&&screen==='leaderboard')$('wrBoardEmpty').textContent='Could not load global rankings. Try Refresh.';}
 }
 function showScoreboard(mode=boardMode){
  if(screen==='play')save();
@@ -138,7 +175,7 @@ function renderPersonalStats(){
  for(const [label,value] of values){const card=document.createElement('div');card.className='wrStat';const name=document.createElement('small');name.textContent=label;const number=document.createElement('strong');number.textContent=String(value);card.append(name,number);grid.append(card);}
 }
 function showStats(){
- stop();screen='stats';$('wrMenu').hidden=true;$('wrPlay').hidden=true;$('wrLeaderboard').hidden=true;$('wrStats').hidden=false;$('wrInfo').hidden=true;
+ boardRequest++;stop();screen='stats';$('wrMenu').hidden=true;$('wrPlay').hidden=true;$('wrLeaderboard').hidden=true;$('wrStats').hidden=false;$('wrInfo').hidden=true;
  renderPersonalStats();
 }
 function persistRecord(){
@@ -193,6 +230,15 @@ function defeatTitle(mode){
  lossRotation[mode]=(i+1)%n;lossRotation.last=title;safeSave(LOSS_KEY,lossRotation);
  return title;
 }
+function publishRank(run){
+ if(!run.rankEligible||!run.rankAttempt){rankNote('Personal result · not ranked');return;}
+ const payload={attemptId:run.rankAttempt,events:run.rankEvents,elapsedMs:Math.round(run.elapsedMs)};
+ rankNote('Verifying global result…');
+ const submit=()=>globalThis.GridRanked.call('word_submit',payload);
+ submit().catch(()=>submit()).then(result=>{
+   if(state===run){rankNote(result.verified?'Global result verified':'Personal result · not ranked');if(screen==='leaderboard')renderScoreboard();}
+ }).catch(()=>{if(state===run)rankNote('Global result could not be verified · personal result kept');});
+}
 function finished(){
  stop();state.selected=[];rulesOpen=false;$('wrRules').hidden=true;$('wrDock').inert=false;
  persistRecord();
@@ -200,6 +246,7 @@ function finished(){
    // Ordinary Free Play rounds do not award credits. A future verified
    // Daily Challenge can award Club Credits separately.
    $('wrResultTitle').textContent=victoryTitle(state.mode);
+   publishRank(state);
    $('wrResultText').textContent=(state.mode==='raft'?'You built ':'You stacked ')+(state.mode==='raft'?Math.min(24,state.blocks):state.blocks)+(state.mode==='raft'?' planks':' pieces of wreckage')+' using '+state.words.length+
      (state.words.length===1?' word in ':' words in ')+Math.round(state.elapsedMs/1000)+' seconds. Score: '+state.score+'.';
  }else{
@@ -214,8 +261,8 @@ function finished(){
 }
 function tick(){
  if(!state||screen!=='play'||rulesOpen||state.won||state.expired||document.hidden)return;
- const now=performance.now(),delta=Math.max(0,Math.min(1000,now-lastTick));
- lastTick=now;
+ const now=performance.now(),delta=Math.max(0,Math.min(1000,Math.floor(now-lastTick)));
+ lastTick+=delta;
  const previousCount=state.rack.filter(Boolean).length;
  engine.advance(state,delta);
  if(state.mode==='raft')renderShark();
@@ -227,12 +274,13 @@ function tick(){
  }
 }
 function begin(mode,continueSaved=false){
- stop();
+ rankStarting=false;stop();
  if(!continueSaved){
    if(readState()&&!confirm('Start a new run? Your unfinished Word Rescue attempt will be replaced.'))return;
    state=engine.create(Date.now(),mode);
- }else state=readState();
+ }else {state=readState();if(state)unrank();}
  if(!state)return menu();
+ rankNote(continueSaved?'Practice · resumed round':'');
  if(typeof state.attemptId!=='string'||!state.attemptId)state.attemptId=makeAttempt();
  if(!Number.isInteger(state.reracks)||state.reracks<0)state.reracks=0;
  $('wrWallet').textContent='◉ '+balance();
@@ -248,7 +296,7 @@ function begin(mode,continueSaved=false){
  if(!seen(state.mode))showRules(true);else startTimer();
 }
 function back(){
- if(screen==='play'){save();menu();}
+ if(screen==='play'){if(rankStarting||state?.rankEligible&&!state.won)unrank();save();menu();}
  else if(screen==='leaderboard'||screen==='stats')menu();
  else homeScreen();
 }
@@ -292,7 +340,7 @@ function render(){
  renderShark();
  $('wrBlocks').textContent=situation(danger);
  $('wrBlocks').classList.toggle('wrSafe',state.won);
- $('wrInfo').disabled=completed||rulesOpen;
+ $('wrInfo').disabled=completed||rulesOpen||rankStarting;
  $('wrScore').textContent=String(state.score);
  $('wrModeTitle').textContent=modeName(state.mode);
  $('wrProgress').style.width='0%';
@@ -317,7 +365,7 @@ function render(){
  $('wrResult').hidden=!completed;$('wrDock').hidden=completed;
 }
 function renderLetters(){
- const completed=state.won||state.expired;
+ const completed=state.won||state.expired||rankStarting;
  const selected=state.selected.map(i=>state.rack[i]).join('');
  // Keep the chosen word in the action button itself, so the rack never shifts.
  const buildLabel=selected?'Build: '+selected:'Build with this word';
@@ -350,16 +398,18 @@ function renderLetters(){
  if($('wrRerack').textContent!==shuffleLabel)$('wrRerack').textContent=shuffleLabel;
 }
 function submit(){
- if(!state||rulesOpen||state.won||state.expired)return;
+ if(!state||rulesOpen||rankStarting||state.won||state.expired)return;
+ const indices=state.selected.slice();
  const result=engine.submit(state);
  if(!result.ok){message(result.reason,true);return;}
+ if(state.rankEligible)state.rankEvents.push({type:'word',at:state.elapsedMs,indices});
  message(result.word+' · +'+result.blocks+(state.mode==='raft'?' planks':' blocks')+' · +'+result.points+' points',false);
  if(result.won)finished();
  else{save();}
  render();
 }
 function rerack(){
- if(!state||rulesOpen||state.won||state.expired)return;
+ if(!state||rulesOpen||rankStarting||state.won||state.expired)return;
  const paid=state.reracks>0;
  // Prepare a new rack without modifying the live state until payment succeeds.
  const next=JSON.parse(JSON.stringify(state));
@@ -369,6 +419,8 @@ function rerack(){
    return;
  }
  next.reracks=(state.reracks||0)+1;state=next;
+ if(paid&&state.rankEligible){unrank();rankNote('Practice · paid reshuffle used');}
+ else if(state.rankEligible)state.rankEvents.push({type:'shuffle',at:state.elapsedMs});
  save();$('wrWallet').textContent='◉ '+balance();
  renderLetters();message(paid?'New letters · 5 credits used':'New letters',false);
 }
@@ -382,6 +434,7 @@ $('wrWordBack').onclick=back;
 $('wrTryAgain').onclick=()=>{safeDel(KEY);begin(state?.mode||'tide');};
 $('wrResultModes').onclick=menu;
 $('wrBoardEntry').onclick=()=>showScoreboard();
+$('wrBoardRefresh').onclick=renderScoreboard;
 $('wrStatsEntry').onclick=showStats;
 for(const [id,value] of [['wrStatsAll','all'],['wrStatsTide','tide'],['wrStatsRaft','raft'],['wrStatsSinking','sinking']])$(id).onclick=()=>{statsMode=value;renderPersonalStats();};
 $('wrResultBoard').onclick=()=>showScoreboard(state.mode);
@@ -399,7 +452,7 @@ $('wrSubmit').onclick=submit;
 $('wrBackspace').onclick=()=>{if(!state||rulesOpen||state.won||state.expired)return;engine.removeLast(state);renderLetters();};
 $('wrRerack').onclick=rerack;
 document.addEventListener('keydown',event=>{
- if(root.hidden||screen!=='play'||!state||state.won||state.expired)return;
+ if(root.hidden||screen!=='play'||!state||rankStarting||state.won||state.expired)return;
  if(rulesOpen){if(event.key==='Escape'){event.preventDefault();if(firstRules)back();else closeRules();}return;}
  if(event.key==='Enter'){event.preventDefault();submit();}
  if(event.key==='Backspace'){event.preventDefault();engine.removeLast(state);renderLetters();}
@@ -407,9 +460,9 @@ document.addEventListener('keydown',event=>{
 });
 document.addEventListener('visibilitychange',()=>{
  if(root.hidden||screen!=='play'||!state)return;
- if(document.hidden){if(lastTick&&!rulesOpen&&!(state.won||state.expired))engine.advance(state,Math.max(0,Math.min(1000,performance.now()-lastTick)));stop();if(state.expired||state.won){finished();render();}else save();}
+ if(document.hidden){if(rankStarting||state.rankEligible){unrank();$('wrDock').inert=false;rankNote('Practice · interrupted round');}if(lastTick&&!rulesOpen&&!(state.won||state.expired))engine.advance(state,Math.max(0,Math.min(1000,performance.now()-lastTick)));stop();if(state.expired||state.won){finished();render();}else save();}
  else if(!state.won&&!state.expired&&!rulesOpen){startTimer();render();}
 });
-window.addEventListener('pagehide',()=>{save();stop();});
+window.addEventListener('pagehide',()=>{if(rankStarting||state?.rankEligible&&!state.won)unrank();save();stop();});
 globalThis.WordRescueApp=Object.freeze({open,menu,begin,back,readState:readState});
 })();
