@@ -1,5 +1,5 @@
-/* Grid Club v0.9.67 · simplified Dot Trails difficulty cards */
-const CACHE='gridclub-pwa-v0.9.67';
+/* Grid Club v0.9.68 · consistent Game Levels menu labels */
+const CACHE='gridclub-pwa-v0.9.68';
 const APP_FILES=[
   './','./index.html',
   './puzzle.js?v=0.9.66',
