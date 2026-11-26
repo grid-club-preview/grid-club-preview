@@ -84,8 +84,11 @@ assert(css.includes('position:fixed;bottom:0;left:50%'),'Submit controls must re
 assert(css.includes('env(safe-area-inset-bottom)'),'Bottom buttons must respect iPhone home indicator');
 assert(css.includes('data-mode=raft')&&css.includes('--wrRaftLength'),'Horizontal raft must visibly grow');
 assert(css.includes('data-panic=frantic'),'Avatar must grow visibly frantic near danger');
-assert(ui.includes("'plank':'planks'")&&ui.includes("'block':'blocks'")&&ui.includes("' to safety'"),
- 'Progress counter must show remaining planks/blocks');
+assert(ui.includes('function situation(danger)')&&!ui.includes("' to safety'"),'Narrative status replaces numerical countdown');
 assert(ui.includes("scene.style.setProperty('--wrBodySpeed'"),'Character animation speeds should vary with danger');
 assert(!ui.includes('GridClubCredits?.award'),'Ordinary Free Play must not grant credits');
 console.log('Word Rescue v0.9.32 passed: 210 seeds, shark distance, vertical tide, horizontal raft, word filter and iPhone bottom dock');
+
+const rescue=e.create(9,'tide');rescue.started=true;rescue.blocks=24;e.advance(rescue,44000);assert(!rescue.won&&!rescue.expired);e.advance(rescue,1000);assert(rescue.won&&!rescue.expired);assert.equal(e.rescueProgress(rescue),1);
+const quick=e.create(9,'tide');quick.started=true;e.advance(quick,14000);assert(quick.expired&&!quick.won);
+const long=e.create(9,'tide');long.rack=['S','H','A','R','K','S','X'];assert.equal(playWord(long,'SHARKS').points,50);

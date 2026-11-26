@@ -37,9 +37,9 @@ function save(){if(state&&!state.won&&!state.expired)safeSave(KEY,state);else sa
 function records(){try{const x=JSON.parse(safeGet(STATS_KEY)||'null');return x&&typeof x==='object'?x:{};}catch(_){return {};}}
 function modeName(mode){return mode==='sinking'?'Sinking Letters':mode==='raft'?'Raft Escape':'Rising Tide';}
 const RULES={
- tide:['Raise Gridda up by making words','Hurry — the tide is rising!','Gridda’s boat has broken apart. Stack 24 pieces of wreckage to stay above the water until the rescue boat arrives.'],
- raft:['Build towards Gridda by making words','Hurry — the shark is approaching!','Build 24 planks out from the island to reach Gridda before the shark catches her.'],
- sinking:['Raise Gridda up by making words','Hurry — the tide is rising and letters are sinking!','Gridda’s boat has broken apart. Stack 24 pieces of wreckage until the rescue boat arrives. One letter disappears every 7 seconds, but the last vowel is protected.']
+ tide:['Raise Gridda up by making words','Hurry — the tide is rising!','Gridda’s boat has broken apart. Stack pieces of wreckage to stay above the water until the approaching rescue boat arrives.'],
+ raft:['Build towards Gridda by making words','Hurry — the shark is approaching!','Build out from the island to reach Gridda before the shark catches her.'],
+ sinking:['Raise Gridda up by making words','Hurry — the tide is rising and letters are sinking!','Gridda’s boat has broken apart. Stack wreckage until the approaching rescue boat arrives. One letter disappears every 7 seconds, but the last vowel is protected.']
 };
 function seen(mode){return rulesSeen.has(mode)||safeGet(RULES_KEY+':'+mode)==='true';}
 function startTimer(){if(!state||state.won||state.expired||rulesOpen||document.hidden||timer!==null)return;lastTick=performance.now();timer=setInterval(tick,125);}
@@ -80,7 +80,7 @@ function scoreHistory(){
 function scoreRows(mode,period,now=Date.now()){
  const date=new Date(now).toISOString().slice(0,10);
  return scoreHistory().filter(x=>{
-   if(x.mode!==mode||x.won===false)return false;
+   if(x.mode!==mode||x.won===false||x.rescueRules!==2)return false;
    const completed=new Date(x.at).toISOString().slice(0,10);
    return period==='all'||(period==='day'?completed===date:completed.slice(0,7)===date.slice(0,7));
  }).sort((a,b)=>b.score-a.score||a.ms-b.ms||a.at-b.at).slice(0,10);
@@ -144,7 +144,7 @@ function showStats(){
 function persistRecord(){
  const entries=scoreHistory();
  if(!entries.some(x=>x.id===state.attemptId)){
-   entries.push({id:state.attemptId,mode:state.mode,score:state.score,ms:state.elapsedMs,at:Date.now(),reracks:state.reracks||0,won:state.won,words:state.words.length,longest:state.words.reduce((max,x)=>Math.max(max,x.word.length),0)});
+   entries.push({id:state.attemptId,mode:state.mode,score:state.score,ms:state.elapsedMs,at:Date.now(),reracks:state.reracks||0,rescueRules:state.rescueRules||1,won:state.won,words:state.words.length,longest:state.words.reduce((max,x)=>Math.max(max,x.word.length),0)});
    safeSave(SCORE_KEY,entries);
  }
  if(!state.won)return;
@@ -200,11 +200,11 @@ function finished(){
    // Ordinary Free Play rounds do not award credits. A future verified
    // Daily Challenge can award Club Credits separately.
    $('wrResultTitle').textContent=victoryTitle(state.mode);
-   $('wrResultText').textContent=(state.mode==='raft'?'You built ':'You stacked ')+Math.min(24,state.blocks)+(state.mode==='raft'?' planks':' pieces of wreckage')+' using '+state.words.length+
+   $('wrResultText').textContent=(state.mode==='raft'?'You built ':'You stacked ')+(state.mode==='raft'?Math.min(24,state.blocks):state.blocks)+(state.mode==='raft'?' planks':' pieces of wreckage')+' using '+state.words.length+
      (state.words.length===1?' word in ':' words in ')+Math.round(state.elapsedMs/1000)+' seconds. Score: '+state.score+'.';
  }else{
    $('wrResultTitle').textContent=defeatTitle(state.mode);
-   $('wrResultText').textContent=(state.mode==='raft'?'You built ':'You stacked ')+state.blocks+' of 24 '+(state.mode==='raft'?'planks':'pieces of wreckage')+'. Try quicker words or a different letter combination.';
+   $('wrResultText').textContent=(state.mode==='raft'?'You built ':'You stacked ')+(state.mode==='raft'?Math.min(24,state.blocks):state.blocks)+' '+(state.mode==='raft'?'planks':'pieces of wreckage')+'. Try quicker words or a different letter combination.';
  }
  $('wrResult').dataset.outcome=state.won?'won':'lost';
  $('wrResultBoard').hidden=!state.won;
@@ -219,7 +219,7 @@ function tick(){
  const previousCount=state.rack.filter(Boolean).length;
  engine.advance(state,delta);
  if(state.mode==='raft')renderShark();
- if(state.expired){finished();render();return;}
+ if(state.expired||state.won){finished();render();return;}
  const second=Math.floor(state.elapsedMs/1000);
  if(second!==lastSecond){
    lastSecond=second;save();render();
@@ -258,13 +258,27 @@ function message(text,error){
 function renderShark(){
  if(state.mode==='raft')$('wrShark').style.left=(94-75*engine.sharkProgress(state)).toFixed(3)+'%';
 }
+function situation(danger){
+ if(state.won)return 'SAFE';
+ if(state.expired)return 'CAUGHT';
+ const phase=state.mode==='raft'?Math.min(1,state.blocks/24):engine.rescueProgress(state);
+ const variant=Math.floor(state.elapsedMs/5000)%2;
+ if(danger>=.86)return variant?'Hurry, Gridda!':'It’s not looking good!';
+ if(danger>=.65)return variant?'Keep going!':'Danger rising!';
+ if(phase>=.78)return variant?'Nearly there!':'Just a little longer';
+ if(state.mode!=='raft'&&phase>=.22)return variant?'Help is on the way!':'There’s a boat on the horizon';
+ return variant?'Keep building!':'Holding steady';
+}
 function render(){
  if(!state)return;
  const completed=state.won||state.expired;
  const danger=engine.dangerFraction(state);
  const scene=$('wrScene');
  scene.dataset.mode=state.mode==='raft'?'raft':'tower';
- $('wrRescueBoat').setAttribute('data-visible',String(state.mode!=='raft'&&state.won));
+ const arrival=engine.rescueProgress(state);
+ $('wrRescueBoat').setAttribute('data-visible',String(state.mode!=='raft'&&!state.expired&&(state.won||arrival>=.20)));
+ scene.style.setProperty('--wrBoatRight',(-20+20*Math.min(1,Math.max(0,(arrival-.20)/.80))).toFixed(2)+'%');
+ scene.style.setProperty('--wrBoatWidth',(12+32*Math.min(1,Math.max(0,(arrival-.20)/.80))).toFixed(2)+'cqw');
  scene.style.setProperty('--wrWater',engine.waterHeight(state)+'%');
  scene.dataset.danger=state.won?'won':state.expired?'lost':danger>=.90?'critical':danger>=.68?'alert':'safe';
  scene.dataset.panic=state.won||state.expired?'end':danger>=.92?'frantic':danger>=.78?'panicking':danger>=.48?'worried':'calm';
@@ -276,15 +290,14 @@ function render(){
  scene.style.setProperty('--wrBodySpeed',(1.65-danger*1.22).toFixed(2)+'s');
  scene.style.setProperty('--wrArmSpeed',(1.20-danger*.88).toFixed(2)+'s');
  renderShark();
- const remaining=Math.max(0,24-state.blocks);
- $('wrBlocks').textContent=state.won?'SAFE':state.expired?'CAUGHT':remaining+' '+(state.mode==='raft'?(remaining===1?'plank':'planks'):(remaining===1?'block':'blocks'))+' to safety';
+ $('wrBlocks').textContent=situation(danger);
  $('wrBlocks').classList.toggle('wrSafe',state.won);
  $('wrInfo').disabled=completed||rulesOpen;
  $('wrScore').textContent=String(state.score);
  $('wrModeTitle').textContent=modeName(state.mode);
- $('wrProgress').style.width=Math.min(100,state.blocks/24*100)+'%';
+ $('wrProgress').style.width='0%';
  $('wrSea').style.height=engine.waterHeight(state)+'%';
- $('wrBuildNotice').textContent=state.mode==='raft'?(state.won?'Together at last!':'Make words. Bring the jetty to Gridda.'):(state.won?'The rescue boat is here!':state.expired?'The tide caught up.':'Stack the wreckage. Help is coming.');
+ $('wrBuildNotice').textContent=state.mode==='raft'?(state.won?'Together at last!':'Make words. Bring the jetty to Gridda.'):(state.won?'The rescue boat is here!':state.expired?'The tide caught up.':(arrival>=.20?'Keep building until the boat reaches you.':'Stack the wreckage. Help is coming.'));
  const bricks=$('wrBricks'),count=Math.min(24,state.blocks);
  if(drawnBlocks!==count){
    bricks.replaceChildren();
@@ -394,7 +407,7 @@ document.addEventListener('keydown',event=>{
 });
 document.addEventListener('visibilitychange',()=>{
  if(root.hidden||screen!=='play'||!state)return;
- if(document.hidden){if(lastTick&&!rulesOpen&&!(state.won||state.expired))engine.advance(state,Math.max(0,Math.min(1000,performance.now()-lastTick)));stop();if(state.expired){finished();render();}else save();}
+ if(document.hidden){if(lastTick&&!rulesOpen&&!(state.won||state.expired))engine.advance(state,Math.max(0,Math.min(1000,performance.now()-lastTick)));stop();if(state.expired||state.won){finished();render();}else save();}
  else if(!state.won&&!state.expired&&!rulesOpen){startTimer();render();}
 });
 window.addEventListener('pagehide',()=>{save();stop();});

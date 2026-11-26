@@ -375,3 +375,9 @@
 #wordRescueScreen .wrStatsGrid .wrStat{padding:12px;min-width:0}
 #wordRescueScreen .wrStatsGrid .wrStat strong{font-size:22px;color:#7de0ce}
 #wordRescueScreen .wrStatsTabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+
+/* v0.9.50: narrative status and steadily approaching rescue boat. */
+#wordRescueScreen #wrBlocks:not(.wrSafe){white-space:normal;line-height:1.15;font-size:clamp(13px,3.8vw,19px)}
+#wordRescueScreen .wrScene[data-mode=tower] .wrRescueBoat[data-visible=true]{display:block;position:absolute;z-index:5;bottom:calc(var(--wrWater,22%) - 6cqh);right:var(--wrBoatRight);width:var(--wrBoatWidth);height:auto;animation:none;transition:right 1s linear,width 1s linear,bottom 1s linear;filter:drop-shadow(0 3px 3px #12467266)}
+#wordRescueScreen .wrScene[data-mode=tower][data-danger=won] .wrRescueBoat[data-visible=true]{animation:none;right:0;width:44cqw}
+@media(prefers-reduced-motion:reduce){#wordRescueScreen .wrRescueBoat{transition:none!important}}

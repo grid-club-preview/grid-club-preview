@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="vault-reward.css?v=0.9.25">
   <link rel="stylesheet" href="dot-daily.css?v=0.9.25">
   <link rel="stylesheet" href="home-roadmap.css?v=0.9.26">
-  <link rel="stylesheet" href="word-rescue.css?v=0.9.49">
+  <link rel="stylesheet" href="word-rescue.css?v=0.9.50">
   <style>
     :root { color-scheme: dark; --bg:#0e1424; --surface:#1a243a; --tile:#253147; --muted:#9daabe; --mint:#7be3d4; --purple:#a178ff; }
     * { box-sizing: border-box; }
@@ -334,7 +334,7 @@
 <body>
   <main class="shell">
     <section id="home">
-      <header><div><div class="eyebrow">GRID CLUB</div><h1>A pocketful of challenges.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.49</span></div></header>
+      <header><div><div class="eyebrow">GRID CLUB</div><h1>A pocketful of challenges.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.50</span></div></header>
       <div class="homeSectionHeader" aria-label="Puzzle Deck games">
         <div class="eyebrow">PUZZLE DECK</div>
         <span class="homeSectionCount">3 playable · 3 planned</span>
@@ -458,7 +458,7 @@
           </div>
           <table class="wrBoardTable"><thead><tr><th scope="col">Rank</th><th scope="col">Score</th><th scope="col">Time</th><th scope="col">Date (UTC)</th></tr></thead><tbody id="wrBoardRows"></tbody></table>
           <p id="wrBoardEmpty" class="wrFine" role="status">No completed rescues in this period yet.</p>
-          <p class="wrFine">Top 10 successful rescues. Highest score first; faster time breaks ties. Day and Month use UTC calendar dates.</p>
+          <p class="wrFine">Top 10 successful rescues under the current scoring rules (v0.9.50 onwards). Highest score first; faster time breaks ties. Day and Month use UTC calendar dates.</p>
         </div>
       </div>
       <div id="wrStats" hidden>
@@ -474,7 +474,7 @@
       </div>
       <div id="wrPlay" hidden>
         <div class="wrStatus">
-          <div class="wrStat wrSafetyStat"><small>Escape progress</small><strong id="wrBlocks">24 blocks to safety</strong></div>
+          <div class="wrStat wrSafetyStat"><small>Gridda’s status</small><strong id="wrBlocks">Holding steady</strong></div>
           <div class="wrStat"><small>Score</small><strong id="wrScore">0</strong></div>
         </div>
         <div class="wrScene" id="wrScene" data-danger="safe" data-mode="tower" data-panic="calm" role="img" aria-label="Gridda builds an elevated escape tower above rising water, or a raft away from a pursuing shark">
@@ -555,7 +555,7 @@
           </div>
           <span class="wrBuildNotice" id="wrBuildNotice">Make words. Build higher.</span>
         </div>
-        <div class="wrProgress" aria-label="Escape progress"><span id="wrProgress" style="width:0"></span></div>
+        <div class="wrProgress" hidden aria-hidden="true"><span id="wrProgress" style="width:0"></span></div>
         <div class="wrStatus">
           <div><strong id="wrModeTitle">Rising Tide</strong><div class="wrFine" id="wrModeNote">Water rises steadily.</div></div>
           <button type="button" class="wrAction" id="wrWordBack">Save &amp; back</button>
@@ -586,7 +586,7 @@
             <p id="wrRulesWarning"></p>
             <div id="wrRulesDetails" class="wrRulesDetails" hidden>
               <p id="wrRulesDetail"></p>
-              <ul><li>Tap letters to make a word of at least 3 letters, then build with it.</li><li>Every letter adds one block or plank. A 4-letter word scores 16 points; a 5-letter word scores 25.</li><li>Letters refill after each valid word. You cannot repeat a word in the same run.</li><li>The first reshuffle is free. Further reshuffles cost 5 Club Credits. The hazard keeps moving.</li></ul>
+              <ul><li>Tap letters to make a word of at least 3 letters, then build with it.</li><li>Every letter adds one block or plank. A 4-letter word scores 16 points; a 5-letter word scores 30, a 6-letter word 50, and a 7-letter word 75.</li><li>Letters refill after each valid word. You cannot repeat a word in the same run.</li><li>The first reshuffle is free. Further reshuffles cost 5 Club Credits. The hazard keeps moving.</li></ul>
             </div>
             <button class="wrAction wrActionMain" id="wrRulesPlay" type="button">Play</button>
             <button class="wrRulesBack" id="wrRulesBack" type="button">Back to game menu</button>
@@ -905,7 +905,7 @@
       </div>
       
       <div class="adSlot" id="adSlot" aria-hidden="true" hidden></div>
-      <footer>Grid Club · v0.9.49 beta</footer>
+      <footer>Grid Club · v0.9.50 beta</footer>
     </section>
   </main>
   <div class="pauseLayer" id="dotDailyCompleteLayer" hidden role="dialog" aria-modal="true" aria-labelledby="dotDailyCompleteTitle">
@@ -945,8 +945,8 @@
   <script src="vault-reward.js?v=0.9.25"></script>
   <script src="pipe-shift.js?v=0.9.41"></script>
   <script src="word-rescue-lexicon.js?v=0.9.30"></script>
-  <script src="word-rescue-engine.js?v=0.9.42"></script>
-  <script src="word-rescue.js?v=0.9.49"></script>
+  <script src="word-rescue-engine.js?v=0.9.50"></script>
+  <script src="word-rescue.js?v=0.9.50"></script>
   <script src="edge-navigation.js?v=0.9.49"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol === 'https:') {

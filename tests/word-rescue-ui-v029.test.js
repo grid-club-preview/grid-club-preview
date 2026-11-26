@@ -89,7 +89,7 @@ dom.wrEntry.onclick();
 dom.wrNewRaft.onclick();
 assert.equal(dom.wrRules.hidden,false);dom.wrRulesPlay.onclick();
 assert.equal(dom.wrScene.dataset.mode,'raft');
-assert.equal(dom.wrBlocks.textContent,'24 planks to safety');
+assert.equal(dom.wrBlocks.textContent,'Holding steady');
 assert.equal(dom.wrScene.style['--wrRaftLength'],'0.000cqw');
 assert.equal(dom.wrSea.style.height,'32%','Raft mode has a fixed sea level');
 assert(dom.wrDock,'Word submission controls must have a dock');
@@ -142,12 +142,13 @@ dom.wrWordBack.onclick();dom.wrStatsEntry.onclick();assert.equal(dom.wrStats.hid
 dom.wrStatsRaft.onclick();assert.equal(dom.wrStatsGrid.children[0].children[1].textContent,'1');
 globals.WordRescueApp.back();assert.equal(dom.wrMenu.hidden,false);
 dom.wrNewTide.onclick();let rounds=0;
-while(dom.wrResult.hidden&&rounds++<10){
+while(dom.wrResult.hidden&&rounds++<10&&globals.WordRescueApp.readState().blocks<24){
  const run=globals.WordRescueApp.readState();const word=engine.possibleWords(run.rack,run.used).sort((a,b)=>b.length-a.length)[0];const used=[];
  for(const ch of word){const i=run.rack.findIndex((x,j)=>x===ch&&!used.includes(j));used.push(i);dom.wrTray.listeners.click({target:dom.wrTray.children[i]});}
  dom.wrSubmit.onclick();
 }
-assert(dom.wrResultText.textContent.startsWith('You stacked 24 pieces of wreckage'));
+for(let i=0;i<45&&tick;i++){now+=1000;tick();}
+assert(dom.wrResultText.textContent.startsWith('You stacked '));assert(dom.wrResultText.textContent.includes('pieces of wreckage'));
 assert.equal(dom.wrRescueBoat.attrs['data-visible'],'true');
 dom.wrResultModes.onclick();dom.wrNewTide.onclick();
 for(let i=0;i<35&&tick;i++){now+=1000;tick();}

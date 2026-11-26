@@ -100,7 +100,7 @@ function possibleWords(rack,used=[]){
 function create(seed=Date.now(),mode='tide'){
  if(!['tide','sinking','raft'].includes(mode))throw Error('Unknown Word Rescue mode');
  const s={version:1,mode,rng:(Number(seed)>>>0)||1,rack:[],selected:[],used:[],words:[],
- blocks:0,score:0,elapsedMs:0,expired:false,won:false,lastErodeMs:0,started:false,sharkProgress:0,raftPace:2};
+ blocks:0,score:0,elapsedMs:0,expired:false,won:false,lastErodeMs:0,started:false,sharkProgress:0,raftPace:2,rescueRules:2};
  s.rack=freshRack(s);ensureVowel(s);
  return s;
 }
@@ -123,7 +123,7 @@ function submit(s){
  if(word.length<3)return {ok:false,reason:'Make a word of at least 3 letters.'};
  if(!isAcceptedWord(word))return {ok:false,reason:'Not in the Word Rescue word list. Try another word.'};
  if(s.used.includes(word))return {ok:false,reason:'You have already used that word.'};
- const points=word.length*word.length;
+ const points=s.rescueRules===2?[0,0,0,9,16,30,50,75][word.length]:word.length*word.length;
  if(s.mode==='raft')s.sharkProgress=sharkProgress(s);
  s.blocks+=word.length;s.score+=points;s.words.push({word,points});s.used.push(word);
  const taken=[...s.selected];s.selected=[];
@@ -132,28 +132,30 @@ function submit(s){
  ensureVowel(s);
  if(possibleWords(s.rack,s.used).length<2)s.rack=freshRack(s);
  ensureVowel(s);
- if(s.blocks>=24)s.won=true;
+ if((s.mode==='raft'||s.rescueRules!==2)&&s.blocks>=24)s.won=true;
  return {ok:true,word,blocks:word.length,points,won:s.won};
 }
 function rerack(s){if(s.expired||s.won)return false;s.rack=freshRack(s);s.selected=[];ensureVowel(s);return true;}
 // Water rises at the v0.9.29 pace, without a hard 90-second timeout.
 const DURATION_MS=90000;
+const RESCUE_MS=45000;
+const rescueProgress=s=>s.mode==='raft'?0:s.rescueRules===2?Math.min(1,s.elapsedMs/RESCUE_MS):Math.min(1,s.blocks/24);
 // Match the raft's fixed 22% bottom position. Raising both starting water
 // and the danger threshold by 14 points preserves the original time pressure.
 const SEA_BASELINE=22;
 // Raft Escape has a fixed waterline, unlike the two Rising Tide variants.
 function waterHeight(s){
  if(s.mode==='raft')return 32;
- return SEA_BASELINE+(s.elapsedMs/DURATION_MS)*(s.mode==='sinking'?52:60);
+ return SEA_BASELINE+(s.elapsedMs/DURATION_MS)*(s.mode==='sinking'?52:60)*(s.rescueRules===2?1.25:1);
 }
-function safeHeight(s){return SEA_BASELINE+17+Math.min(24,s.blocks)*1.8;}
+function safeHeight(s){return SEA_BASELINE+(s.rescueRules===2?11:17)+Math.min(24,s.blocks)*1.8;}
 // New Raft Escape rounds target roughly 40 seconds: 25.5s starting time,
 // plus 0.75s per built plank (at most 42.75s before the final word).
 // Preserve the original 2.7s allowance for unfinished saved rounds.
 function remainingSafetySeconds(s){
  if(s.mode==='raft')
    return 25.5+Math.min(24,s.blocks)*(s.raftPace===2?.75:2.7)-s.elapsedMs/1000;
- const rate=(s.mode==='sinking'?52:60)/90;
+ const rate=(s.mode==='sinking'?52:60)/90*(s.rescueRules===2?1.25:1);
  return (safeHeight(s)-waterHeight(s))/rate;
 }
 // Continuous visual pursuit: the remaining time determines how quickly the
@@ -175,7 +177,7 @@ function hazard(s){
 }
 function advance(s,ms){
  if(s.won||s.expired||!s.started)return;
- const delta=Math.max(0,ms);
+ const delta=s.mode!=='raft'&&s.rescueRules===2?Math.min(Math.max(0,ms),Math.max(0,RESCUE_MS-s.elapsedMs)):Math.max(0,ms);
  if(s.mode==='raft'){
    const previous=sharkProgress(s),remaining=remainingSafetySeconds(s);
    s.sharkProgress=remaining<=0?1:Math.min(1,previous+(1-previous)*Math.min(1,delta/1000/remaining));
@@ -201,6 +203,7 @@ function advance(s,ms){
  // or shark attack as the raft fails to outpace the predator. No time cap.
  if(s.mode==='raft'?remainingSafetySeconds(s)<=0:waterHeight(s)>=safeHeight(s))
    s.expired=true;
+ else if(s.mode!=='raft'&&s.rescueRules===2&&s.elapsedMs>=RESCUE_MS)s.won=true;
 }
 // Retained for older callers; the interface now displays elapsed time instead.
 const remainingMs=s=>Math.max(0,DURATION_MS-s.elapsedMs);
@@ -213,5 +216,5 @@ function validState(s){return !!s&&s.version===1&&['tide','sinking','raft'].incl
  s.blocks>=0&&Number.isFinite(s.elapsedMs)&&s.elapsedMs>=0&&s.elapsedMs<=DURATION_MS*2&&
  typeof s.won==='boolean'&&typeof s.expired==='boolean';}
 return Object.freeze({WORD_SET,EXCLUDED_WORDS,isAcceptedWord,SEEDS,importDictionary,create,wordFor,select,removeLast,submit,rerack,
- ensureVowel,possibleWords,canMake,advance,remainingMs,waterHeight,safeHeight,remainingSafetySeconds,sharkProgress,dangerFraction,hazard,SEA_BASELINE,DURATION_MS,validState});
+ ensureVowel,possibleWords,canMake,advance,remainingMs,waterHeight,safeHeight,remainingSafetySeconds,sharkProgress,rescueProgress,dangerFraction,hazard,SEA_BASELINE,DURATION_MS,validState});
 });
