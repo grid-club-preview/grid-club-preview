@@ -32,9 +32,10 @@ for(const mode of ['tide','sinking','raft']){
 const idle=e.create(400,'raft');idle.started=true;
 assert.equal(e.hazard(idle),'shark');
 assert.equal(e.waterHeight(idle),32,'Raft floats on fixed sea level');
-assert.equal(e.remainingSafetySeconds(idle),25.5);
+assert.equal(e.remainingSafetySeconds(idle),28.5);
 const pace=e.create(7,'raft');pace.blocks=23;
-assert.equal(e.remainingSafetySeconds(pace),42.75);
+assert.equal(e.remainingSafetySeconds(pace),48.05);
+const previousPace={...pace,raftPace:2};assert.equal(e.remainingSafetySeconds(previousPace),42.75);
 const legacyPace={...pace};delete legacyPace.raftPace;
 assert.equal(e.remainingSafetySeconds(legacyPace),25.5+23*2.7);
 assert(!markup.includes('id="wrTime"'),'No live time display');
@@ -48,7 +49,7 @@ const w=e.possibleWords(idle.rack)[0];
 const build=playWord(idle,w);
 assert(build.ok);
 assert(e.remainingSafetySeconds(idle)>save,'Valid words buy survival time');
-assert(Math.abs(e.remainingSafetySeconds(idle)-save-build.blocks*.75)<1e-9,'New raft allowance is 0.75 seconds per plank');
+assert(Math.abs(e.remainingSafetySeconds(idle)-save-build.blocks*.85)<1e-9,'New raft allowance is 0.85 seconds per plank');
 assert.equal(e.sharkProgress(idle),position,'A word must never reset shark position');
 const slower=e.sharkProgress(idle);e.advance(idle,1000);
 assert(e.sharkProgress(idle)>slower,'Shark continues approaching after a word');
@@ -58,7 +59,7 @@ const legacy=JSON.parse(JSON.stringify(idle));delete legacy.sharkProgress;
 const legacyPosition=e.sharkProgress(legacy);e.advance(legacy,1000);assert(e.sharkProgress(legacy)>legacyPosition);
 assert(!idle.expired);
 const fresh=e.create(1,'raft');fresh.started=true;
-e.advance(fresh,26000);
+e.advance(fresh,29000);
 assert.equal(fresh.expired,true,'Idle players get caught by shark');
 assert.equal(e.sharkProgress(fresh),1,'Shark reaches Gridda exactly at defeat');
 assert.equal(e.waterHeight(fresh),32,'The sea must not rise in Raft Escape');
@@ -131,3 +132,5 @@ for(let seed=1;seed<=1000;seed++){const run=e.create(seed*7919,'tide');triples+=
 assert(triples/totalRacks>.02&&triples/totalRacks<.08);
 for(const mode of ['tide','sinking','raft'])for(let seed=1;seed<=45;seed++){const run=e.create(seed,mode);run.started=true;fairRack(run);for(let i=0;i<8&&!run.won&&!run.expired;i++){const word=e.possibleWords(run.rack,run.used)[0];assert(word);assert(playWord(run,word).ok);fairRack(run);if(i%3===0&&!run.won){e.rerack(run);fairRack(run);}if(!run.won){e.advance(run,7000);fairRack(run);}}}
 const friend=e.create(7,'raft');friend.started=true;e.advance(friend,20000);const beforeFriend=e.remainingSafetySeconds(friend),shark=e.sharkProgress(friend);assert(e.callFriend(friend));assert.equal(e.remainingSafetySeconds(friend),beforeFriend+10);assert.equal(e.sharkProgress(friend),shark);assert(!e.callFriend(friend));assert(!e.callFriend(e.create(2,'tide')));e.advance(friend,1000);assert(e.sharkProgress(friend)>shark);console.log('Rare triples '+triples+'/'+totalRacks+' and friend lifeline passed');
+const moderate=e.create(20,'raft');moderate.started=true;e.advance(moderate,27000);assert(!moderate.expired);e.advance(moderate,1500);assert(moderate.expired);
+const old=e.create(20,'raft',3,2);old.started=true;e.advance(old,27000);assert(old.expired);console.log('Raft moderate pace, legacy timing and idle defeat passed');

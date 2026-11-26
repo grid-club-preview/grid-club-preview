@@ -165,10 +165,10 @@ function possibleWords(rack,used=[]){
  const excluded=new Set(used),count=rack.filter(Boolean).length;
  return [...WORD_SET].filter(w=>w.length<=count&&!excluded.has(w)&&isAcceptedWord(w)&&canMake(rack,w));
 }
-function create(seed=Date.now(),mode='tide',rackRules=3){
+function create(seed=Date.now(),mode='tide',rackRules=3,raftPace=3){
  if(!['tide','sinking','raft'].includes(mode))throw Error('Unknown Word Rescue mode');
  const s={version:1,mode,rng:(Number(seed)>>>0)||1,rack:[],selected:[],used:[],words:[],
- blocks:0,score:0,elapsedMs:0,expired:false,won:false,lastErodeMs:0,started:false,sharkProgress:0,raftPace:2,rescueRules:mode==='raft'?2:3,rackRules};
+ blocks:0,score:0,elapsedMs:0,expired:false,won:false,lastErodeMs:0,started:false,sharkProgress:0,raftPace,rescueRules:mode==='raft'?2:3,rackRules};
  rollTriple(s);s.rack=freshRack(s);
  return s;
 }
@@ -221,7 +221,7 @@ function safeHeight(s){return SEA_BASELINE+(s.rescueRules>=2?11:17)+Math.min(24,
 // Preserve the original 2.7s allowance for unfinished saved rounds.
 function remainingSafetySeconds(s){
  if(s.mode==='raft')
-   return 25.5+Math.min(24,s.blocks)*(s.raftPace===2?.75:2.7)+ (s.friendHelp===true?10:0)-s.elapsedMs/1000;
+   return (s.raftPace===3?28.5:25.5)+Math.min(24,s.blocks)*(s.raftPace===3?.85:s.raftPace===2?.75:2.7)+(s.friendHelp===true?10:0)-s.elapsedMs/1000;
  const rate=tideRate(s);
  return (safeHeight(s)-waterHeight(s))/rate;
 }

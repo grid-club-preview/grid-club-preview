@@ -53,12 +53,12 @@ function startTimer(){
  if(state.rankEligible===undefined&&state.elapsedMs===0&&state.words.length===0&&rankedReady()){
    const original=state;rankStarting=true;state.rankEligible=false;
    $('wrDock').inert=true;render();rankNote('Connecting for global ranking…');
-   const request=globalThis.GridRanked.call('word_start',{mode:state.mode,rackRules:3});
+   const request=globalThis.GridRanked.call('word_start',{mode:state.mode,rackRules:3,raftPace:3});
    let timeout;
    Promise.race([request,new Promise((_,reject)=>{timeout=setTimeout(()=>reject(Error('Connection timeout')),6000);})]).then(reply=>{
      if(state!==original||screen!=='play'||!rankStarting)return;
-     if(!reply.attemptId||!Number.isInteger(reply.seed)||reply.rules!==5)throw Error('Ranked rescue unavailable');
-     state=engine.create(reply.seed,original.mode,3);
+     if(!reply.attemptId||!Number.isInteger(reply.seed)||reply.rules!==(original.mode==='raft'?6:5))throw Error('Ranked rescue unavailable');
+     state=engine.create(reply.seed,original.mode,3,3);
      state.attemptId=original.attemptId;state.reracks=0;state.started=true;
      state.rankEligible=true;state.rankAttempt=reply.attemptId;state.rankEvents=[];
      rankNote('Global ranking enabled');
@@ -128,7 +128,7 @@ async function renderScoreboard(){
  $('wrBoardEmpty').textContent='Loading global rankings…';
  if(!rankedReady()){$('wrBoardEmpty').textContent='Global leaderboard unavailable offline. Your stats remain available.';return;}
  try{
-   const result=await globalThis.GridRanked.call('word_leaderboard',{mode:boardMode,period:boardPeriod,rackRules:3});
+   const result=await globalThis.GridRanked.call('word_leaderboard',{mode:boardMode,period:boardPeriod,rackRules:3,raftPace:3});
    if(request!==boardRequest||screen!=='leaderboard')return;
    const rows=result.entries||[];
    $('wrBoardEmpty').hidden=rows.length>0;$('wrBoardEmpty').textContent='No ranked rescues in this period yet.';
