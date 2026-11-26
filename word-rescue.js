@@ -39,7 +39,7 @@ function modeName(mode){return mode==='sinking'?'Sinking Letters':mode==='raft'?
 const RULES={
  tide:['Raise Gridda up by making words','Hurry — the tide is rising!','Gridda’s boat has broken apart. Stack pieces of wreckage to stay above the water until the approaching rescue boat arrives.'],
  raft:['Build towards Gridda by making words','Hurry — the shark is approaching!','Build out from the island to reach Gridda before the shark catches her.'],
- sinking:['Raise Gridda up by making words','Hurry — the tide is rising and letters are sinking!','Gridda’s boat has broken apart. Stack wreckage until the approaching rescue boat arrives. A letter sinks every 7 seconds when possible, but at least one vowel, two consonants and a valid word are protected.']
+ sinking:['Raise Gridda up by making words','Hurry — the tide is rising and letters are sinking!','Gridda’s boat has broken apart. Stack wreckage until the approaching rescue boat arrives. A letter slot is lost permanently every 7 seconds, down to three letters. Making words or reshuffling cannot recover lost slots. At least one vowel, two consonants and a valid word remain.']
 };
 function seen(mode){return rulesSeen.has(mode)||safeGet(RULES_KEY+':'+mode)==='true';}
 function startTimer(){if(!state||state.won||state.expired||rulesOpen||document.hidden||timer!==null)return;lastTick=performance.now();timer=setInterval(tick,125);}
@@ -80,7 +80,7 @@ function scoreHistory(){
 function scoreRows(mode,period,now=Date.now()){
  const date=new Date(now).toISOString().slice(0,10);
  return scoreHistory().filter(x=>{
-   if(x.mode!==mode||x.won===false||x.rescueRules!==2)return false;
+   if(x.mode!==mode||x.won===false||x.rescueRules!==(mode==='raft'?2:3))return false;
    const completed=new Date(x.at).toISOString().slice(0,10);
    return period==='all'||(period==='day'?completed===date:completed.slice(0,7)===date.slice(0,7));
  }).sort((a,b)=>b.score-a.score||a.ms-b.ms||a.at-b.at).slice(0,10);
@@ -223,7 +223,7 @@ function tick(){
  const second=Math.floor(state.elapsedMs/1000);
  if(second!==lastSecond){
    lastSecond=second;save();render();
-   if(previousCount>state.rack.filter(Boolean).length)message('A letter sank. Complete a word to refill the tray.',false);
+   if(previousCount>state.rack.filter(Boolean).length)message(state.rescueRules>=3?(state.rack.filter(Boolean).length%2===0?'Wreckage is drifting away!':'Wreckage is sinking!'):'A letter sank. Complete a word to refill the tray.',false);
  }
 }
 function begin(mode,continueSaved=false){
@@ -241,7 +241,7 @@ function begin(mode,continueSaved=false){
  state.started=seen(state.mode);
  $('wrModeTitle').textContent=modeName(state.mode);
  $('wrModeNote').textContent=state.mode==='sinking'?
-   'A letter sinks every 7 seconds. Stack the wreckage until help arrives.':
+   'Wreckage drifts away every 7 seconds. Lost letter slots cannot be recovered.':
    state.mode==='raft'?'Build from the island towards Gridda before the shark catches her.':
    'Stack the wreckage to stay above the water until the rescue boat arrives.';
  render();save();

@@ -108,3 +108,19 @@ for(const mode of ['tide','sinking','raft'])for(let seed=1;seed<=40;seed++){
 const eroded=e.create(3,'sinking');eroded.rack=['C','A','T','','','',''];eroded.started=true;e.advance(eroded,7000);playable(eroded);assert.equal(eroded.rack.filter(Boolean).length,3);
 const oldRack=e.create(4,'sinking');oldRack.rack=['E','','E','U','','O','I'];assert(e.ensurePlayable(oldRack));playable(oldRack);assert.equal(oldRack.rack.filter(Boolean).length,5);
 console.log('Playable racks: 120 seeded rounds, impossible saved rack repair, erosion and free/paid shuffle engine checks passed');
+
+// v0.9.52: each seven-second erosion removes a permanent slot until three remain.
+const permanent=e.create(91,'sinking');permanent.started=true;permanent.blocks=24;
+for(let n=6;n>=3;n--){
+ e.advance(permanent,7000);assert.equal(permanent.rack.filter(Boolean).length,n);playable(permanent);
+ const slots=permanent.rack.map(Boolean);
+ const word=e.possibleWords(permanent.rack,permanent.used)[0];assert(playWord(permanent,word).ok);
+ assert.deepEqual(permanent.rack.map(Boolean),slots,'Submitting cannot restore sunken slots');
+ e.rerack(permanent);assert.deepEqual(permanent.rack.map(Boolean),slots,'Rerack cannot restore sunken slots');playable(permanent);
+}
+e.advance(permanent,7000);assert.equal(permanent.rack.filter(Boolean).length,3);playable(permanent);
+for(const mode of ['tide','sinking']){
+ const newer=e.create(4,mode),older={...newer,rescueRules:2};newer.elapsedMs=older.elapsedMs=10000;
+ assert(e.waterHeight(newer)>e.waterHeight(older));assert(e.remainingSafetySeconds(newer)<e.remainingSafetySeconds(older));
+}
+console.log('Permanent sinking slots, protected playable floor, faster tides and old-rule compatibility passed');
