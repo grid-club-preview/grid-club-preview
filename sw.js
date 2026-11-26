@@ -1,5 +1,5 @@
-/* Grid Club v0.9.62 · narrative results and background ranking */
-const CACHE='gridclub-pwa-v0.9.62';
+/* Grid Club v0.9.63 · Word Rescue boat icon */
+const CACHE='gridclub-pwa-v0.9.63';
 const APP_FILES=[
   './','./index.html',
   './puzzle.js?v=0.9.9',
