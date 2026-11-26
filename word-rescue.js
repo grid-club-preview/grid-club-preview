@@ -37,9 +37,9 @@ function save(){if(state&&!state.won&&!state.expired)safeSave(KEY,state);else sa
 function records(){try{const x=JSON.parse(safeGet(STATS_KEY)||'null');return x&&typeof x==='object'?x:{};}catch(_){return {};}}
 function modeName(mode){return mode==='sinking'?'Sinking Letters':mode==='raft'?'Raft Escape':'Rising Tide';}
 const RULES={
- tide:['Raise Gridda up by making words','Hurry — the tide is rising!','Build 24 blocks before the water reaches Gridda.'],
+ tide:['Raise Gridda up by making words','Hurry — the tide is rising!','Gridda’s boat has broken apart. Stack 24 pieces of wreckage to stay above the water until the rescue boat arrives.'],
  raft:['Build towards Gridda by making words','Hurry — the shark is approaching!','Build 24 planks out from the island to reach Gridda before the shark catches her.'],
- sinking:['Raise Gridda up by making words','Hurry — the tide is rising and letters are sinking!','Build 24 blocks before the tide catches Gridda. One letter disappears every 7 seconds, but the last vowel is protected.']
+ sinking:['Raise Gridda up by making words','Hurry — the tide is rising and letters are sinking!','Gridda’s boat has broken apart. Stack 24 pieces of wreckage until the rescue boat arrives. One letter disappears every 7 seconds, but the last vowel is protected.']
 };
 function seen(mode){return rulesSeen.has(mode)||safeGet(RULES_KEY+':'+mode)==='true';}
 function startTimer(){if(!state||state.won||state.expired||rulesOpen||document.hidden||timer!==null)return;lastTick=performance.now();timer=setInterval(tick,125);}
@@ -209,9 +209,9 @@ function begin(mode,continueSaved=false){
  state.started=seen(state.mode);
  $('wrModeTitle').textContent=modeName(state.mode);
  $('wrModeNote').textContent=state.mode==='sinking'?
-   'A letter sinks every 7 seconds. Keep building above the rising tide.':
+   'A letter sinks every 7 seconds. Stack the wreckage until help arrives.':
    state.mode==='raft'?'Build from the island towards Gridda before the shark catches her.':
-   'The rising water is the danger. Build upwards to stay dry.';
+   'Stack the wreckage to stay above the water until the rescue boat arrives.';
  render();save();
  if(!seen(state.mode))showRules(true);else startTimer();
 }
@@ -232,6 +232,8 @@ function render(){
  const danger=engine.dangerFraction(state);
  const scene=$('wrScene');
  scene.dataset.mode=state.mode==='raft'?'raft':'tower';
+ $('wrRescueBoat').hidden=state.mode==='raft'||!state.won;
+ scene.style.setProperty('--wrWater',engine.waterHeight(state)+'%');
  scene.dataset.danger=state.won?'won':state.expired?'lost':danger>=.90?'critical':danger>=.68?'alert':'safe';
  scene.dataset.panic=state.won||state.expired?'end':danger>=.92?'frantic':danger>=.78?'panicking':danger>=.48?'worried':'calm';
  scene.style.setProperty('--wrDanger',String(danger));
@@ -250,7 +252,7 @@ function render(){
  $('wrModeTitle').textContent=modeName(state.mode);
  $('wrProgress').style.width=Math.min(100,state.blocks/24*100)+'%';
  $('wrSea').style.height=engine.waterHeight(state)+'%';
- $('wrBuildNotice').textContent=state.mode==='raft'?(state.won?'Together at last!':'Make words. Bring the jetty to Gridda.'):'Make words. Build higher.';
+ $('wrBuildNotice').textContent=state.mode==='raft'?(state.won?'Together at last!':'Make words. Bring the jetty to Gridda.'):(state.won?'The rescue boat is here!':state.expired?'The tide caught up.':'Stack the wreckage. Help is coming.');
  const bricks=$('wrBricks'),count=Math.min(24,state.blocks);
  if(drawnBlocks!==count){
    bricks.replaceChildren();

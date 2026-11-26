@@ -357,3 +357,15 @@
 #wordRescueScreen .wrBoardTable th,#wordRescueScreen .wrBoardTable td{padding:10px 4px;border-bottom:1px solid #34475e}
 #wordRescueScreen .wrBoardTable th{color:#a9bacb;font-weight:600}
 #wordRescueScreen .wrBoardTable td:nth-child(2){font-weight:800;color:#7de0ce}
+
+/* v0.9.48: wreckage tower and rescue boat. Scene-relative sizing. */
+#wordRescueScreen .wrScene[data-mode=tower]{container-type:size}
+#wordRescueScreen .wrScene[data-mode=tower] .wrStack{width:clamp(52px,23cqw,86px)}
+#wordRescueScreen .wrScene[data-mode=tower] .wrBase{height:4cqh;background:linear-gradient(180deg,#d4ae7d 0 18%,#895537 18% 75%,#4c6876 75%);border-radius:2px 2px 35% 30%;clip-path:polygon(0 0,10% 18%,19% 0,35% 15%,50% 0,67% 17%,79% 0,100% 9%,94% 80%,81% 100%,16% 100%,5% 76%)}
+#wordRescueScreen .wrScene[data-mode=tower] .wrBrick{height:1.8cqh;box-sizing:border-box;background:linear-gradient(180deg,#e2bf86,#b68048);border-color:#986139}
+#wordRescueScreen .wrScene[data-mode=tower] .wrBrick:nth-child(3n){background:linear-gradient(180deg,#c4d3d6,#7a969e)}
+#wordRescueScreen .wrScene[data-mode=tower] .wrAvatar{height:min(26cqh,112px);width:auto;aspect-ratio:96/132}
+#wordRescueScreen .wrRescueBoat{display:none}
+#wordRescueScreen .wrScene[data-mode=tower][data-danger=won] .wrRescueBoat:not([hidden]){display:block;position:absolute;z-index:5;bottom:calc(var(--wrWater,22%) - 8cqh);right:0;width:44cqw;height:auto;animation:wrBoatArrive 1.1s ease-out both;filter:drop-shadow(0 3px 3px #12467266)}
+@keyframes wrBoatArrive{from{transform:translateX(110%)}to{transform:translateX(0)}}
+@media(prefers-reduced-motion:reduce){#wordRescueScreen .wrScene[data-mode=tower][data-danger=won] .wrRescueBoat{animation:none!important}}

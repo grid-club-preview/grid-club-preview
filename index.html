@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="vault-reward.css?v=0.9.25">
   <link rel="stylesheet" href="dot-daily.css?v=0.9.25">
   <link rel="stylesheet" href="home-roadmap.css?v=0.9.26">
-  <link rel="stylesheet" href="word-rescue.css?v=0.9.47">
+  <link rel="stylesheet" href="word-rescue.css?v=0.9.48">
   <style>
     :root { color-scheme: dark; --bg:#0e1424; --surface:#1a243a; --tile:#253147; --muted:#9daabe; --mint:#7be3d4; --purple:#a178ff; }
     * { box-sizing: border-box; }
@@ -334,7 +334,7 @@
 <body>
   <main class="shell">
     <section id="home">
-      <header><div><div class="eyebrow">GRID CLUB</div><h1>A pocketful of challenges.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.47</span></div></header>
+      <header><div><div class="eyebrow">GRID CLUB</div><h1>A pocketful of challenges.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.48</span></div></header>
       <div class="homeSectionHeader" aria-label="Puzzle Deck games">
         <div class="eyebrow">PUZZLE DECK</div>
         <span class="homeSectionCount">3 playable · 3 planned</span>
@@ -418,12 +418,12 @@
       <div id="wrMenu">
         <div class="wrCard wrIntro">
           <h3>Words are your way out.</h3>
-          <p>Help Gridda escape! Build upwards to survive a rising tide, or build a raft to escape a pursuing shark. Every letter in a valid word adds a block or plank.</p>
+          <p>Help Gridda escape! Salvage wreckage to survive a rising tide until help arrives, or build a jetty to escape a pursuing shark. Every letter in a valid word adds a block or plank.</p>
         </div>
         <button id="wrContinue" class="wrContinue" type="button" hidden><span id="wrContinueLabel">Continue current run</span><span aria-hidden="true">›</span></button>
         <button id="wrNewTide" class="wrMode" type="button">
           <span class="wrModeIcon" aria-hidden="true">🌊</span>
-          <span><strong>Rising Tide</strong><small>Build above the rising water · no separate timer</small></span>
+          <span><strong>Rising Tide</strong><small>Stack wreckage until the rescue boat arrives</small></span>
           <span class="tileArrow" aria-hidden="true">›</span>
         </button>
         <button id="wrNewRaft" class="wrMode wrModeRaft" type="button">
@@ -433,7 +433,7 @@
         </button>
         <button id="wrNewSinking" class="wrMode wrModeAlt" type="button">
           <span class="wrModeIcon" aria-hidden="true">🔡</span>
-          <span><strong>Sinking Letters</strong><small>A letter disappears every 7 seconds · keep forming words</small></span>
+          <span><strong>Sinking Letters</strong><small>Stack wreckage · a letter sinks every 7 seconds</small></span>
           <span class="tileArrow" aria-hidden="true">›</span>
         </button>
         <button id="wrBoardEntry" class="wrMode" type="button"><span class="wrModeIcon" aria-hidden="true">🏆</span><span><strong>Leaderboard</strong><small>Day · Month · All Time</small></span><span class="tileArrow" aria-hidden="true">›</span></button>
@@ -507,7 +507,18 @@
             <div class="wrBase"></div>
           </div>
           <div class="wrSea" id="wrSea"><span class="wrShark" id="wrShark" aria-hidden="true">🦈</span></div>
-          <div class="wrShore" aria-hidden="true">
+          <svg id="wrRescueBoat" class="wrRescueBoat" viewBox="0 0 160 110" aria-hidden="true" hidden>
+ <path d="M7 83 Q39 79 76 84 T154 83" fill="none" stroke="#d7f8ff" stroke-width="4" stroke-linecap="round"/>
+ <path d="M9 61 L155 61 L141 82 Q83 90 25 82 Z" fill="#d85b38" stroke="#8a382d" stroke-width="2"/>
+ <path d="M13 62 H151 L146 69 H18 Z" fill="#fff1cd"/>
+ <path d="M52 61 V29 Q52 23 59 23 H112 Q119 23 119 30 V61" fill="#f6f2e3" stroke="#b5c1c4" stroke-width="2"/>
+ <rect x="61" y="31" width="20" height="19" rx="3" fill="#568ca9"/><rect x="87" y="31" width="23" height="19" rx="3" fill="#568ca9"/>
+ <path d="M84 23 V8 H103" fill="none" stroke="#445567" stroke-width="3"/><path d="M91 8 H109 V19 H91 Z" fill="#f6bf49"/>
+ <circle cx="36" cy="62" r="10" fill="#f7f1dc" stroke="#cb503b" stroke-width="5"/>
+ <path d="M14 60 V47 H45 V60 M121 60 V47 H149 V60" fill="none" stroke="#e7edf0" stroke-width="2"/>
+ <text x="95" y="76" fill="#fff5dd" font-size="8" font-weight="bold" text-anchor="middle">RESCUE</text>
+ </svg>
+ <div class="wrShore" aria-hidden="true">
             <span class="wrPalm">🌴</span>
             <div class="wrJetty"></div>
             <div class="wrPlankPile"></div>
@@ -882,7 +893,7 @@
       </div>
       
       <div class="adSlot" id="adSlot" aria-hidden="true" hidden></div>
-      <footer>Grid Club · v0.9.47 beta</footer>
+      <footer>Grid Club · v0.9.48 beta</footer>
     </section>
   </main>
   <div class="pauseLayer" id="dotDailyCompleteLayer" hidden role="dialog" aria-modal="true" aria-labelledby="dotDailyCompleteTitle">
@@ -923,7 +934,7 @@
   <script src="pipe-shift.js?v=0.9.41"></script>
   <script src="word-rescue-lexicon.js?v=0.9.30"></script>
   <script src="word-rescue-engine.js?v=0.9.42"></script>
-  <script src="word-rescue.js?v=0.9.47"></script>
+  <script src="word-rescue.js?v=0.9.48"></script>
   <script src="edge-navigation.js?v=0.9.47"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol === 'https:') {
