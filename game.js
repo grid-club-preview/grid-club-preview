@@ -281,7 +281,7 @@
   function freshGame() {
     const fixed=mode==='level'?levelCore.get(levelId):null;
     const seed = mode === 'daily'||mode==='practice' ? dailyLevelSeed() : fixed?fixed.seed:randomSeed();
-    const plain=core.generate(size,seed,{daily:mode==='daily'||mode==='practice'});
+    const plain=core.generate(size,seed,{daily:mode==='daily'||mode==='practice',freePlay:mode==='free'});
     const curatedPath=Number.isInteger(fixed?.blockedPathIndex)?plain.solution[fixed.blockedPathIndex]:null;
     const blocked=fixed?.blocked?.length?core.withBlocked(plain,fixed.blocked):
       curatedPath?core.withBlocked(plain,curatedPath):plain;

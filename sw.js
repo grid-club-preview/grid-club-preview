@@ -1,13 +1,13 @@
-/* Grid Club v0.9.65 · six-second sinking letter warnings */
-const CACHE='gridclub-pwa-v0.9.65';
+/* Grid Club v0.9.66 · Dot Trails Hard and Expert Free Play */
+const CACHE='gridclub-pwa-v0.9.66';
 const APP_FILES=[
   './','./index.html',
-  './puzzle.js?v=0.9.9',
+  './puzzle.js?v=0.9.66',
   './levels.js?v=0.9.56',
   './win-messages.js?v=0.9.45',
   './daily-journey.js?v=0.9.25',
   './club-credits.js?v=0.9.11',
-  './game.js?v=0.9.41',
+  './game.js?v=0.9.66',
   './pipe-shift.css?v=0.9.25',
   './vault-reward.css?v=0.9.25',
   './dot-daily.css?v=0.9.25',

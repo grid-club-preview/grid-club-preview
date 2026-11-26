@@ -53,9 +53,9 @@
     }
     return route;
   }
-  function splitRoute(route, size, pick) {
+  function splitRoute(route, size, pick, countOverride, obstacleCount=0) {
     const [minPairs, maxPairs] = PAIR_RANGES[size];
-    const count = minPairs + pick(maxPairs - minPairs + 1), total = size * size;
+    const count = countOverride ?? (minPairs + pick(maxPairs - minPairs + 1)), total = size * size - obstacleCount;
     const base = Math.floor(total / count);
     const lengths = Array.from({length: count}, (_, i) => base + (i < total % count ? 1 : 0));
     const minimum = size <= 5 ? 3 : 4;
@@ -71,10 +71,17 @@
     }
     const solution = Array.from({length: count}, () => []);
     let offset = 0;
-    for (let i = 0; i < count; i++) {
+    const obstacleAt = obstacleCount ? pick(count+1) : -1;
+    let blocked = [];
+    for (let i = 0; i <= count; i++) {
+      if(i===obstacleAt){blocked=route.slice(offset,offset+obstacleCount);offset+=obstacleCount;}
+      if(i===count)break;
       solution[ids[i]] = route.slice(offset, offset + lengths[i]);
       offset += lengths[i];
     }
+    // Reserve a complete contiguous route segment for Expert obstacles.
+    // The caller removes it before creating pairs.
+    if(obstacleCount)solution.push(blocked);
     return solution;
   }
   function quality(solution) {
@@ -95,16 +102,21 @@
   function generate(size, seed, options = {}) {
     if (!SIZES.includes(size)) throw new Error('Unsupported board size');
     const pick = random(seed);
-    let best = null, bestQuality = -Infinity;
+    let best = null, bestBlocked = [], bestQuality = -Infinity;
+    const free = options.freePlay === true && !options.daily && size>=9;
+    const count = free ? (size===9?8:9)+pick(3) : undefined;
+    const obstacleCount = free && size===11 ? 3+pick(4) : 0;
     const candidates = options.daily ? 8 : 4;
     for (let n = 0; n < candidates; n++) {
       const route = bendRoute(snake(size), size, pick, size * size * (options.daily ? 15 : 10));
-      const solution = splitRoute(route, size, pick);
+      const solution = splitRoute(route, size, pick, count, obstacleCount);
+      const blocked = obstacleCount ? solution.pop() : [];
       const value = quality(solution);
-      if (value > bestQuality) { bestQuality = value; best = solution; }
+      if (value > bestQuality) { bestQuality = value; best = solution; bestBlocked = blocked; }
     }
     return {
       size, seed, solution: best,
+      ...(bestBlocked.length?{blocked:bestBlocked}:{}),
       pairs: best.map((path, id) => ({id, a: path[0], b: path[path.length - 1]})),
       difficulty: options.daily ? 'daily' : String(size)
     };
@@ -112,7 +124,8 @@
   // Curated obstacles may be added ONLY to fixed numbered puzzles. The blocked
   // squares correspond to complete paths in the original reference solution,
   // so every remaining playable square still has an explicit valid route.
-  // Do not use this transformation for random or ranked Daily puzzles.
+  // This catalogue transformation is not used for random or ranked Daily puzzles.
+  // Expert Free Play reserves obstacles directly when generating the route.
   function withBlocked(level, cells) {
     if (!Array.isArray(cells) || !cells.length) return level;
     const blocked = new Set();
