@@ -233,10 +233,11 @@ function statsMenu(){
      {count:(fresh?.count||0)+(old?.count||0),total:(fresh?.total||0)+(old?.total||0)};
    const played=tier==='daily'?Object.keys(progress.daily||{}).filter(d=>progress.daily[d]?.completed).length:
      tier===null?completed:(progress.randomCount[tier]||0)+(previousSize?(progress.randomCount[previousSize]||0):0);
-   const row=document.createElement('div');row.className='pipeStatRow';
-   const title=document.createElement('strong');title.textContent=label;
-   const detail=document.createElement('span');detail.textContent=`${played} completed · ${record?.count?(record.total/record.count).toFixed(1)+' avg. moves':'— avg. moves'}`;
-   row.append(title,detail);list.append(row);
+   const row=document.createElement('tr');
+   const title=document.createElement('th');title.scope='row';title.textContent=label;
+   const completedCell=document.createElement('td');completedCell.textContent=String(played);
+   const averageCell=document.createElement('td');averageCell.textContent=record?.count?(record.total/record.count).toFixed(1):'—';
+   row.append(title,completedCell,averageCell);list.append(row);
  }
 }
 function recordCompletion(kind,size,usedMoves){
