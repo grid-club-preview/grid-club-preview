@@ -73,20 +73,21 @@ function startTimer(){
  lastTick=performance.now();timer=setInterval(tick,125);
 }
 function showRules(first=false){
- if(!state||state.won||state.expired||rulesOpen)return;
- if(!first&&state.rankEligible){unrank();rankNote('Practice · rules opened');}
+ if(!state||rulesOpen||rankStarting)return;
+ if(!first&&!state.won&&!state.expired&&state.rankEligible){if(!confirm('Opening instructions pauses this round and makes it personal practice only. Continue?'))return;unrank();rankNote('Practice · rules opened');}
  stop();rulesOpen=true;firstRules=first;
  const [lead,warning,detail]=RULES[state.mode];
  $('wrRulesMode').textContent=modeName(state.mode);
  $('wrRulesLead').textContent=lead;$('wrRulesWarning').textContent=warning;
  $('wrRulesDetail').textContent=detail;$('wrRulesDetails').hidden=first;
- $('wrRulesPlay').textContent=first?'Play':'Continue';$('wrRules').hidden=false;
+ $('wrRulesPlay').textContent=first?'Play':state.won||state.expired?'Close':'Continue';$('wrRules').hidden=false;
  $('wrDock').inert=true;render();$('wrRulesPlay').focus?.();
 }
 function closeRules(){
  if(!rulesOpen)return;
  if(firstRules){rulesSeen.add(state.mode);safeSave(RULES_KEY+':'+state.mode,true);}
  rulesOpen=false;firstRules=false;$('wrRules').hidden=true;$('wrDock').inert=false;
+ if(state.won||state.expired){render();return;}
  state.started=true;render();save();startTimer();
 }
 function menu(){
@@ -340,7 +341,7 @@ function render(){
  renderShark();
  $('wrBlocks').textContent=situation(danger);
  $('wrBlocks').classList.toggle('wrSafe',state.won);
- $('wrInfo').disabled=completed||rulesOpen||rankStarting;
+ $('wrInfo').disabled=rulesOpen||rankStarting;
  $('wrScore').textContent=String(state.score);
  $('wrModeTitle').textContent=modeName(state.mode);
  $('wrProgress').style.width='0%';
@@ -430,7 +431,6 @@ $('wrNewTide').onclick=()=>begin('tide');
 $('wrNewSinking').onclick=()=>begin('sinking');
 $('wrNewRaft').onclick=()=>begin('raft');
 $('wrContinue').onclick=()=>begin('tide',true);
-$('wrWordBack').onclick=back;
 $('wrTryAgain').onclick=()=>{safeDel(KEY);begin(state?.mode||'tide');};
 $('wrResultModes').onclick=menu;
 $('wrBoardEntry').onclick=()=>showScoreboard();

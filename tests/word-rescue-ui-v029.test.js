@@ -41,6 +41,7 @@ assert.equal(dom.wrRulesLead.textContent,'Raise Gridda up by making words');
 assert.equal(globals.WordRescueApp.readState().started,false);
 assert.equal(dom.wrSubmit.disabled,true);dom.wrRulesPlay.onclick();
 assert.equal(dom.wrRules.hidden,true);assert.equal(globals.WordRescueApp.readState().started,true);
+assert(html.includes('class="wrAction wrHelp" id="wrInfo"'));assert(!html.includes('id="wrWordBack"'));
 dom.wrInfo.onclick();assert.equal(dom.wrRulesDetails.hidden,false);dom.wrRulesPlay.onclick();
 assert.equal(dom.wrPlay.hidden,false);
 assert.equal(dom.wrTray.children.length,7,'Seven buttons should render');
@@ -72,7 +73,7 @@ for(let j=0;j<7;j++)assert.equal(dom.wrTray.children[j],originalTiles[j],'Refill
 state=globals.WordRescueApp.readState();
 assert(state?.blocks>=3,'Submitting a valid word should add blocks');
 assert.equal(state.rack.length,7);
-dom.wrWordBack.onclick();
+dom.wrBack.onclick();
 assert.equal(dom.wrPlay.hidden,true,'Back to menu should pause a run');
 assert.equal(dom.wrContinue.hidden,false,'An unfinished run should be resumable');
 dom.wrContinue.onclick();
@@ -128,7 +129,7 @@ let shuffled=globals.WordRescueApp.readState();
 assert.equal(shuffled.reracks,1);assert.equal(shuffled.elapsedMs,before.elapsedMs);
 assert.equal(shuffled.sharkProgress,before.sharkProgress);assert.equal(wallet,10);
 assert.equal(dom.wrRerack.textContent,'↻ New letters · ◉ 5');
-dom.wrWordBack.onclick();dom.wrContinue.onclick();
+dom.wrBack.onclick();dom.wrContinue.onclick();
 assert.equal(dom.wrRerack.textContent,'↻ New letters · ◉ 5','Resuming does not restore free shuffle');
 dom.wrRerack.onclick();shuffled=globals.WordRescueApp.readState();
 assert.equal(shuffled.reracks,2);assert.equal(wallet,5);assert.equal(spends[0].kind,'word-rerack');
@@ -138,7 +139,7 @@ const blocked=globals.WordRescueApp.readState();dom.wrRerack.onclick();
 assert.deepEqual(globals.WordRescueApp.readState(),blocked,'Insufficient credit must not change the rack');
 assert.equal(spends.length,2);assert(dom.wrMessage.textContent.includes('5 Club Credits'));
 assert.equal(calls.length,0,'Free Play must not award Club Credits');
-dom.wrWordBack.onclick();dom.wrStatsEntry.onclick();assert.equal(dom.wrStats.hidden,false);assert.equal(dom.wrStatsGrid.children.length,8);
+dom.wrBack.onclick();dom.wrStatsEntry.onclick();assert.equal(dom.wrStats.hidden,false);assert.equal(dom.wrStatsGrid.children.length,8);
 dom.wrStatsRaft.onclick();assert.equal(dom.wrStatsGrid.children[0].children[1].textContent,'1');
 globals.WordRescueApp.back();assert.equal(dom.wrMenu.hidden,false);
 dom.wrNewTide.onclick();let rounds=0;
@@ -150,6 +151,7 @@ while(dom.wrResult.hidden&&rounds++<10&&globals.WordRescueApp.readState().blocks
 for(let i=0;i<45&&tick;i++){now+=1000;tick();}
 assert(dom.wrResultText.textContent.startsWith('You stacked '));assert(dom.wrResultText.textContent.includes('pieces of wreckage'));
 assert.equal(dom.wrRescueBoat.attrs['data-visible'],'true');
+assert.equal(dom.wrInfo.disabled,false);dom.wrInfo.onclick();assert.equal(dom.wrRules.hidden,false);assert.equal(dom.wrRulesPlay.textContent,'Close');dom.wrRulesPlay.onclick();assert.equal(dom.wrResult.hidden,false);
 dom.wrResultModes.onclick();dom.wrNewTide.onclick();
 for(let i=0;i<35&&tick;i++){now+=1000;tick();}
 assert.equal(dom.wrResult.dataset.outcome,'lost');assert.equal(dom.wrRescueBoat.attrs['data-visible'],'false');
