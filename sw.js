@@ -1,5 +1,5 @@
-/* Grid Club v0.9.58 · shipwreck story and cleaner game screen */
-const CACHE='gridclub-pwa-v0.9.58';
+/* Grid Club v0.9.59 · concise Word Rescue results */
+const CACHE='gridclub-pwa-v0.9.59';
 const APP_FILES=[
   './','./index.html',
   './puzzle.js?v=0.9.9',
@@ -15,7 +15,7 @@ const APP_FILES=[
   './word-rescue.css?v=0.9.58',
   './word-rescue-lexicon.js?v=0.9.30',
   './word-rescue-engine.js?v=0.9.57',
-  './word-rescue.js?v=0.9.57',
+  './word-rescue.js?v=0.9.59',
   './edge-navigation.js?v=0.9.49',
   './vault-reward.js?v=0.9.25',
   './pipe-engine.js?v=0.9.33',

@@ -28,7 +28,12 @@ let resultReadyAt=0;
 const RESULT_TAP_GUARD_MS=900;
 const rankedReady=()=>!!globalThis.GridRanked?.configured&&globalThis.navigator?.onLine!==false;
 function unrank(){if(state){state.rankEligible=false;state.rankAttempt=null;}rankStarting=false;}
-function rankNote(value){rankStatus=value;$('wrRankNote').textContent=value;$('wrResultRankNote').textContent=value;}
+function rankNote(value){
+ rankStatus=value;$('wrRankNote').textContent=value;
+ // Routine online status is not part of the result. Retain notices only
+ // when the player needs to know their score is not on the global board.
+ $('wrResultRankNote').textContent=/^Personal result|^Global result could not/.test(value)?value:'';
+}
 const makeAttempt=()=>`word:${Date.now()}:${Math.random().toString(36).slice(2,12)}`;
 function ensureDictionary(){
  // All words are loaded synchronously from the PWA bundle before this app
@@ -251,7 +256,7 @@ function finished(){
    $('wrResultTitle').textContent=victoryTitle(state.mode);
    publishRank(state);
    $('wrResultText').textContent=(state.mode==='raft'?'You built ':'You stacked ')+(state.mode==='raft'?Math.min(24,state.blocks):state.blocks)+(state.mode==='raft'?' planks':' pieces of wreckage')+' using '+state.words.length+
-     (state.words.length===1?' word in ':' words in ')+Math.round(state.elapsedMs/1000)+' seconds. Score: '+state.score+'.';
+     (state.words.length===1?' word':' words')+(state.mode==='raft'?' in '+Math.round(state.elapsedMs/1000)+' seconds':'')+'. Score: '+state.score+'.';
  }else{
    $('wrResultTitle').textContent=defeatTitle(state.mode);
    $('wrResultText').textContent=(state.mode==='raft'?'You built ':'You stacked ')+(state.mode==='raft'?Math.min(24,state.blocks):state.blocks)+' '+(state.mode==='raft'?'planks':'pieces of wreckage')+'. Try quicker words or a different letter combination.';

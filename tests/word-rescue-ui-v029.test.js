@@ -116,7 +116,7 @@ assert.equal(dom.wrTryAgain.disabled,true);dom.wrTryAgain.onclick();assert.equal
 assert(html.indexOf('id="wrResultModes"')<html.indexOf('id="wrTryAgain"'),'Play again stays below secondary actions');
 assert(!html.match(/<table class="wrBoardTable">.*?<th scope="col">Time<\/th>/),'Word Rescue leaderboard is score-only');
 assert.equal(dom.wrSceneLabel.textContent,'GRIDDA IS SAFE');
-assert(dom.wrResultText.textContent.includes('24 planks'));assert(!dom.wrResultText.textContent.includes('Results saved'));assert.equal(dom.wrRescueBoat.attrs['data-visible'],'false');
+assert(dom.wrResultText.textContent.includes('24 planks'));assert(dom.wrResultText.textContent.includes('seconds'),'Raft completion time remains meaningful');assert(!dom.wrResultText.textContent.includes('Results saved'));assert.equal(dom.wrRescueBoat.attrs['data-visible'],'false');
 assert.equal(dom.wrScene.style['--wrRaftLength'],'54.000cqw');
 assert.equal(dom.wrBricks.children.length,24);
 const scores=JSON.parse(local.get('gridclub-word-rescue-scores-v1'));assert.equal(scores.length,1);assert.equal(scores[0].mode,'raft');
@@ -153,7 +153,7 @@ while(dom.wrResult.hidden&&rounds++<10&&globals.WordRescueApp.readState().blocks
  dom.wrSubmit.onclick();
 }
 for(let i=0;i<45&&tick;i++){now+=1000;tick();}
-assert(dom.wrResultText.textContent.startsWith('You stacked '));assert(dom.wrResultText.textContent.includes('pieces of wreckage'));
+assert(dom.wrResultText.textContent.startsWith('You stacked '));assert(dom.wrResultText.textContent.includes('pieces of wreckage'));assert(!dom.wrResultText.textContent.includes('seconds'),'Fixed-duration victory omits time');
 assert.equal(dom.wrRescueBoat.attrs['data-visible'],'true');
 assert.equal(dom.wrInfo.disabled,false);dom.wrInfo.onclick();assert.equal(dom.wrRules.hidden,false);assert.equal(dom.wrRulesPlay.textContent,'Close');dom.wrRulesPlay.onclick();assert.equal(dom.wrResult.hidden,false);
 dom.wrResultModes.onclick();dom.wrNewTide.onclick();
@@ -178,3 +178,7 @@ dom.wrTray.listeners.click({target:tile,detail:1});assert.equal(tile.attrs['aria
 touch();assert.equal(tile.attrs['aria-pressed'],'false','Rapid second touch toggles immediately');
 dom.wrTray.listeners.click({target:tile,detail:0});assert.equal(tile.attrs['aria-pressed'],'true','Keyboard activation still works');
 console.log('Word Rescue browser wiring passed: three modes, raft victory, dock, scoring, pause/continue and return home');
+
+const rankSource=js.slice(js.indexOf('function rankNote(value){'),js.indexOf('}',js.indexOf('function rankNote(value){'))+1);
+new Function('$','let rankStatus;'+rankSource+';rankNote("Global result verified");')(id=>dom[id]);assert.equal(dom.wrResultRankNote.textContent,'');
+new Function('$','let rankStatus;'+rankSource+';rankNote("Global result could not be verified · personal result kept");')(id=>dom[id]);assert(dom.wrResultRankNote.textContent.includes('could not be verified'));
