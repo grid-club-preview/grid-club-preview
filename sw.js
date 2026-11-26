@@ -1,5 +1,5 @@
-/* Grid Club v0.9.69 · friendly Word Rescue trays and Dot Trails banner */
-const CACHE='gridclub-pwa-v0.9.69';
+/* Grid Club v0.9.70 · Pipe Shift stats table */
+const CACHE='gridclub-pwa-v0.9.70';
 const APP_FILES=[
   './','./index.html',
   './puzzle.js?v=0.9.66',
@@ -8,7 +8,7 @@ const APP_FILES=[
   './daily-journey.js?v=0.9.25',
   './club-credits.js?v=0.9.11',
   './game.js?v=0.9.66',
-  './pipe-shift.css?v=0.9.25',
+  './pipe-shift.css?v=0.9.70',
   './vault-reward.css?v=0.9.25',
   './dot-daily.css?v=0.9.25',
   './home-roadmap.css?v=0.9.26',
@@ -19,7 +19,7 @@ const APP_FILES=[
   './edge-navigation.js?v=0.9.49',
   './vault-reward.js?v=0.9.25',
   './pipe-engine.js?v=0.9.33',
-  './pipe-shift.js?v=0.9.41',
+  './pipe-shift.js?v=0.9.70',
   './stats-utils.js?v=0.7.0',
   './ranked.js?v=0.7.0',
   './backend-config.js?v=0.7.0',
