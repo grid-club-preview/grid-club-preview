@@ -81,9 +81,16 @@ function ensureVowel(s){
  return true;
 }
 // Every playable tray contains a vowel, two consonants and an unused word.
-function balanced(rack){
+function balanced(rack,rackRules=1,allowTriple=false){
  const letters=rack.filter(Boolean);
- return letters.some(c=>VOWELS.includes(c))&&letters.filter(c=>!VOWELS.includes(c)).length>=2;
+ const vowels=letters.filter(c=>VOWELS.includes(c)).length;
+ if(rackRules>=2){
+   const counts=new Map();for(const c of letters)counts.set(c,(counts.get(c)||0)+1);
+   if([...counts.values()].some(n=>n>(rackRules>=3&&allowTriple?3:2))||[...counts.values()].filter(n=>n===3).length>1)return false;
+   if(vowels<(letters.length>=6?2:1)||vowels>Math.min(3,letters.length-2))return false;
+   return true;
+ }
+ return vowels>=1&&letters.length-vowels>=2;
 }
 function hasPlayable(rack,used=[]){
  const letters=rack.filter(Boolean),excluded=new Set(used);
@@ -95,7 +102,39 @@ function hasPlayable(rack,used=[]){
  return search('',0);
 }
 const SHORT_SEEDS='CAT DOG BAT BED RED SUN SKY RUN FUN PEN PET NET HAT HOT POT TOP MAP TAP CAP CUP MUG BUG BUS BOX FOX FIX SIX MIX PIN BIN WIN WET SET GET MET SIT HIT BIT FIT BIG BAG RAG TAG LOG COT DOT LOT NOT NUT CUT BUT RUT RAT MAT SAT FAT VAN FAN MAN PAN TAN CAN CAR BAR FAR WAR JAR HAM JAM DAM RAM SAD MAD BAD HAD LAD PAD DAD NOD GOD ROD COD WEB WAX TAX WIG DIG PIG FIG ZIP SIP TIP DIP RIP LIP HIP LEG PEG BEG EGG END ANT AND ASK ADD ART ARM ARC AID AIM AIR'.split(' ');
+const COMMON_WORDS=new Set([...groups.join(' ').toUpperCase().split(/\s+/),...SEEDS,...SHORT_SEEDS].filter(isAcceptedWord));
+function familiarWord(rack,used=[]){
+ const excluded=new Set(used);
+ for(const word of COMMON_WORDS)if(word.length<=rack.filter(Boolean).length&&!excluded.has(word)&&canMake(rack,word))return true;
+ return false;
+}
+const TRIPLE_SEEDS='BANANA ASSESS SUCCESS TATTOO BUBBLE MAMMAL SENSES CHEESES PEPPERS'.split(' ').filter(isAcceptedWord);
+function rollTriple(s){if(s.rackRules>=3)s.allowTriple=pick(s,20)===0;}
+function freshBalancedRack(s,count){
+ const used=new Set(s.used||[]);
+ // Prefer longer everyday seed words, but allow short ones as the tray shrinks.
+ const eligible=w=>w.length<=count&&!used.has(w)&&balanced(w.split(''),s.rackRules,s.allowTriple);
+ let pool=s.rackRules>=3&&s.allowTriple?TRIPLE_SEEDS.filter(eligible):[];
+ if(!pool.length)pool=SEEDS.filter(eligible);
+ if(!pool.length)pool=SHORT_SEEDS.filter(eligible);
+ if(!pool.length)pool=[...COMMON_WORDS].filter(eligible);
+ if(!pool.length)throw Error('No unused familiar word available');
+ const rack=pool[pick(s,pool.length)].split('');
+ while(rack.length<count){
+   const next=FILL.split('').filter(c=>{
+     const copies=rack.filter(x=>x===c).length;
+     if(copies>=2&&(!(s.rackRules>=3&&s.allowTriple)||copies>=3||rack.some(x=>rack.filter(y=>y===x).length===3)))return false;
+     const vowels=rack.filter(x=>VOWELS.includes(x)).length+(VOWELS.includes(c)?1:0);
+     const remaining=count-rack.length-1;
+     return vowels<=Math.min(3,count-2)&&vowels+remaining>=(count>=6?2:1);
+   });
+   if(!next.length)throw Error('Unable to balance rack');
+   rack.push(next[pick(s,next.length)]);
+ }
+ return shuffleLetters(s,rack);
+}
 function freshRack(s,count=7){
+ if(s.rackRules>=2)return freshBalancedRack(s,count);
  const used=new Set(s.used||[]);
  const allowed=w=>w.length<=count&&!used.has(w)&&balanced(w.split(''))&&isAcceptedWord(w);
  let pool=SEEDS.filter(allowed);
@@ -107,7 +146,7 @@ function freshRack(s,count=7){
  return shuffleLetters(s,rack);
 }
 function ensurePlayable(s){
- if(balanced(s.rack)&&hasPlayable(s.rack,s.used))return false;
+ if(balanced(s.rack,s.rackRules,s.allowTriple)&&(s.rackRules>=2?familiarWord(s.rack,s.used):hasPlayable(s.rack,s.used)))return false;
  // Preserve empty slots in Sinking Letters and all existing gameplay progress.
  const count=Math.max(3,s.rack.filter(Boolean).length),letters=freshRack(s,count);
  const indices=s.rack.map((c,i)=>c?i:-1).filter(i=>i>=0);
@@ -126,11 +165,11 @@ function possibleWords(rack,used=[]){
  const excluded=new Set(used),count=rack.filter(Boolean).length;
  return [...WORD_SET].filter(w=>w.length<=count&&!excluded.has(w)&&isAcceptedWord(w)&&canMake(rack,w));
 }
-function create(seed=Date.now(),mode='tide'){
+function create(seed=Date.now(),mode='tide',rackRules=3){
  if(!['tide','sinking','raft'].includes(mode))throw Error('Unknown Word Rescue mode');
  const s={version:1,mode,rng:(Number(seed)>>>0)||1,rack:[],selected:[],used:[],words:[],
- blocks:0,score:0,elapsedMs:0,expired:false,won:false,lastErodeMs:0,started:false,sharkProgress:0,raftPace:2,rescueRules:mode==='raft'?2:3};
- s.rack=freshRack(s);
+ blocks:0,score:0,elapsedMs:0,expired:false,won:false,lastErodeMs:0,started:false,sharkProgress:0,raftPace:2,rescueRules:mode==='raft'?2:3,rackRules};
+ rollTriple(s);s.rack=freshRack(s);
  return s;
 }
 function wordFor(s,indices=s.selected){
@@ -155,14 +194,14 @@ function submit(s){
  const points=s.rescueRules>=2?[0,0,0,9,16,30,50,75][word.length]:word.length*word.length;
  if(s.mode==='raft')s.sharkProgress=sharkProgress(s);
  s.blocks+=word.length;s.score+=points;s.words.push({word,points});s.used.push(word);
- const taken=[...s.selected];s.selected=[];
+ const taken=[...s.selected];s.selected=[];rollTriple(s);
  for(const i of taken)s.rack[i]=FILL[pick(s,FILL.length)];
  if(!(s.mode==='sinking'&&s.rescueRules>=3))for(let i=0;i<7;i++)if(!s.rack[i])s.rack[i]=FILL[pick(s,FILL.length)];
  ensurePlayable(s);
  if((s.mode==='raft'||!(s.rescueRules>=2))&&s.blocks>=24)s.won=true;
  return {ok:true,word,blocks:word.length,points,won:s.won};
 }
-function rerack(s){if(s.expired||s.won)return false;if(s.mode==='sinking'&&s.rescueRules>=3){const indices=s.rack.map((c,i)=>c?i:-1).filter(i=>i>=0);const letters=freshRack(s,Math.max(3,indices.length));for(let i=0;indices.length<letters.length&&i<7;i++)if(!indices.includes(i))indices.push(i);s.rack=Array(7).fill('');indices.forEach((i,j)=>s.rack[i]=letters[j]);}else s.rack=freshRack(s);s.selected=[];return true;}
+function rerack(s){if(s.expired||s.won)return false;rollTriple(s);if(s.mode==='sinking'&&s.rescueRules>=3){const indices=s.rack.map((c,i)=>c?i:-1).filter(i=>i>=0);const letters=freshRack(s,Math.max(3,indices.length));for(let i=0;indices.length<letters.length&&i<7;i++)if(!indices.includes(i))indices.push(i);s.rack=Array(7).fill('');indices.forEach((i,j)=>s.rack[i]=letters[j]);}else s.rack=freshRack(s);s.selected=[];return true;}
 // Water rises at the v0.9.29 pace, without a hard 90-second timeout.
 const DURATION_MS=90000;
 const RESCUE_MS=45000;
@@ -182,13 +221,14 @@ function safeHeight(s){return SEA_BASELINE+(s.rescueRules>=2?11:17)+Math.min(24,
 // Preserve the original 2.7s allowance for unfinished saved rounds.
 function remainingSafetySeconds(s){
  if(s.mode==='raft')
-   return 25.5+Math.min(24,s.blocks)*(s.raftPace===2?.75:2.7)-s.elapsedMs/1000;
+   return 25.5+Math.min(24,s.blocks)*(s.raftPace===2?.75:2.7)+ (s.friendHelp===true?10:0)-s.elapsedMs/1000;
  const rate=tideRate(s);
  return (safeHeight(s)-waterHeight(s))/rate;
 }
 // Continuous visual pursuit: the remaining time determines how quickly the
 // shark covers its remaining distance, not its absolute position. A word
 // extends that time, slowing the shark without moving it backwards.
+function callFriend(s){if(s.mode!=='raft'||s.won||s.expired||s.friendHelp===true)return false;s.sharkProgress=sharkProgress(s);s.friendHelp=true;return true;}
 function sharkProgress(s){
  if(s.mode!=='raft')return 0;
  if(s.expired)return 1;
@@ -211,7 +251,7 @@ function advance(s,ms){
    s.sharkProgress=remaining<=0?1:Math.min(1,previous+(1-previous)*Math.min(1,delta/1000/remaining));
  }
  s.elapsedMs+=delta;
- if(!balanced(s.rack))ensurePlayable(s);
+ if(!balanced(s.rack,s.rackRules,s.allowTriple))ensurePlayable(s);
  if(s.mode==='sinking'){
    const waves=Math.floor(s.elapsedMs/7000),old=Math.floor(s.lastErodeMs/7000);
    for(let k=old;k<waves;k++){
@@ -221,7 +261,7 @@ function advance(s,ms){
        // removal would strand Gridda, leave the current tray alone.
        const options=present.filter(i=>{
          const rack=s.rack.slice();rack[i]='';
-         return balanced(rack)&&hasPlayable(rack,s.used);
+         return balanced(rack,s.rackRules,s.allowTriple)&&(s.rackRules>=2?familiarWord(rack,s.used):hasPlayable(rack,s.used));
        });
        if(!options.length&&!(s.rescueRules>=3))break;
        const candidates=options.length?options:present;
@@ -249,5 +289,5 @@ function validState(s){return !!s&&s.version===1&&['tide','sinking','raft'].incl
  s.blocks>=0&&Number.isFinite(s.elapsedMs)&&s.elapsedMs>=0&&s.elapsedMs<=DURATION_MS*2&&
  typeof s.won==='boolean'&&typeof s.expired==='boolean';}
 return Object.freeze({WORD_SET,EXCLUDED_WORDS,isAcceptedWord,SEEDS,importDictionary,create,wordFor,select,removeLast,submit,rerack,
- ensureVowel,ensurePlayable,hasPlayable,possibleWords,canMake,advance,remainingMs,waterHeight,safeHeight,remainingSafetySeconds,sharkProgress,rescueProgress,dangerFraction,hazard,SEA_BASELINE,DURATION_MS,validState});
+ ensureVowel,ensurePlayable,hasPlayable,familiarWord,possibleWords,canMake,advance,remainingMs,waterHeight,safeHeight,remainingSafetySeconds,callFriend,sharkProgress,rescueProgress,dangerFraction,hazard,SEA_BASELINE,DURATION_MS,validState});
 });

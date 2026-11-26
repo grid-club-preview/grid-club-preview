@@ -1,9 +1,9 @@
-/* Grid Club v0.9.55 · safe result controls and score-only board */
-const CACHE='gridclub-pwa-v0.9.55';
+/* Grid Club v0.9.56 · balanced racks, instant taps and friend lifeline */
+const CACHE='gridclub-pwa-v0.9.56';
 const APP_FILES=[
   './','./index.html',
   './puzzle.js?v=0.9.9',
-  './levels.js?v=0.9.46',
+  './levels.js?v=0.9.56',
   './win-messages.js?v=0.9.45',
   './daily-journey.js?v=0.9.25',
   './club-credits.js?v=0.9.11',
@@ -12,10 +12,10 @@ const APP_FILES=[
   './vault-reward.css?v=0.9.25',
   './dot-daily.css?v=0.9.25',
   './home-roadmap.css?v=0.9.26',
-  './word-rescue.css?v=0.9.55',
+  './word-rescue.css?v=0.9.56',
   './word-rescue-lexicon.js?v=0.9.30',
-  './word-rescue-engine.js?v=0.9.52',
-  './word-rescue.js?v=0.9.55',
+  './word-rescue-engine.js?v=0.9.56',
+  './word-rescue.js?v=0.9.56',
   './edge-navigation.js?v=0.9.49',
   './vault-reward.js?v=0.9.25',
   './pipe-engine.js?v=0.9.33',

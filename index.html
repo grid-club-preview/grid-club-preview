@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="vault-reward.css?v=0.9.25">
   <link rel="stylesheet" href="dot-daily.css?v=0.9.25">
   <link rel="stylesheet" href="home-roadmap.css?v=0.9.26">
-  <link rel="stylesheet" href="word-rescue.css?v=0.9.55">
+  <link rel="stylesheet" href="word-rescue.css?v=0.9.56">
   <style>
     :root { color-scheme: dark; --bg:#0e1424; --surface:#1a243a; --tile:#253147; --muted:#9daabe; --mint:#7be3d4; --purple:#a178ff; }
     * { box-sizing: border-box; }
@@ -334,7 +334,7 @@
 <body>
   <main class="shell">
     <section id="home">
-      <header><div><div class="eyebrow">GRID CLUB</div><h1>A pocketful of challenges.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.55</span></div></header>
+      <header><div><div class="eyebrow">GRID CLUB</div><h1>A pocketful of challenges.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.56</span></div></header>
       <div class="homeSectionHeader" aria-label="Puzzle Deck games">
         <div class="eyebrow">PUZZLE DECK</div>
         <span class="homeSectionCount">3 playable · 3 planned</span>
@@ -440,7 +440,7 @@
         <button id="wrStatsEntry" class="wrMode" type="button"><span class="wrModeIcon" aria-hidden="true">▥</span><span><strong>Your stats</strong><small>Personal records and rescue history</small></span><span class="tileArrow" aria-hidden="true">›</span></button>
         <div class="wrCard">
           <strong>Prototype rules</strong>
-          <p class="wrFine">Words need at least 3 letters. Regular plurals are accepted. At least one vowel, two consonants and an unused valid word are always available. Letters refresh after every valid word. Each letter builds one block; longer words score more points. The first reshuffle in each round is free; subsequent reshuffles cost 5 Club Credits. Credits are not earned in Free Play.</p>
+          <p class="wrFine">Words need at least 3 letters. Regular plurals are accepted. Every tray contains a familiar unused word, at least one vowel and two consonants. Full trays contain two or three vowels. A third copy of a letter is rare; four copies are never dealt. Letters refresh after every valid word. Each letter builds one block; longer words score more points. The first reshuffle in each round is free; subsequent reshuffles cost 5 Club Credits. Credits are not earned in Free Play.</p>
           <p id="wrBest" class="wrFine" aria-live="polite">Complete a rescue to set your first personal best.</p>
           <p id="wrDictionaryStatus" class="wrDictionaryStatus" role="status" aria-live="polite">Expanded English word list ready offline.</p>
           <p class="wrFine">The larger English dictionary is bundled with the game, so common words and plurals work immediately, including offline. There are no adverts or purchases in this prototype. Online unassisted rescues can qualify for global rankings.</p>
@@ -458,7 +458,7 @@
           </div>
           <table class="wrBoardTable"><thead><tr><th scope="col">Rank</th><th scope="col">Player</th><th scope="col">Score</th></tr></thead><tbody id="wrBoardRows"></tbody></table>
           <p id="wrBoardEmpty" class="wrFine" role="status">Loading global rankings…</p><p id="wrBoardRank" class="wrFine" aria-live="polite"></p><button id="wrBoardRefresh" class="wrAction" type="button">Refresh</button>
-          <p class="wrFine">Top 10 players, one best verified rescue each. Paid reshuffles, paused or offline rounds are personal practice only. Highest score first. In Raft Escape, faster time breaks ties; otherwise the earliest result ranks higher. Day and Month use UTC calendar dates.</p>
+          <p class="wrFine">Top 10 players, one best verified rescue each under the current letter rules. Paid reshuffles, friend lifelines, paused or offline rounds are personal practice only. Highest score first. In Raft Escape, faster time breaks ties; otherwise the earliest result ranks higher. Day and Month use UTC calendar dates.</p>
         </div>
       </div>
       <div id="wrStats" hidden>
@@ -568,6 +568,7 @@
             <button id="wrRerack" class="wrAction" type="button">↻ New letters</button>
             <button id="wrSubmit" class="wrAction wrActionMain" type="button">Build with this word</button>
           </div>
+          <button id="wrFriend" class="wrAction wrFriend" type="button" hidden>Call a friend · +10s · ◉ 10</button>
           <p id="wrMessage" class="wrMessage" role="status" aria-live="polite"></p>
         </div>
         <div id="wrWordHistory" class="wrHistory">Longer words earn more points. Each letter adds one block.</div>
@@ -909,7 +910,7 @@
       </div>
       
       <div class="adSlot" id="adSlot" aria-hidden="true" hidden></div>
-      <footer>Grid Club · v0.9.55 beta</footer>
+      <footer>Grid Club · v0.9.56 beta</footer>
     </section>
   </main>
   <div class="pauseLayer" id="dotDailyCompleteLayer" hidden role="dialog" aria-modal="true" aria-labelledby="dotDailyCompleteTitle">
@@ -940,7 +941,7 @@
   <script src="ranked.js?v=0.7.0"></script>
   <script src="stats-utils.js?v=0.7.0"></script>
   <script src="puzzle.js?v=0.9.9"></script>
-  <script src="levels.js?v=0.9.46"></script>
+  <script src="levels.js?v=0.9.56"></script>
   <script src="win-messages.js?v=0.9.45"></script>
   <script src="daily-journey.js?v=0.9.25"></script>
   <script src="club-credits.js?v=0.9.11"></script>
@@ -949,8 +950,8 @@
   <script src="vault-reward.js?v=0.9.25"></script>
   <script src="pipe-shift.js?v=0.9.41"></script>
   <script src="word-rescue-lexicon.js?v=0.9.30"></script>
-  <script src="word-rescue-engine.js?v=0.9.52"></script>
-  <script src="word-rescue.js?v=0.9.55"></script>
+  <script src="word-rescue-engine.js?v=0.9.56"></script>
+  <script src="word-rescue.js?v=0.9.56"></script>
   <script src="edge-navigation.js?v=0.9.49"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol === 'https:') {

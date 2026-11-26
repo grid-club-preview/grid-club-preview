@@ -396,3 +396,8 @@
 #wordRescueScreen .wrBoardTable td:nth-child(2){font-weight:600;color:inherit}
 #wordRescueScreen .wrBoardTable th:last-child,#wordRescueScreen .wrBoardTable td:last-child{text-align:right}
 #wordRescueScreen .wrBoardTable td:last-child{font-weight:800;color:#7de0ce}
+
+/* Raft-only lifeline, kept in the fixed control dock. */
+#wordRescueScreen .wrDock .wrFriend{width:100%;margin-top:6px;min-height:44px;background:#314857;color:#f4d58c;font-size:13px;touch-action:manipulation}
+#wordRescueScreen:has(.wrDock[data-mode=raft]:not([hidden])){padding-bottom:calc(275px + env(safe-area-inset-bottom))}
+#wordRescueScreen .wrTray,#wordRescueScreen .wrLetter{touch-action:none}

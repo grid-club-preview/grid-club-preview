@@ -169,4 +169,11 @@ dom.wrBack.onclick();dom.wrNewTide.onclick();
 for(let i=0;i<35&&tick;i++){now+=1000;tick();}
 assert.equal(dom.wrResult.hidden,false);
 now+=901;dom.wrTryAgain.onclick();assert.equal(dom.wrResult.hidden,true,'Intentional restart allowed after guard');
+dom.wrBack.onclick();wallet=10;dom.wrNewRaft.onclick();if(!dom.wrRules.hidden)dom.wrRulesPlay.onclick();assert.equal(dom.wrFriend.hidden,false);const beforeFriend=globals.WordRescueApp.readState();dom.wrFriend.onclick();assert.equal(wallet,0);assert.equal(globals.WordRescueApp.readState().friendHelp,true);assert.equal(globals.WordRescueApp.readState().elapsedMs,beforeFriend.elapsedMs);assert.equal(dom.wrFriend.disabled,true);dom.wrFriend.onclick();assert.equal(wallet,0);
+const tile=dom.wrTray.children[0];let cancelled=false;
+const touch=()=>dom.wrTray.listeners.touchstart({target:tile,touches:[{}],cancelable:true,preventDefault(){cancelled=true;}});
+touch();assert(cancelled);assert.equal(tile.attrs['aria-pressed'],'true');
+dom.wrTray.listeners.click({target:tile,detail:1});assert.equal(tile.attrs['aria-pressed'],'true','Compatibility click must not toggle twice');
+touch();assert.equal(tile.attrs['aria-pressed'],'false','Rapid second touch toggles immediately');
+dom.wrTray.listeners.click({target:tile,detail:0});assert.equal(tile.attrs['aria-pressed'],'true','Keyboard activation still works');
 console.log('Word Rescue browser wiring passed: three modes, raft victory, dock, scoring, pause/continue and return home');

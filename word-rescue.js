@@ -16,7 +16,7 @@ const safeDel=key=>{try{localStorage.removeItem(key);}catch(_){}};
 const readState=()=>{try{const s=JSON.parse(safeGet(KEY)||'null');if(!engine.validState(s)||s.won||s.expired)return null;
   // Repair impossible old racks without consuming a free shuffle, credits
   // or time. Keep construction, score, elapsed time and sunk slots.
-  if(engine.ensurePlayable(s))safeSave(KEY,s);
+  if(!s.rankEligible&&s.rackRules!==3){s.rackRules=3;s.allowTriple=false;engine.ensurePlayable(s);safeSave(KEY,s);}else if(engine.ensurePlayable(s))safeSave(KEY,s);
   return s;
  }catch(_){return null;}};
 const balance=()=>globalThis.GridClubCredits?.balance?.()||0;
@@ -44,7 +44,7 @@ function records(){try{const x=JSON.parse(safeGet(STATS_KEY)||'null');return x&&
 function modeName(mode){return mode==='sinking'?'Sinking Letters':mode==='raft'?'Raft Escape':'Rising Tide';}
 const RULES={
  tide:['Raise Gridda up by making words','Hurry — the tide is rising!','Gridda’s boat has broken apart. Stack pieces of wreckage to stay above the water until the approaching rescue boat arrives.'],
- raft:['Build towards Gridda by making words','Hurry — the shark is approaching!','Build out from the island to reach Gridda before the shark catches her.'],
+ raft:['Build towards Gridda by making words','Hurry — the shark is approaching!','Build out from the island to reach Gridda before the shark catches her. Call a friend once for 10 Club Credits to distract the shark and gain 10 seconds. This makes the result personal practice only.'],
  sinking:['Raise Gridda up by making words','Hurry — the tide is rising and letters are sinking!','Gridda’s boat has broken apart. Stack wreckage until the approaching rescue boat arrives. A letter slot is lost permanently every 7 seconds, down to three letters. Making words or reshuffling cannot recover lost slots. At least one vowel, two consonants and a valid word remain.']
 };
 function seen(mode){return rulesSeen.has(mode)||safeGet(RULES_KEY+':'+mode)==='true';}
@@ -53,12 +53,12 @@ function startTimer(){
  if(state.rankEligible===undefined&&state.elapsedMs===0&&state.words.length===0&&rankedReady()){
    const original=state;rankStarting=true;state.rankEligible=false;
    $('wrDock').inert=true;render();rankNote('Connecting for global ranking…');
-   const request=globalThis.GridRanked.call('word_start',{mode:state.mode});
+   const request=globalThis.GridRanked.call('word_start',{mode:state.mode,rackRules:3});
    let timeout;
    Promise.race([request,new Promise((_,reject)=>{timeout=setTimeout(()=>reject(Error('Connection timeout')),6000);})]).then(reply=>{
      if(state!==original||screen!=='play'||!rankStarting)return;
-     if(!reply.attemptId||!Number.isInteger(reply.seed)||reply.rules!==(original.mode==='raft'?2:3))throw Error('Ranked rescue unavailable');
-     state=engine.create(reply.seed,original.mode);
+     if(!reply.attemptId||!Number.isInteger(reply.seed)||reply.rules!==5)throw Error('Ranked rescue unavailable');
+     state=engine.create(reply.seed,original.mode,3);
      state.attemptId=original.attemptId;state.reracks=0;state.started=true;
      state.rankEligible=true;state.rankAttempt=reply.attemptId;state.rankEvents=[];
      rankNote('Global ranking enabled');
@@ -128,7 +128,7 @@ async function renderScoreboard(){
  $('wrBoardEmpty').textContent='Loading global rankings…';
  if(!rankedReady()){$('wrBoardEmpty').textContent='Global leaderboard unavailable offline. Your stats remain available.';return;}
  try{
-   const result=await globalThis.GridRanked.call('word_leaderboard',{mode:boardMode,period:boardPeriod});
+   const result=await globalThis.GridRanked.call('word_leaderboard',{mode:boardMode,period:boardPeriod,rackRules:3});
    if(request!==boardRequest||screen!=='leaderboard')return;
    const rows=result.entries||[];
    $('wrBoardEmpty').hidden=rows.length>0;$('wrBoardEmpty').textContent='No ranked rescues in this period yet.';
@@ -353,6 +353,8 @@ function render(){
  $('wrBlocks').textContent=situation(danger);
  $('wrBlocks').classList.toggle('wrSafe',state.won);
  $('wrInfo').disabled=rulesOpen||rankStarting;
+ $('wrFriend').hidden=state.mode!=='raft';$('wrFriend').disabled=completed||rulesOpen||rankStarting||state.friendHelp===true;
+ $('wrFriend').textContent=state.friendHelp?'Friend lifeline used':'Call a friend · +10s · ◉ 10';
  $('wrScore').textContent=String(state.score);
  $('wrModeTitle').textContent=modeName(state.mode);
  $('wrProgress').style.width='0%';
@@ -374,7 +376,7 @@ function render(){
    'Words: '+state.words.slice(-7).map(x=>x.word).join(' · '):
    state.mode==='raft'?'Longer words build more planks. Reach shore before the shark.':
    'Longer words earn more points. Each letter adds one block.';
- $('wrResult').hidden=!completed;$('wrDock').hidden=completed;
+ $('wrResult').hidden=!completed;$('wrDock').hidden=completed; $('wrDock').dataset.mode=state.mode;
 }
 function renderLetters(){
  const completed=state.won||state.expired||rankStarting;
@@ -420,6 +422,17 @@ function submit(){
  else{save();}
  render();
 }
+function callFriend(){
+ if(!state||rulesOpen||rankStarting||state.won||state.expired||state.mode!=='raft'||state.friendHelp)return;
+ const next=JSON.parse(JSON.stringify(state));
+ if(!engine.callFriend(next))return;
+ if(!globalThis.GridClubCredits?.spend?.(10,'word-friend',state.attemptId)){
+   message('You need 10 Club Credits to call a friend.',true);return;
+ }
+ state=next;unrank();rankNote('Practice · friend lifeline used');
+ save();$('wrWallet').textContent='◉ '+balance();
+ render();message('A friend distracts the shark! +10 seconds',false);
+}
 function rerack(){
  if(!state||rulesOpen||rankStarting||state.won||state.expired)return;
  const paid=state.reracks>0;
@@ -454,14 +467,31 @@ for(const [id,value] of [['wrBoardDay','day'],['wrBoardMonth','month'],['wrBoard
 $('wrInfo').onclick=()=>showRules(false);
 $('wrRulesPlay').onclick=closeRules;
 $('wrRulesBack').onclick=back;
+// Select on contact on the fixed letter tray, not on the delayed mobile click.
+// Cancel the compatibility click; preserve keyboard and mouse activation.
+let lastTouchButton=null,lastTouchAt=-Infinity;
+function activateLetter(btn){
+ if(!btn||btn.disabled||!state||rulesOpen||rankStarting||screen!=='play'||state.won||state.expired)return false;
+ if(engine.select(state,Number(btn.dataset.letterIndex))){if(flash)message('',false);renderLetters();return true;}
+ return false;
+}
+$('wrTray').addEventListener('touchstart',event=>{
+ if(event.touches&&event.touches.length!==1)return;
+ const btn=event.target.closest('[data-letter-index]');
+ if(!btn||btn.disabled)return;
+ if(event.cancelable)event.preventDefault();
+ lastTouchButton=btn;lastTouchAt=performance.now();
+ activateLetter(btn);
+},{passive:false});
 $('wrTray').addEventListener('click',event=>{
- const btn=event.target.closest('[data-letter-index]');if(!btn||btn.disabled||!state||rulesOpen||screen!=='play')return;
- if(engine.select(state,Number(btn.dataset.letterIndex))){if(flash)message('',false);renderLetters();}
- // Selection is persisted by the existing once-per-second tick, Back and pagehide.
+ const btn=event.target.closest('[data-letter-index]');
+ if(event.detail>0&&btn===lastTouchButton&&performance.now()-lastTouchAt<800)return;
+ activateLetter(btn);
 });
 $('wrSubmit').onclick=submit;
 $('wrBackspace').onclick=()=>{if(!state||rulesOpen||state.won||state.expired)return;engine.removeLast(state);renderLetters();};
 $('wrRerack').onclick=rerack;
+$('wrFriend').onclick=callFriend;
 document.addEventListener('keydown',event=>{
  if(root.hidden||screen!=='play'||!state||rankStarting||state.won||state.expired)return;
  if(rulesOpen){if(event.key==='Escape'){event.preventDefault();if(firstRules)back();else closeRules();}return;}

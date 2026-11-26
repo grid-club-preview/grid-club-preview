@@ -124,3 +124,10 @@ for(const mode of ['tide','sinking']){
  assert(e.waterHeight(newer)>e.waterHeight(older));assert(e.remainingSafetySeconds(newer)<e.remainingSafetySeconds(older));
 }
 console.log('Permanent sinking slots, protected playable floor, faster tides and old-rule compatibility passed');
+function fairRack(s){const a=s.rack.filter(Boolean),v=a.filter(c=>'AEIOU'.includes(c)).length,counts=[...new Set(a)].map(c=>a.filter(x=>x===c).length);assert(v>=(a.length>=6?2:1));assert(v<=Math.min(3,a.length-2));assert(Math.max(...counts)<=3);assert(counts.filter(n=>n===3).length<=1);if(counts.includes(3))assert(s.allowTriple);assert(e.familiarWord(s.rack,s.used));return counts.includes(3);}
+const repeated=e.create(8,'tide');repeated.rack=['R','G','I','I','I','I','I'];assert(e.ensurePlayable(repeated));fairRack(repeated);
+let triples=0,totalRacks=0;
+for(let seed=1;seed<=1000;seed++){const run=e.create(seed*7919,'tide');triples+=fairRack(run);totalRacks++;for(let i=0;i<3;i++){e.rerack(run);triples+=fairRack(run);totalRacks++;}}
+assert(triples/totalRacks>.02&&triples/totalRacks<.08);
+for(const mode of ['tide','sinking','raft'])for(let seed=1;seed<=45;seed++){const run=e.create(seed,mode);run.started=true;fairRack(run);for(let i=0;i<8&&!run.won&&!run.expired;i++){const word=e.possibleWords(run.rack,run.used)[0];assert(word);assert(playWord(run,word).ok);fairRack(run);if(i%3===0&&!run.won){e.rerack(run);fairRack(run);}if(!run.won){e.advance(run,7000);fairRack(run);}}}
+const friend=e.create(7,'raft');friend.started=true;e.advance(friend,20000);const beforeFriend=e.remainingSafetySeconds(friend),shark=e.sharkProgress(friend);assert(e.callFriend(friend));assert.equal(e.remainingSafetySeconds(friend),beforeFriend+10);assert.equal(e.sharkProgress(friend),shark);assert(!e.callFriend(friend));assert(!e.callFriend(e.create(2,'tide')));e.advance(friend,1000);assert(e.sharkProgress(friend)>shark);console.log('Rare triples '+triples+'/'+totalRacks+' and friend lifeline passed');
