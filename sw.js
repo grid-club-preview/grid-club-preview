@@ -1,5 +1,5 @@
-/* Grid Club v0.9.50 · narrative rescue pacing */
-const CACHE='gridclub-pwa-v0.9.50';
+/* Grid Club v0.9.51 · playable Word Rescue racks */
+const CACHE='gridclub-pwa-v0.9.51';
 const APP_FILES=[
   './','./index.html',
   './puzzle.js?v=0.9.9',
@@ -14,8 +14,8 @@ const APP_FILES=[
   './home-roadmap.css?v=0.9.26',
   './word-rescue.css?v=0.9.50',
   './word-rescue-lexicon.js?v=0.9.30',
-  './word-rescue-engine.js?v=0.9.50',
-  './word-rescue.js?v=0.9.50',
+  './word-rescue-engine.js?v=0.9.51',
+  './word-rescue.js?v=0.9.51',
   './edge-navigation.js?v=0.9.49',
   './vault-reward.js?v=0.9.25',
   './pipe-engine.js?v=0.9.33',

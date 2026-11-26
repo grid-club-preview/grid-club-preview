@@ -14,9 +14,9 @@ const safeGet=(key)=>{try{return localStorage.getItem(key);}catch(_){return null
 const safeSave=(key,value)=>{try{localStorage.setItem(key,JSON.stringify(value));return true;}catch(_){return false;}};
 const safeDel=key=>{try{localStorage.removeItem(key);}catch(_){}};
 const readState=()=>{try{const s=JSON.parse(safeGet(KEY)||'null');if(!engine.validState(s)||s.won||s.expired)return null;
-  // Older v0.9.30 unfinished runs may be saved with no available vowel.
-  // Repair only the letter rack; keep their tower, score and elapsed time.
-  if(engine.ensureVowel(s))safeSave(KEY,s);
+  // Repair impossible old racks without consuming a free shuffle, credits
+  // or time. Keep construction, score, elapsed time and sunk slots.
+  if(engine.ensurePlayable(s))safeSave(KEY,s);
   return s;
  }catch(_){return null;}};
 const balance=()=>globalThis.GridClubCredits?.balance?.()||0;
@@ -39,7 +39,7 @@ function modeName(mode){return mode==='sinking'?'Sinking Letters':mode==='raft'?
 const RULES={
  tide:['Raise Gridda up by making words','Hurry — the tide is rising!','Gridda’s boat has broken apart. Stack pieces of wreckage to stay above the water until the approaching rescue boat arrives.'],
  raft:['Build towards Gridda by making words','Hurry — the shark is approaching!','Build out from the island to reach Gridda before the shark catches her.'],
- sinking:['Raise Gridda up by making words','Hurry — the tide is rising and letters are sinking!','Gridda’s boat has broken apart. Stack wreckage until the approaching rescue boat arrives. One letter disappears every 7 seconds, but the last vowel is protected.']
+ sinking:['Raise Gridda up by making words','Hurry — the tide is rising and letters are sinking!','Gridda’s boat has broken apart. Stack wreckage until the approaching rescue boat arrives. A letter sinks every 7 seconds when possible, but at least one vowel, two consonants and a valid word are protected.']
 };
 function seen(mode){return rulesSeen.has(mode)||safeGet(RULES_KEY+':'+mode)==='true';}
 function startTimer(){if(!state||state.won||state.expired||rulesOpen||document.hidden||timer!==null)return;lastTick=performance.now();timer=setInterval(tick,125);}

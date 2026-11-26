@@ -92,3 +92,19 @@ console.log('Word Rescue v0.9.32 passed: 210 seeds, shark distance, vertical tid
 const rescue=e.create(9,'tide');rescue.started=true;rescue.blocks=24;e.advance(rescue,44000);assert(!rescue.won&&!rescue.expired);e.advance(rescue,1000);assert(rescue.won&&!rescue.expired);assert.equal(e.rescueProgress(rescue),1);
 const quick=e.create(9,'tide');quick.started=true;e.advance(quick,14000);assert(quick.expired&&!quick.won);
 const long=e.create(9,'tide');long.rack=['S','H','A','R','K','S','X'];assert.equal(playWord(long,'SHARKS').points,50);
+
+// v0.9.51: no vowel-only, consonant-only or unplayable racks.
+function playable(s){const letters=s.rack.filter(Boolean);assert(letters.some(x=>'AEIOU'.includes(x)));assert(letters.filter(x=>!'AEIOU'.includes(x)).length>=2);assert(e.hasPlayable(s.rack,s.used));}
+const broken=e.create(1,'tide');broken.rack=['E','O','E','U','U','O','I'];broken.blocks=12;broken.score=50;broken.elapsedMs=10000;broken.reracks=1;
+assert(e.ensurePlayable(broken));playable(broken);assert.equal(broken.blocks,12);assert.equal(broken.score,50);assert.equal(broken.elapsedMs,10000);assert.equal(broken.reracks,1);
+for(const mode of ['tide','sinking','raft'])for(let seed=1;seed<=40;seed++){
+ const run=e.create(seed,mode);run.started=true;playable(run);
+ for(let i=0;i<8&&!run.won&&!run.expired;i++){
+  const word=e.possibleWords(run.rack,run.used)[0];assert(word);assert(playWord(run,word).ok);playable(run);
+  if(i%3===0&&!run.won){e.rerack(run);playable(run);}
+  if(!run.won){e.advance(run,7000);playable(run);}
+ }
+}
+const eroded=e.create(3,'sinking');eroded.rack=['C','A','T','','','',''];eroded.started=true;e.advance(eroded,7000);playable(eroded);assert.equal(eroded.rack.filter(Boolean).length,3);
+const oldRack=e.create(4,'sinking');oldRack.rack=['E','','E','U','','O','I'];assert(e.ensurePlayable(oldRack));playable(oldRack);assert.equal(oldRack.rack.filter(Boolean).length,5);
+console.log('Playable racks: 120 seeded rounds, impossible saved rack repair, erosion and free/paid shuffle engine checks passed');
