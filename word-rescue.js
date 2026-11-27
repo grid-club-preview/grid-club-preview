@@ -158,7 +158,7 @@ function campaignMenu(level=null){
  else{
    const s=levelSummary(p,level);awardCampaign(p,level);$('wrWallet').textContent='◉ '+balance();
    $('wrCampaignSummary').textContent=s.count+'/3 stages · Score '+s.score+'/'+s.target+' · Bonus '+(s.bonus?'✓':'5+ letter word each stage');
-   [1,2,3].forEach(t=>{const rec=p[stageKey(level,t)],spec=campaignSpec(level,t);add('Stage '+t,(rec?'Completed · Best '+rec.score+' · ':'')+modeName(spec.mode),stageUnlocked(p,level,t),()=>begin(spec.mode,false,spec));});
+   [1,2,3].forEach(t=>{const rec=p[stageKey(level,t)],spec=campaignSpec(level,t);add('Stage '+t,(rec?'Completed · Best '+rec.score+' · ':'')+modeName(spec.mode)+' · '+campaignDescription(spec),stageUnlocked(p,level,t),()=>begin(spec.mode,false,spec));});
  }
 }
 function campaignFinish(run){
@@ -181,6 +181,11 @@ function campaignConstraint(s){
  s.campaign.letter=type==='start'?word[0]||'':word[Math.min(1,word.length-1)]||'';
  s.campaign.constraintSignature=signature;
  return s.campaign.letter;
+}
+function campaignDescription(c){
+ const parts=[];if(c.mode==='raft')parts.push((c.blocks||24)+' planks to safety');else parts.push('Hold on for '+((c.rescueMs||45000)/1000)+'s');
+ if(c.shark<0)parts.push('faster shark');if(c.shark>0)parts.push('extra time');if(c.sinkInterval)parts.push('letters sink every '+c.sinkInterval/1000+'s');if(c.storm)parts.push('accelerating tide');else if(c.tide>1)parts.push('faster tide');
+ if(c.constraint==='start')parts.push('start with highlighted letter');if(c.constraint==='contains')parts.push('use highlighted letter');if(c.constraint==='four')parts.push('4+ letter words');return parts.join(' · ');
 }
 function campaignText(s){
  const c=s.campaign;if(!c)return '';
@@ -518,8 +523,9 @@ function renderLetters(){
    const b=letterButtons[i],letter=state.rack[i],pressed=state.selected.includes(i);
    const value=letter||'·',disabled=completed||rulesOpen||!letter;
    if(b.textContent!==value)b.textContent=value;
+   const required=String(!!letter&&!!state.campaign?.letter&&state.campaign.letter===letter);if(b.dataset.required!==required)b.dataset.required=required;
    if(b.disabled!==disabled)b.disabled=disabled;
-   const label=letter?'Letter '+letter+(pressed?', selected':''):'Empty letter slot';
+   const label=letter?'Letter '+letter+(pressed?', selected':'')+(required==='true'?', required letter':''):'Empty letter slot';
    if(b.dataset.pressed!==String(pressed)){
      b.dataset.pressed=String(pressed);b.setAttribute('aria-pressed',String(pressed));
    }
@@ -578,7 +584,7 @@ $('wrNewTide').onclick=()=>begin('tide');
 $('wrNewSinking').onclick=()=>begin('sinking');
 $('wrNewRaft').onclick=()=>begin('raft');
 $('wrContinue').onclick=()=>begin('tide',true);
-$('wrTryAgain').onclick=()=>{if(screen!=='play'||!state||!(state.won||state.expired)||performance.now()<resultReadyAt)return;safeDel(KEY);const c=state.campaign;if(!c)return begin(state.mode);if(!state.won)return begin(c.mode,false,campaignSpec(c.level,c.stage));if(c.stage<3)return begin(campaignMode(c.level,c.stage+1),false,campaignSpec(c.level,c.stage+1));campaignMenu();};
+$('wrTryAgain').onclick=()=>{if(screen!=='play'||!state||!(state.won||state.expired)||performance.now()<resultReadyAt)return;safeDel(KEY);const c=state.campaign;if(!c)return begin(state.mode);if(!state.won)return begin(c.mode,false,campaignSpec(c.level,c.stage));if(!campaignProgress()[stageKey(c.level,c.stage)])return campaignMenu(c.level);if(c.stage<3)return begin(campaignMode(c.level,c.stage+1),false,campaignSpec(c.level,c.stage+1));campaignMenu();};
 $('wrResultModes').onclick=()=>state?.campaign?campaignMenu(state.campaign.level):menu();
 $('wrCampaignEntry').onclick=()=>campaignMenu();$('wrCampaignBack').onclick=()=>campaignMenu();
 $('wrBoardEntry').onclick=()=>showScoreboard();
