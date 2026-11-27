@@ -431,3 +431,8 @@
 #wordRescueScreen .wrDock .wrActions .wrActionMain{grid-column:1/-1}
 #wordRescueScreen .wrDock .wrActions .wrAction:not(.wrActionMain){padding-inline:4px;font-size:clamp(11px,3.2vw,14px)}
 #wordRescueScreen .wrLetter[data-sinking=true]:not(:disabled){opacity:var(--wrSinkOpacity,1);outline:3px dashed #fff0a4;outline-offset:-4px}
+
+/* Rescue Challenge */
+#wrCampaign .wrMode:disabled{opacity:.48;cursor:default;}
+#wrCampaign .wrMode{justify-content:space-between;}
+.wrCampaignObjective{font-size:12px;font-weight:700;color:#a4efe4;text-align:center;margin:0 0 6px;}
