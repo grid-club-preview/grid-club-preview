@@ -261,14 +261,16 @@ function submit(s){
  for(const i of taken)s.rack[i]=FILL[pick(s,FILL.length)];
  if(!(s.mode==='sinking'&&s.rescueRules>=3))for(let i=0;i<7;i++)if(!s.rack[i])s.rack[i]=FILL[pick(s,FILL.length)];
  ensurePlayable(s);
- if((s.mode==='raft'||!(s.rescueRules>=2))&&s.blocks>=24)s.won=true;
+ if((s.mode==='raft'||!(s.rescueRules>=2))&&s.blocks>=targetBlocks(s))s.won=true;
  return {ok:true,word,blocks:word.length,points,won:s.won};
 }
 function rerack(s){if(s.expired||s.won)return false;rollTriple(s);if(s.mode==='sinking'&&s.rescueRules>=3){const indices=s.rack.map((c,i)=>c?i:-1).filter(i=>i>=0);const letters=freshRack(s,Math.max(3,indices.length));for(let i=0;indices.length<letters.length&&i<7;i++)if(!indices.includes(i))indices.push(i);s.rack=Array(7).fill('');indices.forEach((i,j)=>s.rack[i]=letters[j]);}else s.rack=freshRack(s);s.selected=[];return true;}
 // Water rises at the v0.9.29 pace, without a hard 90-second timeout.
 const DURATION_MS=90000;
 const RESCUE_MS=45000;
-const rescueProgress=s=>s.mode==='raft'?0:s.rescueRules>=2?Math.min(1,s.elapsedMs/RESCUE_MS):Math.min(1,s.blocks/24);
+const rescueMs=s=>s.campaign?.rescueMs||RESCUE_MS;
+const targetBlocks=s=>s.campaign?.blocks||24;
+const rescueProgress=s=>s.mode==='raft'?0:s.rescueRules>=2?Math.min(1,s.elapsedMs/rescueMs(s)):Math.min(1,s.blocks/24);
 // Match the raft's fixed 22% bottom position. Raising both starting water
 // and the danger threshold by 14 points preserves the original time pressure.
 const SEA_BASELINE=22;
@@ -276,7 +278,8 @@ const SEA_BASELINE=22;
 function tideRate(s){return (s.mode==='sinking'?52:60)/90*(s.rescueRules>=3?(s.mode==='sinking'?1.6:1.5):s.rescueRules===2?1.25:1);}
 function waterHeight(s){
  if(s.mode==='raft')return 32;
- return SEA_BASELINE+s.elapsedMs/1000*tideRate(s);
+ const seconds=s.elapsedMs/1000;
+ return SEA_BASELINE+seconds*tideRate(s)*(s.campaign?.tide||1)+(s.campaign?.storm||0)*seconds*seconds;
 }
 function safeHeight(s){return SEA_BASELINE+(s.rescueRules>=2?11:17)+Math.min(24,s.blocks)*1.8;}
 // New Raft Escape rounds target roughly 40 seconds: 25.5s starting time,
@@ -284,8 +287,8 @@ function safeHeight(s){return SEA_BASELINE+(s.rescueRules>=2?11:17)+Math.min(24,
 // Preserve the original 2.7s allowance for unfinished saved rounds.
 function remainingSafetySeconds(s){
  if(s.mode==='raft')
-   return (s.raftPace===3?28.5:25.5)+Math.min(24,s.blocks)*(s.raftPace===3?.85:s.raftPace===2?.75:2.7)+(s.friendHelp===true?10:0)-s.elapsedMs/1000;
- const rate=tideRate(s);
+   return (s.raftPace===3?28.5:25.5)+(s.campaign?.shark||0)+Math.min(targetBlocks(s),s.blocks)*(s.raftPace===3?.85:s.raftPace===2?.75:2.7)+(s.friendHelp===true?10:0)-s.elapsedMs/1000;
+ const rate=tideRate(s)*(s.campaign?.tide||1)+2*(s.campaign?.storm||0)*s.elapsedMs/1000;
  return (safeHeight(s)-waterHeight(s))/rate;
 }
 // Continuous visual pursuit: the remaining time determines how quickly the
@@ -314,7 +317,8 @@ function sinkWarning(s){
  return {index:s.sinkSlot,progress:Math.max(0,Math.min(1,(s.elapsedMs-s.sinkWarnAt)/sinkFadeMs(s)))};
 }
 function advanceSinking(s){
- for(let drop=10000;drop<=30000;drop+=10000){
+ const interval=s.campaign?.sinkInterval||10000;
+ for(let drop=interval;drop<=interval*3;drop+=interval){
    const warn=drop-sinkFadeMs(s);
    if(s.lastErodeMs<warn&&s.elapsedMs>=warn&&s.rack.filter(Boolean).length>4){
      const present=s.rack.map((v,i)=>v?i:-1).filter(i=>i>=0);
@@ -332,7 +336,7 @@ function advanceSinking(s){
 }
 function advance(s,ms){
  if(s.won||s.expired||!s.started)return;
- const delta=s.mode!=='raft'&&s.rescueRules>=2?Math.min(Math.max(0,ms),Math.max(0,RESCUE_MS-s.elapsedMs)):Math.max(0,ms);
+ const delta=s.mode!=='raft'&&s.rescueRules>=2?Math.min(Math.max(0,ms),Math.max(0,rescueMs(s)-s.elapsedMs)):Math.max(0,ms);
  if(s.mode==='raft'){
    const previous=sharkProgress(s),remaining=remainingSafetySeconds(s);
    s.sharkProgress=remaining<=0?1:Math.min(1,previous+(1-previous)*Math.min(1,delta/1000/remaining));
@@ -364,7 +368,7 @@ function advance(s,ms){
  // or shark attack as the raft fails to outpace the predator. No time cap.
  if(s.mode==='raft'?remainingSafetySeconds(s)<=0:waterHeight(s)>=safeHeight(s))
    s.expired=true;
- else if(s.mode!=='raft'&&s.rescueRules>=2&&s.elapsedMs>=RESCUE_MS)s.won=true;
+ else if(s.mode!=='raft'&&s.rescueRules>=2&&s.elapsedMs>=rescueMs(s))s.won=true;
 }
 // Retained for older callers; the interface now displays elapsed time instead.
 const remainingMs=s=>Math.max(0,DURATION_MS-s.elapsedMs);
@@ -377,5 +381,5 @@ function validState(s){return !!s&&s.version===1&&['tide','sinking','raft'].incl
  s.blocks>=0&&Number.isFinite(s.elapsedMs)&&s.elapsedMs>=0&&s.elapsedMs<=DURATION_MS*2&&
  typeof s.won==='boolean'&&typeof s.expired==='boolean';}
 return Object.freeze({WORD_SET,EXCLUDED_WORDS,isAcceptedWord,SEEDS,importDictionary,create,wordFor,select,removeLast,submit,rerack,
- ensureVowel,ensurePlayable,hasPlayable,familiarWord,friendlyRack,shortChoices,possibleWords,canMake,advance,remainingMs,waterHeight,safeHeight,remainingSafetySeconds,callFriend,sharkProgress,rescueProgress,sinkWarning,dangerFraction,hazard,SEA_BASELINE,DURATION_MS,validState});
+ ensureVowel,ensurePlayable,hasPlayable,familiarWord,friendlyRack,shortChoices,possibleWords,canMake,advance,remainingMs,waterHeight,safeHeight,remainingSafetySeconds,callFriend,sharkProgress,rescueProgress,sinkWarning,dangerFraction,hazard,SEA_BASELINE,DURATION_MS,validState,targetBlocks,rescueMs});
 });
