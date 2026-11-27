@@ -436,3 +436,5 @@
 #wrCampaign .wrMode:disabled{opacity:.48;cursor:default;}
 #wrCampaign .wrMode{justify-content:space-between;}
 .wrCampaignObjective{font-size:12px;font-weight:700;color:#a4efe4;text-align:center;margin:0 0 6px;}
+
+.wrLetter[data-required=true]{outline:2px solid #ffe37f;outline-offset:-3px;}
