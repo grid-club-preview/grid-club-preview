@@ -284,8 +284,9 @@ function finishDaily(run){
  }).catch(()=>{active.eligible=false;}).finally(()=>{clearTimeout(timeout);storeDaily(active);dailyBusy=false;if(state===run&&screen==='play')$('wrTryAgain').disabled=false;if(screen==='daily')dailyMenu();});
 }
 function dailyObjective(s){
- const total=tripleTotal(dailyRun?.stages||[]),lengths=new Set([...(dailyRun?.stages||[]).flatMap(x=>x.lengths||[]),...s.words.map(w=>w.word.length)]);
- return 'Rescue '+(s.daily.index+1)+'/3 · Bonuses '+[5,6,7].map(l=>l+' '+(lengths.has(l)?'✓':'○')).join(' · ')+' · '+total.score+' prior pts';
+ const stages=[...(dailyRun?.stages||[]).slice(0,s.daily.index),{won:s.won,score:s.score,elapsedMs:s.elapsedMs,lengths:s.words.map(w=>w.word.length)}];
+ const total=tripleTotal(stages),lengths=new Set(stages.flatMap(x=>x.lengths||[]));
+ return 'Rescue '+(s.daily.index+1)+'/3 · Bonuses '+[5,6,7].map(l=>l+' '+(lengths.has(l)?'✓':'○')).join(' · ')+' · '+total.score+' total pts';
 }
 
 function menu(){
@@ -295,7 +296,7 @@ function menu(){
  boardRequest++;
  rulesOpen=false;firstRules=false;$('wrRules').hidden=true;$('wrDock').inert=false;$('wrInfo').hidden=true;
  stop();screen='menu';$('wrMenu').hidden=false;$('wrPlay').hidden=true;$('wrLeaderboard').hidden=true;$('wrStats').hidden=true;
- const saved=readState();$('wrContinue').hidden=!saved;
+ const saved=readState();$('wrContinue').hidden=!saved||!!saved.daily;
  ensureDictionary();
  if(saved)$('wrContinueLabel').textContent=saved.campaign?'Continue Level '+saved.campaign.level+' · Stage '+saved.campaign.stage:'Continue '+modeName(saved.mode)+' · '+formatMs(saved.elapsedMs)+' played';
  $('wrWallet').textContent='◉ '+balance();
@@ -589,7 +590,7 @@ function render(){
  }
  // Animation state is owned by the scene CSS; never replace the SVG avatar
  // on each timer tick, which would restart its animation.
- $('wrSceneLabel').textContent=state.won?'GRIDDA IS SAFE':state.expired?(state.mode==='raft'?'THE SHARK GOT GRIDDA!':'THE TIDE CAUGHT GRIDDA!'):state.mode==='raft'?'SHARK APPROACHING':state.mode==='sinking'?'LETTERS SINKING':'RISING TIDE';
+ $('wrSceneLabel').textContent=state.won?'GRIDDA IS SAFE':state.expired?(state.mode==='raft'?['THE SHARK GOT GRIDDA!','GRIDDA COULDN’T ESCAPE!','THE SHARK STRUCK!'][state.words.length%3]:['THE TIDE CAUGHT GRIDDA!','GRIDDA WENT UNDER!','THE WATER ROSE TOO QUICKLY!'][state.words.length%3]):state.mode==='raft'?'SHARK APPROACHING':state.mode==='sinking'?'LETTERS SINKING':'RISING TIDE';
  renderLetters();
  $('wrWordHistory').textContent=state.words.length?
    'Words: '+state.words.slice(-7).map(x=>x.word).join(' · '):
