@@ -98,7 +98,7 @@ function showRules(first=false){
  const [lead,warning,detail]=RULES[state.mode];
  $('wrRulesMode').textContent=modeName(state.mode);
  $('wrRulesLead').textContent=lead;$('wrRulesWarning').textContent=warning;
- $('wrRulesDetail').textContent=detail;$('wrRulesDetails').hidden=first;
+ $('wrRulesDetail').textContent=state.daily&&state.mode==='raft'?'Build out from the island to reach Gridda before the shark catches her.':detail;$('wrRulesDetails').hidden=first;
  $('wrRulesPlay').textContent=first?'Play':state.won||state.expired?'Close':'Continue';$('wrRules').hidden=false;
  $('wrDock').inert=true;render();$('wrRulesPlay').focus?.();
 }
@@ -157,7 +157,7 @@ function campaignMenu(level=null){
  $('wrCampaignTitle').textContent=level?'Level '+level+' · '+CAMPAIGN[level-1][0]:'Rescue Challenge';
  $('wrCampaignBack').hidden=!level;campaignLevel=level;
  const add=(title,detail,enabled,action)=>{const b=document.createElement('button');b.type='button';b.className='wrMode';b.disabled=!enabled;const copy=document.createElement('span'),a=document.createElement('strong'),d=document.createElement('small'),mark=document.createElement('span');a.textContent=title;d.textContent=detail;copy.append(a,d);mark.textContent=enabled?'›':'🔒';b.append(copy,mark);b.onclick=action;list.append(b);};
- if(!level){CAMPAIGN.forEach(([name,mode],i)=>{const l=i+1,s=levelSummary(p,l);add('Level '+l+' · '+name,s.count+'/3 stages · '+(mode==='mixed'?'All rescue modes':modeName(mode)),stageUnlocked(p,l,1),()=>campaignMenu(l));});}
+ if(!level){CAMPAIGN.forEach((_,i)=>awardCampaign(p,i+1));$('wrWallet').textContent='◉ '+balance();CAMPAIGN.forEach(([name,mode],i)=>{const l=i+1,s=levelSummary(p,l);add('Level '+l+' · '+name,s.count+'/3 stages · '+(mode==='mixed'?'All rescue modes':modeName(mode)),stageUnlocked(p,l,1),()=>campaignMenu(l));});}
  else{
    const s=levelSummary(p,level);awardCampaign(p,level);$('wrWallet').textContent='◉ '+balance();
    $('wrCampaignSummary').textContent=s.count+'/3 stages · Score '+s.score+'/'+s.target+' · Bonus '+(s.bonus?'✓':'5+ letter word each stage');
@@ -301,7 +301,7 @@ function menu(){
  $('wrWallet').textContent='◉ '+balance();
 
 }
-function homeScreen(){if(rankStarting||state?.rankEligible&&!state.won)unrank();save();stop();root.hidden=true;home.hidden=false;}
+function homeScreen(){if(!root.hidden&&screen==='play'){if(rankStarting||state?.rankEligible&&!state.won)unrank();save();}stop();root.hidden=true;home.hidden=false;}
 function open(){
  home.hidden=true;root.hidden=false;menu();
 }
@@ -370,10 +370,10 @@ function renderPersonalStats(){
    ['Successful rescues',s.rescues],['Rounds tracked',s.rounds],['Defeats',s.defeats],
    ['Success rate',s.success===null?'—':s.success+'%'],
    ['Highest recorded score',s.score??'—'],['Fastest rescue',s.fastest===null?'—':(s.fastest/1000).toFixed(1)+'s'],
-   ['Average rescue score',s.average===null?'—':s.average.toFixed(1)],['Longest word',s.longest?s.longest+' letters':'—']
+   ['Average rescue score',s.average===null?'—':s.average.toFixed(1)],['Longest word',s.longest?s.longest+' letters':'—'],['vs Global','—']
  ];
  const grid=$('wrStatsGrid');grid.replaceChildren();
- for(const [label,value] of values){const card=document.createElement('div');card.className='wrStat';const name=document.createElement('small');name.textContent=label;const number=document.createElement('strong');number.textContent=String(value);card.append(name,number);grid.append(card);}
+ for(const [label,value] of values){const card=document.createElement('div');card.className='wrStat';const name=document.createElement('small');name.textContent=label;const number=document.createElement('strong');number.textContent=String(value);card.append(name,number);grid.append(card);if(label==='vs Global'){const samples=globalThis.GridPerformance?.samples(statsMode==='all'?'word:':'word:'+statsMode+':')||[];globalThis.GridPerformance?.compare([{samples}]).then(v=>globalThis.GridPerformance.show(number,v[0],'',true));}}
 }
 function showStats(){
  $('wrDaily').hidden=true;
@@ -448,7 +448,7 @@ function finished(){
  persistRecord();
  const won=state.won,c=state.campaign,raft=state.mode==='raft';
  $('wrResultTitle').textContent=won?victoryTitle(state.mode):defeatTitle(state.mode);
- if(won&&!c&&!state.daily)publishRank(state);
+ if(won&&!c&&!state.daily){publishRank(state);if(!state.friendHelp&&(state.reracks||0)<=1&&!/paused|backgrounded|resumed|closed|instructions/i.test(state.rankReason||''))globalThis.GridPerformance?.record(state.attemptId,'word:'+state.mode+':'+(state.mode==='raft'?state.raftPace===4?10:9:9),state.score);}
  const count=raft?Math.min(engine.targetBlocks(state),state.blocks):state.blocks;
  const material=raft?(count===1?' plank':' planks'):(count===1?' piece of wreckage':' pieces of wreckage');
  $('wrResultOutcome').textContent=won?'You saved Gridda!':'You didn’t save Gridda!';
@@ -638,7 +638,7 @@ function renderLetters(){
  $('wrBackspace').disabled=completed||rulesOpen||state.selected.length===0;
  $('wrClear').disabled=completed||rulesOpen||state.selected.length===0;
  $('wrRerack').disabled=completed||rulesOpen||!!(state.daily&&state.reracks>0);
- const shuffleLabel=state.reracks>0?'↻ New letters · ◉ 5':'↻ New letters';
+ const shuffleLabel=state.daily&&state.reracks>0?'↻ Free reshuffle used':state.reracks>0?'↻ New letters · ◉ 5':'↻ New letters';
  if($('wrRerack').textContent!==shuffleLabel)$('wrRerack').textContent=shuffleLabel;
 }
 function submit(){

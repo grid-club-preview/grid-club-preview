@@ -40,3 +40,31 @@
   if(typeof module!=='undefined'&&module.exports)module.exports=api;
   root.GridStats=api;
 })(typeof globalThis==='object'?globalThis:this);
+
+/* Indicative comparisons, not verified rankings. */
+(function(root){
+'use strict';
+const KEY='gridclub-performance-v1';
+function read(){try{return JSON.parse(localStorage.getItem(KEY)||'{}')||{};}catch(_){return {};}}
+function write(x){try{localStorage.setItem(KEY,JSON.stringify(x));return true;}catch(_){return false;}}
+function record(id,bucket,value){
+ if(typeof id!=='string'||!Number.isInteger(value)||value<0||value>86400000)return;
+ const all=read();if(all[id])return;all[id]={id,bucket,value,sent:false};if(write(all))void flush();
+}
+let flushing=null;
+async function send(rows,buckets){if(!root.GridRanked?.configured||root.navigator?.onLine===false)throw Error('Offline');return root.GridRanked.call('performance_sync',{rows,buckets});}
+function flush(){
+ if(flushing)return flushing;
+ flushing=(async()=>{try{for(let i=0;i<10;i++){const pending=Object.values(read()).filter(x=>!x.sent).slice(0,100);if(!pending.length)break;await send(pending.map(({id,bucket,value})=>({id,bucket,value})),[]);const all=read();for(const x of pending)if(all[x.id])all[x.id].sent=true;write(all);}}catch(_){}})().finally(()=>{flushing=null;});return flushing;
+}
+function samples(prefix){return Object.values(read()).filter(x=>x.bucket.startsWith(prefix));}
+async function compare(groups){
+ await flush();const keys=[...new Set(groups.flatMap(g=>g.samples.map(s=>s.bucket)))],global={};
+ if(!keys.length)return groups.map(()=>null);
+ try{for(let i=0;i<keys.length;i+=200){const result=await send([],keys.slice(i,i+200));Object.assign(global,result.buckets||{});}}catch(_){return groups.map(()=>null);}
+ return groups.map(g=>{const eligible=g.samples.filter(s=>{const b=global[s.bucket];return b&&Number(b.players)>=5&&Number(b.count)>=20&&Number.isFinite(Number(b.mean));});if(!eligible.length)return null;return eligible.reduce((sum,s)=>sum+s.value-Number(global[s.bucket].mean),0)/eligible.length;});
+}
+function show(cell,value,unit='',higherBetter=false){if(value===null||!Number.isFinite(value)){cell.textContent='—';return;}const n=Math.round(unit==='s'?value/1000:value);cell.textContent=(n>0?'+':n<0?'−':'')+Math.abs(n)+unit;cell.classList.toggle('globalBetter',n!==0&&(higherBetter?n>0:n<0));cell.classList.toggle('globalWorse',n!==0&&(higherBetter?n<0:n>0));}
+root.GridPerformance=Object.freeze({record,samples,compare,show,flush});
+root.addEventListener?.('online',()=>void flush());
+})(globalThis);

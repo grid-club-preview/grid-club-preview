@@ -221,7 +221,7 @@ function statsMenu(){
  const count=records.reduce((a,v)=>a+(Number(v.count)||0),0);
  $('pipeStatsCompleted').textContent=String(completed+random+Object.values(progress.daily||{}).filter(x=>x?.completed).length);
  $('pipeStatsAverage').textContent=count?String(Math.round(sum/count)):'—';
- const list=$('pipeStatsDetails');list.replaceChildren();
+ const list=$('pipeStatsDetails');list.replaceChildren();const groups=[],cells=[];
  for(const [label,tier,previousSize] of [
    ['Beginner','beginner',5],['Apprentice','apprentice',6],
    ['Advanced','advanced',null],['Expert','expert',7],
@@ -237,8 +237,10 @@ function statsMenu(){
    const title=document.createElement('th');title.scope='row';title.textContent=label;
    const completedCell=document.createElement('td');completedCell.textContent=String(played);
    const averageCell=document.createElement('td');averageCell.textContent=record?.count?String(Math.round(record.total/record.count)):'—';
-   row.append(title,completedCell,averageCell);list.append(row);
+   const comparison=document.createElement('td');comparison.textContent='—';row.append(title,completedCell,averageCell,comparison);list.append(row);cells.push(comparison);
+   const samples=tier==='daily'?Object.entries(progress.daily||{}).filter(([,v])=>v?.completed&&v.verified&&Number.isInteger(v.moves)).map(([date,v])=>({bucket:'pipe:daily:'+date,value:v.moves})):globalThis.GridPerformance?.samples(tier===null?'pipe:levels:':'pipe:random:'+tier+':')||[];groups.push({samples});
  }
+ globalThis.GridPerformance?.compare(groups).then(values=>values.forEach((v,i)=>globalThis.GridPerformance.show(cells[i],v)));
 }
 function recordCompletion(kind,size,usedMoves){
  const stats=progress.moveStats||(progress.moveStats={random:{},levels:{count:0,total:0}});
@@ -829,6 +831,7 @@ function slide(from,to){
    won=true;timerStop();
    creditReward={puzzle:0,stage:0,daily:0,saveFailed:false};
    if(mode!=='practice'&&!dailyPractice)recordCompletion(mode,mode==='random'?currentTier:currentSize,moves);
+   if(hintsUsed===0&&extraTimeCount===0&&(mode==='random'||mode==='levels'))globalThis.GridPerformance?.record(attemptId,mode==='levels'?'pipe:levels:'+currentLevel:'pipe:random:'+currentTier+':'+(puzzle.freeObjective==='all'?'all':'any')+':'+(puzzle.randomLayoutVersion||1),moves);
    if(mode==='levels'){
      const first=!progress.completed[currentLevel],group=e.stageOf(currentLevel);
      progress.completed[currentLevel]=true;

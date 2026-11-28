@@ -12,11 +12,11 @@
   <link rel="icon" href="./icons/icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
   <title>Grid Club · Puzzle Deck</title>
-  <link rel="stylesheet" href="pipe-shift.css?v=0.9.70">
+  <link rel="stylesheet" href="pipe-shift.css?v=0.9.73">
   <link rel="stylesheet" href="vault-reward.css?v=0.9.25">
   <link rel="stylesheet" href="dot-daily.css?v=0.9.25">
   <link rel="stylesheet" href="home-roadmap.css?v=0.9.26">
-  <link rel="stylesheet" href="word-rescue.css?v=0.9.72">
+  <link rel="stylesheet" href="word-rescue.css?v=0.9.73">
   <style>
     :root { color-scheme: dark; --bg:#0e1424; --surface:#1a243a; --tile:#253147; --muted:#9daabe; --mint:#7be3d4; --purple:#a178ff; }
     * { box-sizing: border-box; }
@@ -43,6 +43,7 @@
     .overviewItem small{display:block;color:var(--muted);font-size:12px;margin-bottom:8px;}
     .overviewItem strong{display:block;font-size:22px;font-variant-numeric:tabular-nums;}
     .difficultyStats{overflow-x:auto;border:1px solid #3b4a62;border-radius:15px;background:var(--surface);-webkit-overflow-scrolling:touch;}
+    .globalStatsNote{font-size:11px;color:#a5b7cc;line-height:1.4;margin:10px 2px}.globalBetter{color:#8fdfbc!important;font-weight:700}.globalWorse{color:#f1a09b!important;font-weight:700}
     .difficultyTable{border-collapse:collapse;width:100%;min-width:320px;text-align:left;font-size:12px;font-variant-numeric:tabular-nums;}
     .difficultyTable thead{background:#283950;color:#c3d0df;}
     .difficultyTable th,.difficultyTable td{padding:12px 7px;border-bottom:1px solid #344357;vertical-align:middle;white-space:nowrap;}
@@ -337,7 +338,7 @@
 <body>
   <main class="shell">
     <section id="home">
-      <header><div><div class="eyebrow">GRID CLUB</div><h1>A pocketful of challenges.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.72</span></div></header>
+      <header><div><div class="eyebrow">GRID CLUB</div><h1>A pocketful of challenges.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.73</span></div></header>
       <div class="homeSectionHeader" aria-label="Puzzle Deck games">
         <div class="eyebrow">PUZZLE DECK</div>
         <span class="homeSectionCount">3 playable · 3 planned</span>
@@ -532,7 +533,7 @@
           <div class="wrBoardTabs wrStatsTabs" role="group" aria-label="Game mode">
             <button id="wrStatsAll" type="button">All modes</button><button id="wrStatsTide" type="button">Rising Tide</button><button id="wrStatsRaft" type="button">Raft Escape</button><button id="wrStatsSinking" type="button">Sinking Letters</button>
           </div>
-          <div id="wrStatsGrid" class="wrStatsGrid"></div>
+          <div id="wrStatsGrid" class="wrStatsGrid"></div><p class="globalStatsNote">Global comparisons are indicative. Results with paid reshuffles and lifelines are excluded.</p>
           <p class="wrFine">Rescue totals and averages use saved score history. Older personal bests are retained where available. Round totals, defeats, success rate and longest word are tracked from v0.9.49; abandoned rounds are not counted.</p>
         </div>
       </div>
@@ -726,10 +727,10 @@
         </div>
         <div class="pipeStatsDetails">
           <table class="pipeStatsTable" aria-label="Pipe Shift stats by game mode">
-            <thead><tr><th scope="col">Mode</th><th scope="col">Completed</th><th scope="col">Avg. moves</th></tr></thead>
+            <thead><tr><th scope="col">Mode</th><th scope="col">Completed</th><th scope="col">Avg. moves</th><th scope="col">vs Global</th></tr></thead>
             <tbody id="pipeStatsDetails"></tbody>
           </table>
-        </div>
+        </div><p class="globalStatsNote">Global comparisons are indicative. Results with hints and time extensions are excluded.</p>
       </div>
       <div id="pipe-random" hidden>
         <div class="pipeHeader"><button class="back" id="pipeRandomBack" aria-label="Back to Pipe Shift">‹</button>
@@ -859,7 +860,7 @@
       <p class="chooseIntro">Your progress and daily results.</p>
       <div id="statsOverview" class="overviewRow" aria-label="Your performance overview"></div>
       <div class="statHeading">Performance by difficulty</div>
-      <div id="difficultyStats" class="difficultyStats" aria-label="Free Play and Levels performance by difficulty"></div>
+      <div id="difficultyStats" class="difficultyStats" aria-label="Free Play and Levels performance by difficulty"></div><p class="globalStatsNote">Global comparisons are indicative. Results with hints and time extensions are excluded.</p>
       <div class="statHeading">Daily Challenge history</div>
       <div id="dailyStats" class="overviewRow"></div>
       <p id="todayDailyStatus" class="dailyLocalStatus" role="status" hidden></p>
@@ -985,7 +986,7 @@
       </div>
       
       <div class="adSlot" id="adSlot" aria-hidden="true" hidden></div>
-      <footer>Grid Club · v0.9.72 beta</footer>
+      <footer>Grid Club · v0.9.73 beta</footer>
     </section>
   </main>
   <div class="pauseLayer" id="dotDailyCompleteLayer" hidden role="dialog" aria-modal="true" aria-labelledby="dotDailyCompleteTitle">
@@ -1014,20 +1015,20 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" defer></script>
   <script src="backend-config.js?v=0.7.0"></script>
   <script src="ranked.js?v=0.7.0"></script>
-  <script src="stats-utils.js?v=0.7.0"></script>
+  <script src="stats-utils.js?v=0.9.73"></script>
   <script src="puzzle.js?v=0.9.66"></script>
   <script src="levels.js?v=0.9.56"></script>
   <script src="win-messages.js?v=0.9.45"></script>
-  <script src="daily-journey.js?v=0.9.25"></script>
+  <script src="daily-journey.js?v=0.9.73"></script>
   <script src="club-credits.js?v=0.9.11"></script>
-  <script src="game.js?v=0.9.66"></script>
+  <script src="game.js?v=0.9.73"></script>
   <script src="pipe-engine.js?v=0.9.33"></script>
   <script src="vault-reward.js?v=0.9.25"></script>
-  <script src="pipe-shift.js?v=0.9.70"></script>
+  <script src="pipe-shift.js?v=0.9.73"></script>
   <script src="word-rescue-lexicon.js?v=0.9.30"></script>
   <script src="word-rescue-engine.js?v=0.9.72"></script>
-  <script src="word-rescue.js?v=0.9.72"></script>
-  <script src="edge-navigation.js?v=0.9.71"></script>
+  <script src="word-rescue.js?v=0.9.73"></script>
+  <script src="edge-navigation.js?v=0.9.73"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol === 'https:') {
       addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));

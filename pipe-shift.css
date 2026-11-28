@@ -376,3 +376,5 @@
 /* Ranked podium: keep the number visible beside the medal. */
 .pipeDailyRow.pipeDailyPodium>span{font-weight:800;color:#f0dfbb;}
 .pipeDailyRow.pipeDailyPodium{border-top-color:#57617a;}
+
+.pipeStatsTable tr>*:first-child{width:36%}.pipeStatsTable th,.pipeStatsTable td{padding-left:3px;padding-right:3px}.pipeStatsTable thead th{font-size:10px}.pipeStatsTable tr>*:last-child{padding-right:8px}

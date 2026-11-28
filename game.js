@@ -412,11 +412,12 @@
       statBox('Stages',`${stagesComplete}/15`)
     );
     const levels=$('difficultyStats');levels.replaceChildren();
+    const globalGroups=[],globalCells=[];
     // Comparable columns make the timing differences across grid sizes clear.
     // All values come from the existing local stats summary; no data migration.
     const table=document.createElement('table');table.className='difficultyTable';
     const head=document.createElement('thead'),headRow=document.createElement('tr');
-    for(const heading of ['Difficulty','Solved','Average','Median','Best']){
+    for(const heading of ['Difficulty','Solved','Average','Best','vs Global']){
       const th=document.createElement('th');th.scope='col';th.textContent=heading;
       headRow.append(th);
     }
@@ -426,9 +427,9 @@
       const row=document.createElement('tr'),nameCell=document.createElement('td');
       const name=document.createElement('strong');name.className='difficultyName';name.textContent=x.name;
       const detail=document.createElement('small');detail.className='difficultyDetail';
-      detail.textContent=`${x.size}×${x.size}${x.count?` · ${x.averageMoves} avg moves${x.assistedCount?` · ${x.assistedCount} assisted`:''}`:''}`;
+      detail.textContent=x.count?x.averageMoves+' avg moves':'';
       nameCell.append(name,detail);row.append(nameCell);
-      const values=[x.count,x.averageMs,x.medianMs,x.bestMs];
+      const values=[x.count,x.averageMs,x.bestMs];
       for(let i=0;i<values.length;i++){
         const cell=document.createElement('td');
         const present=i===0||x.count>0;
@@ -436,9 +437,12 @@
         if(i>0)cell.className=present?'difficultyTime':'difficultyEmpty';
         row.append(cell);
       }
+      const compareCell=document.createElement('td');compareCell.textContent='—';row.append(compareCell);globalCells.push(compareCell);
+      const samples=globalThis.GridPerformance?.samples('dot:')||[];globalGroups.push({samples:samples.filter(s=>s.bucket==='dot:free:'+x.size||s.bucket.startsWith('dot:level:'+x.size+':'))});
       body.append(row);
     }
     table.append(body);levels.append(table);
+    globalThis.GridPerformance?.compare(globalGroups).then(values=>values.forEach((v,i)=>globalThis.GridPerformance.show(globalCells[i],v,'s')));
     const daily=$('dailyStats');daily.replaceChildren(
       statBox('Daily average',reports.daily.count?statsUtil.fmt(reports.daily.averageMs):'—'),
       statBox('Daily best',reports.daily.count?statsUtil.fmt(reports.daily.bestMs):'—')
@@ -817,6 +821,7 @@
     if(mode==='daily'&&!item.daily[date])item.daily[date]=result;
     const ok=writeJSON(STATS_KEY,stats);
     if(!ok)result.saveFailed=true;
+    if(ok&&!result.assisted&&(mode==='free'||mode==='level'))globalThis.GridPerformance?.record(result.attemptId,'dot:'+mode+':'+size+(mode==='level'?':'+levelId:''),elapsedMs);
     // Local completion earns one award per game per UTC day, even if the
     // leaderboard connection is unavailable. No credits for practice replays.
     if(ok&&mode==='daily'&&result.firstDaily){
