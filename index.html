@@ -17,7 +17,7 @@
   <link rel="stylesheet" href="dot-daily.css?v=0.9.25">
   <link rel="stylesheet" href="home-roadmap.css?v=0.9.26">
   <link rel="stylesheet" href="word-rescue.css?v=0.9.74">
-  <link rel="stylesheet" href="grid-zero.css?v=0.9.75">
+  <link rel="stylesheet" href="grid-zero.css?v=0.9.77">
   <style>
     :root { color-scheme: dark; --bg:#0e1424; --surface:#1a243a; --tile:#253147; --muted:#9daabe; --mint:#7be3d4; --purple:#a178ff; }
     * { box-sizing: border-box; }
@@ -339,7 +339,7 @@
 <body>
   <main class="shell">
     <section id="home">
-      <header><div><div class="eyebrow">GRID CLUB</div><h1>A pocketful of challenges.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.76</span></div></header>
+      <header><div><div class="eyebrow">GRID CLUB</div><h1>A pocketful of challenges.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.77</span></div></header>
       <div class="homeSectionHeader" aria-label="Puzzle Deck games">
         <div class="eyebrow">PUZZLE DECK</div>
         <span class="homeSectionCount">4 playable · 3 planned</span>
@@ -427,7 +427,11 @@
     </section>
     <section id="gridZeroScreen" hidden>
       <div class="wrHeader"><button class="back" id="gzBack" type="button" aria-label="Back">‹</button><div class="wrHeading"><div class="eyebrow">GRID CLUB · PUZZLE DECK</div><h2>Zero Down</h2></div></div>
-      <div id="gzMenu"><div class="gzCard"><h3>Count down to zero</h3><p class="gzFine">Select a number from your tray and subtract it from a square. Reach exactly zero to secure that square. Secure every square to win.</p><p class="gzFine">Each placement refills its tray slot with the next number. Plan ahead: a wrong choice can leave you stuck. Restart to try the same puzzle again.</p><h3>Choose difficulty</h3><div class="gzChoices" role="group" aria-label="Difficulty"><button id="gzChoiceBeginner" type="button" aria-pressed="true">Beginner</button><button id="gzChoiceApprentice" type="button" aria-pressed="false">Apprentice</button><button id="gzChoiceAdvanced" type="button" aria-pressed="false">Advanced</button><button id="gzChoiceExpert" type="button" aria-pressed="false">Expert</button></div><button id="gzContinue" class="gzSecondary" type="button" hidden>Continue puzzle</button><button id="gzStart" class="gzPrimary" type="button">Play new puzzle</button><p id="gzBest" class="gzFine"></p></div></div>
+      <div id="gzMenu">
+        <button id="gzContinue" class="gzPrimary gzContinue" type="button" hidden>Continue last puzzle ›</button>
+        <div class="gzCard"><h3>Start new game</h3><div class="gzChoices" role="group" aria-label="Difficulty"><button id="gzChoiceBeginner" type="button" aria-pressed="true">Beginner</button><button id="gzChoiceApprentice" type="button" aria-pressed="false">Apprentice</button><button id="gzChoiceAdvanced" type="button" aria-pressed="false">Advanced</button><button id="gzChoiceExpert" type="button" aria-pressed="false">Expert</button></div><button id="gzStart" class="gzPrimary" type="button">Play now ›</button></div>
+        <details class="gzCard gzRules"><summary>How to play</summary><div class="gzRulesCopy"><p>Select a square to subtract the highlighted number from that square. Make every square zero to win.</p><p>For harder difficulties, select the number to subtract then choose the square to subtract it from.</p><p>Each subtraction refills its tray slot with the next number. Plan ahead: a wrong choice can leave you stuck. Restart to try the same puzzle again.</p></div></details>
+      </div>
       <div id="gzPlay" hidden><p id="gzDifficulty" class="gzDifficulty"></p><div class="gzStats"><div class="gzStat"><small>Secured</small><strong id="gzSecured">0/9</strong></div><div class="gzStat"><small>Time</small><strong id="gzTime">00:00</strong></div><div class="gzStat"><small>Remaining</small><strong id="gzRemaining">0</strong></div></div><div id="gzBoard" class="gzBoard" aria-label="Zero Down board"></div><p class="gzLabel" id="gzTrayLabel">Select a number</p><div id="gzTray" class="gzTray"></div><p class="gzLabel">Coming next ↑</p><div id="gzQueue" class="gzQueue" aria-label="Next six numbers"></div><p id="gzMessage" role="status"></p><div class="gzControls" id="gzPlayControls"><button id="gzRestart" class="gzSecondary" type="button">↻ Restart</button><button id="gzNew" class="gzSecondary" type="button">New puzzle</button></div><p class="gzLabel" id="gzRestartCount">Restarts: <span id="gzRestarts">0</span></p><div id="gzResult" class="gzCard gzResult" hidden><h3 id="gzResultTitle"></h3><p id="gzResultText" class="gzFine"></p><div class="gzControls gzResultControls"><button id="gzResultMenu" class="gzSecondary" type="button">‹ Menu</button><button id="gzResultRestart" class="gzSecondary" type="button">↻ Restart</button><button id="gzResultNext" class="gzPrimary" type="button">New puzzle ›</button></div></div></div>
     </section>
     <section id="wordRescueScreen" hidden>
@@ -993,7 +997,7 @@
       </div>
       
       <div class="adSlot" id="adSlot" aria-hidden="true" hidden></div>
-      <footer>Grid Club · v0.9.76 beta</footer>
+      <footer>Grid Club · v0.9.77 beta</footer>
     </section>
   </main>
   <div class="pauseLayer" id="dotDailyCompleteLayer" hidden role="dialog" aria-modal="true" aria-labelledby="dotDailyCompleteTitle">
@@ -1036,7 +1040,7 @@
   <script src="word-rescue-engine.js?v=0.9.72"></script>
   <script src="word-rescue.js?v=0.9.74"></script>
   <script src="grid-zero-engine.js?v=0.9.76"></script>
-  <script src="grid-zero.js?v=0.9.76"></script>
+  <script src="grid-zero.js?v=0.9.77"></script>
   <script src="edge-navigation.js?v=0.9.74"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol === 'https:') {
