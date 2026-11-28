@@ -5,6 +5,7 @@ const $=id=>doc.getElementById(id);
 const visible=id=>{const el=$(id);return !!el&&!el.hidden;};
 const current=()=>{
  if(visible('home'))return null;
+ if(visible('gridZeroScreen'))return [visible('gzPlay')?'grid-zero-play':'grid-zero-menu',root.GridZeroApp?.back];
  if(visible('wordRescueScreen')){
    if(visible('wrRules'))return null;
    return visible('wrPlay')?['word-play',root.WordRescueApp?.back]:visible('wrLeaderboard')?['word-leaderboard',root.WordRescueApp?.back]:visible('wrStats')?['word-stats',root.WordRescueApp?.back]:visible('wrCampaign')?['word-campaign',root.WordRescueApp?.back]:visible('wrDaily')?['word-daily',root.WordRescueApp?.back]:visible('wrMenu')?['word-menu',root.WordRescueApp?.back]:null;
@@ -23,7 +24,7 @@ let touch=null,pointer=null;
 function start(target,x,y,id){
  const route=current();
  if(!route||typeof route[1]!=='function'||x>90||x<0)return null;
- if(target?.closest?.('input,select,textarea,.controls,.pipeControls,#pipeExtraTime,#wrDock,#wrResult,#wrRules'))return null;
+ if(target?.closest?.('input,select,textarea,.controls,.pipeControls,#pipeExtraTime,#wrDock,#wrResult,#wrRules,#gzBoard,#gzTray'))return null;
  if(target?.closest?.('#board,.boardWrap,#pipeBoard,.pipeBoardHolder')&&x>28)return null;
  return {id,x,y,route:route[0]};
 }

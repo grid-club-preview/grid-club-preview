@@ -216,7 +216,7 @@ function dailyMenu(){
  else if(screen==='play'&&!state?.won&&!state?.expired){unrank();save();}
  stop();screen='daily';boardRequest++;$('wrMenu').hidden=true;$('wrPlay').hidden=true;$('wrCampaign').hidden=true;$('wrLeaderboard').hidden=true;$('wrStats').hidden=true;$('wrDaily').hidden=false;$('wrRules').hidden=true;$('wrInfo').hidden=true;
  const run=dailyStored(),total=tripleTotal(run?.stages||[]);
- $('wrDailyDate').textContent=day();$('wrDailyPlay').textContent=run?.completed?'Practise today’s rescue':run?'Continue today’s rescue':'Play today’s rescue';
+ $('wrDailyDate').textContent=day();$('wrDailyPlay').textContent=run?.completed?'Practise today’s rescue':run?'Continue today’s rescue':'Play today’s rescue';$('wrDailyPlay').classList.toggle('wrActionMain',!run?.completed);
  $('wrDailySummary').textContent=run?.completed?total.rescues+'/3 saved · '+total.score+' points · '+(run.verified?'On today’s leaderboard':'Saved on this device'):'';
  const list=$('wrDailyStages');list.replaceChildren();
  for(let i=0;i<3;i++){const result=run?.stages?.[i],row=document.createElement('div');row.className='wrDailyStage';const title=document.createElement('strong'),detail=document.createElement('span');title.textContent=(i+1)+'. '+modeName(tripleSpec(day(),i).mode);detail.textContent=result?(result.won?'✓ Saved':'✕ Failed')+' · '+result.score: 'Waiting';row.append(title,detail);list.append(row);}
@@ -273,7 +273,7 @@ function finishDaily(run){
  const saved=storeDaily(dailyRun);
  if(final&&!dailyRun.practice&&saved){const amount=[0,3,6,10][total.rescues];if(amount){const award=globalThis.GridClubCredits?.award('club:word:daily:'+meta.day,amount,'word-daily');dailyRun.credits=award?.awarded||0;storeDaily(dailyRun);}}
  $('wrResultCampaignNote').hidden=false;$('wrResultCampaignNote').textContent=total.rescues+'/'+(meta.index+1)+' saved · '+total.score+' total points'+(final?' · '+(dailyRun.credits||0)+' credits earned':'');
- $('wrTryAgain').textContent=final?'Finish ✓':'Continue ›';
+ $('wrTryAgain').textContent=final?(dailyRun.credits&&!dailyRun.vaultFilled?'Fill vault':'Finish ✓'):'Continue ›';if(final)$('wrResultModes').textContent='View results';
  if(dailyRun.practice||!dailyRun.eligible||!run.rankEligible||!run.dailyRanked){dailyRun.eligible=false;storeDaily(dailyRun);return;}
  const active=dailyRun;dailyBusy=true;
  const payload={index:meta.index,day:meta.day,events:run.rankEvents,elapsedMs:result.elapsedMs};
@@ -282,6 +282,27 @@ function finishDaily(run){
  if(reply.verified!==true)throw Error('Not verified');
  if(final)active.verified=true;
  }).catch(()=>{active.eligible=false;}).finally(()=>{clearTimeout(timeout);storeDaily(active);dailyBusy=false;if(state===run&&screen==='play')$('wrTryAgain').disabled=false;if(screen==='daily')dailyMenu();});
+}
+let vaultAnimation=false;
+function vaultPending(){return !!(state?.daily&&dailyRun?.completed&&!dailyRun.practice&&dailyRun.credits&&!dailyRun.vaultFilled);}
+function showWallet(){ $('wrWallet').textContent='◉ '+Math.max(0,balance()-(vaultPending()?dailyRun.credits:0));}
+function viewTriple(){
+ const panel=$('wrTripleResults'),show=panel.hidden;panel.hidden=!show;
+ $('wrResultModes').textContent=show?'‹ Back':'View results';
+ $('wrResultOutcome').hidden=show;$('wrResultText').hidden=show;
+ if(!show)return;
+ panel.replaceChildren();const totals=tripleTotal(dailyRun.stages);
+ for(const result of dailyRun.stages){const row=document.createElement('div'),name=document.createElement('strong'),detail=document.createElement('span');row.className='wrDailyStage';name.textContent=modeName(result.mode);detail.textContent=(result.won?'✓ Saved':'✕ Failed')+' · '+result.score+' pts';row.append(name,detail);panel.append(row);}
+ const bonus=document.createElement('p');bonus.textContent='Word bonuses: +'+(totals.score-dailyRun.stages.reduce((n,r)=>n+r.score,0))+' points';panel.append(bonus);
+}
+function fillDailyVault(){
+ if(vaultAnimation||!vaultPending())return;
+ const active=dailyRun,button=$('wrTryAgain'),wallet=$('wrWallet'),amount=active.credits,from=Math.max(0,balance()-amount);
+ vaultAnimation=true;button.disabled=true;button.textContent='Filling vault…';
+ const start=performance.now(),reduced=globalThis.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;let shown=0;
+ function coin(){if(reduced||root.hidden)return;const a=button.getBoundingClientRect(),b=wallet.getBoundingClientRect(),el=document.createElement('span');el.className='wrVaultCoin';el.textContent='◉';el.setAttribute('aria-hidden','true');el.style.left=(a.left+a.width/2)+'px';el.style.top=(a.top+a.height/2)+'px';el.style.setProperty('--wr-vault-x',(b.left+b.width/2-a.left-a.width/2)+'px');el.style.setProperty('--wr-vault-y',(b.top+b.height/2-a.top-a.height/2)+'px');document.body.append(el);setTimeout(()=>el.remove(),700);}
+ function frame(t){const p=reduced?1:Math.min(1,(t-start)/1200),n=Math.floor(p*amount);while(shown<n){shown++;coin();}wallet.textContent='◉ '+(from+n);if(p<1){requestAnimationFrame(frame);return;}active.vaultFilled=true;storeDaily(active);vaultAnimation=false;wallet.textContent='◉ '+balance();if(dailyRun===active&&state?.daily&&screen==='play'){$('wrTryAgain').textContent='Finish ✓';$('wrTryAgain').disabled=false;const total=tripleTotal(active.stages);$('wrResultCampaignNote').textContent=total.rescues+'/3 saved · '+total.score+' total points · '+amount+' credits added';}}
+ requestAnimationFrame(frame);
 }
 function dailyObjective(s){
  const stages=[...(dailyRun?.stages||[]).slice(0,s.daily.index),{won:s.won,score:s.score,elapsedMs:s.elapsedMs,lengths:s.words.map(w=>w.word.length)}];
@@ -448,7 +469,7 @@ function finished(){
  stop();state.selected=[];rulesOpen=false;$('wrRules').hidden=true;$('wrDock').inert=false;
  persistRecord();
  const won=state.won,c=state.campaign,raft=state.mode==='raft';
- $('wrResultTitle').textContent=won?victoryTitle(state.mode):defeatTitle(state.mode);
+ $('wrTripleResults').hidden=true;$('wrResultOutcome').hidden=false;$('wrResultText').hidden=false;$('wrResultTitle').textContent=won?victoryTitle(state.mode):defeatTitle(state.mode);
  if(won&&!c&&!state.daily){publishRank(state);if(!state.friendHelp&&(state.reracks||0)<=1&&!/paused|backgrounded|resumed|closed|instructions/i.test(state.rankReason||''))globalThis.GridPerformance?.record(state.attemptId,'word:'+state.mode+':'+(state.mode==='raft'?state.raftPace===4?10:9:9),state.score);}
  const count=raft?Math.min(engine.targetBlocks(state),state.blocks):state.blocks;
  const material=raft?(count===1?' plank':' planks'):(count===1?' piece of wreckage':' pieces of wreckage');
@@ -474,7 +495,7 @@ function finished(){
  },RESULT_TAP_GUARD_MS);
  $('wrResultTitle').focus?.({preventScroll:true});
  save();
- $('wrWallet').textContent='◉ '+balance();
+ showWallet();
 }
 function tick(){
  if(!state||screen!=='play'||rulesOpen||state.won||state.expired||document.hidden)return;
@@ -517,6 +538,7 @@ function begin(mode,continueSaved=false,campaign=null,dailyMeta=null){
  if(!seen(state.mode))showRules(true);else startTimer();
 }
 function back(){
+ if(vaultAnimation)return;if(screen==='play'&&vaultPending()){viewTriple();return;}
  if(screen==='play'){if(rankStarting||state?.rankEligible&&!state.won)unrank();save();if(state?.daily)dailyMenu();else if(state?.campaign)campaignMenu(state.campaign.level);else menu();}
  else if(screen==='campaign'){if(campaignLevel)campaignMenu();else menu();}
  else if(screen==='daily'||screen==='leaderboard'||screen==='stats')menu();
@@ -687,8 +709,8 @@ $('wrNewTide').onclick=()=>begin('tide');
 $('wrNewSinking').onclick=()=>begin('sinking');
 $('wrNewRaft').onclick=()=>begin('raft');
 $('wrContinue').onclick=()=>begin('tide',true);
-$('wrTryAgain').onclick=()=>{if(screen!=='play'||!state||!(state.won||state.expired)||performance.now()<resultReadyAt)return;safeDel(KEY);if(state.daily){if(dailyBusy)return;return dailyRun?.stages.length===3?dailyMenu():nextDailyStage();}const c=state.campaign;if(!c)return begin(state.mode);if(!state.won)return begin(c.mode,false,campaignSpec(c.level,c.stage));if(!campaignProgress()[stageKey(c.level,c.stage)])return campaignMenu(c.level);if(c.stage<3)return begin(campaignMode(c.level,c.stage+1),false,campaignSpec(c.level,c.stage+1));if(c.level<15){const next=campaignSpec(c.level+1,1);return begin(next.mode,false,next);}campaignMenu();};
-$('wrResultModes').onclick=()=>state?.daily?dailyMenu():state?.campaign?campaignMenu():menu();
+$('wrTryAgain').onclick=()=>{if(screen!=='play'||!state||!(state.won||state.expired)||performance.now()<resultReadyAt)return;safeDel(KEY);if(state.daily){if(dailyBusy||vaultAnimation)return;if(vaultPending())return fillDailyVault();return dailyRun?.stages.length===3?dailyMenu():nextDailyStage();}const c=state.campaign;if(!c)return begin(state.mode);if(!state.won)return begin(c.mode,false,campaignSpec(c.level,c.stage));if(!campaignProgress()[stageKey(c.level,c.stage)])return campaignMenu(c.level);if(c.stage<3)return begin(campaignMode(c.level,c.stage+1),false,campaignSpec(c.level,c.stage+1));if(c.level<15){const next=campaignSpec(c.level+1,1);return begin(next.mode,false,next);}campaignMenu();};
+$('wrResultModes').onclick=()=>state?.daily?(dailyRun?.completed?viewTriple():dailyMenu()):state?.campaign?campaignMenu():menu();
 $('wrDailyEntry').onclick=dailyMenu;$('wrDailyPlay').onclick=startDaily;$('wrDailyRefresh').onclick=refreshDailyBoard;$('wrDailyNext').onclick=()=>globalThis.GridClubDailyJourney?.visitNext('wordRescue');
 $('wrResultLevels').onclick=()=>campaignMenu();
 $('wrCampaignEntry').onclick=()=>campaignMenu();$('wrCampaignBack').onclick=()=>campaignMenu();

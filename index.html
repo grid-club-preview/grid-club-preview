@@ -16,7 +16,8 @@
   <link rel="stylesheet" href="vault-reward.css?v=0.9.25">
   <link rel="stylesheet" href="dot-daily.css?v=0.9.25">
   <link rel="stylesheet" href="home-roadmap.css?v=0.9.26">
-  <link rel="stylesheet" href="word-rescue.css?v=0.9.73">
+  <link rel="stylesheet" href="word-rescue.css?v=0.9.74">
+  <link rel="stylesheet" href="grid-zero.css?v=0.9.74">
   <style>
     :root { color-scheme: dark; --bg:#0e1424; --surface:#1a243a; --tile:#253147; --muted:#9daabe; --mint:#7be3d4; --purple:#a178ff; }
     * { box-sizing: border-box; }
@@ -338,10 +339,10 @@
 <body>
   <main class="shell">
     <section id="home">
-      <header><div><div class="eyebrow">GRID CLUB</div><h1>A pocketful of challenges.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.73</span></div></header>
+      <header><div><div class="eyebrow">GRID CLUB</div><h1>A pocketful of challenges.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.74</span></div></header>
       <div class="homeSectionHeader" aria-label="Puzzle Deck games">
         <div class="eyebrow">PUZZLE DECK</div>
-        <span class="homeSectionCount">3 playable · 3 planned</span>
+        <span class="homeSectionCount">4 playable · 3 planned</span>
       </div>
       <button class="tileButton" id="freeStart">
         <span class="tileIcon dotTrailsIcon" aria-hidden="true">
@@ -387,6 +388,7 @@
         <span><strong>Word Rescue</strong><small>New prototype · Build words to escape</small></span>
         <span class="tileArrow" aria-hidden="true">›</span>
       </button>
+      <button class="tileButton" id="gzEntry" type="button"><span class="tileIcon" aria-hidden="true" style="background:linear-gradient(145deg,#304862,#275747);border:1px solid #5d897e"><svg viewBox="0 0 56 56" width="52" height="52" aria-hidden="true"><rect x="5" y="5" width="21" height="21" rx="5" fill="#3b5871"/><rect x="30" y="5" width="21" height="21" rx="5" fill="#285b49"/><rect x="5" y="30" width="21" height="21" rx="5" fill="#285b49"/><rect x="30" y="30" width="21" height="21" rx="5" fill="#3b5871"/><g font-size="15" font-weight="800" text-anchor="middle" fill="#b7e9d5"><text x="15.5" y="20">8</text><text x="40.5" y="20">0</text><text x="15.5" y="45">0</text><text x="40.5" y="45">6</text></g></svg></span><span><strong>Grid Zero</strong><small>New prototype · Count down to zero</small></span><span class="tileArrow" aria-hidden="true">›</span></button>
       <div class="roadmapGrid" aria-label="Planned Puzzle Deck games">
         <article class="roadmapCard" data-game="block">
           <div class="roadmapCardHeader"><span class="roadmapSymbol" aria-hidden="true">▦</span><strong>Block Shift</strong></div>
@@ -422,6 +424,11 @@
         <p id="backendCheckMessage" role="status" aria-live="polite">Checking configuration…</p>
         <button id="testBackend" type="button">Test connection</button>
       </details>
+    </section>
+    <section id="gridZeroScreen" hidden>
+      <div class="wrHeader"><button class="back" id="gzBack" type="button" aria-label="Back">‹</button><div class="wrHeading"><div class="eyebrow">GRID CLUB · PUZZLE DECK</div><h2>Grid Zero</h2></div></div>
+      <div id="gzMenu"><div class="gzCard"><h3>Count down to zero</h3><p class="gzFine">Select a number from your tray and subtract it from a square. Reach exactly zero to secure that square. Secure every square to win.</p><p class="gzFine">Each placement refills its tray slot with the next number. Plan ahead: a wrong choice can leave you stuck. Restart to try the same puzzle again.</p><h3>Selectable numbers</h3><div class="gzChoices" role="group" aria-label="Selectable numbers"><button id="gzChoice3" type="button" aria-pressed="true">3 · Relaxed</button><button id="gzChoice2" type="button" aria-pressed="false">2 · Tricky</button><button id="gzChoice1" type="button" aria-pressed="false">1 · Strict</button></div><button id="gzContinue" class="gzSecondary" type="button" hidden>Continue puzzle</button><button id="gzStart" class="gzPrimary" type="button">Play new puzzle</button><p id="gzBest" class="gzFine"></p></div></div>
+      <div id="gzPlay" hidden><div class="gzStats"><div class="gzStat"><small>Secured</small><strong id="gzSecured">0/9</strong></div><div class="gzStat"><small>Time</small><strong id="gzTime">00:00</strong></div><div class="gzStat"><small>Remaining</small><strong id="gzRemaining">0</strong></div></div><div id="gzBoard" class="gzBoard" aria-label="Grid Zero board"></div><p class="gzLabel">Select a number</p><div id="gzTray" class="gzTray"></div><p class="gzLabel">Coming next ↑</p><div id="gzQueue" class="gzQueue" aria-label="Next six numbers"></div><p id="gzMessage" role="status"></p><div class="gzControls"><button id="gzRestart" class="gzSecondary" type="button">↻ Restart</button><button id="gzNew" class="gzSecondary" type="button">New puzzle</button></div><p class="gzLabel">Restarts: <span id="gzRestarts">0</span></p><div id="gzResult" class="gzCard gzResult" hidden><h3 id="gzResultTitle"></h3><p id="gzResultText" class="gzFine"></p><div class="gzControls"><button id="gzResultMenu" class="gzSecondary" type="button">‹ Menu</button><button id="gzResultNext" class="gzPrimary" type="button">New puzzle ›</button></div></div></div>
     </section>
     <section id="wordRescueScreen" hidden>
       <div class="wrHeader">
@@ -646,7 +653,7 @@
             <h3 id="wrResultTitle" tabindex="-1">Safe at last!</h3>
             <p id="wrResultOutcome"></p>
             <p id="wrResultText"></p>
-            <p id="wrResultCampaignNote" hidden></p>
+            <p id="wrResultCampaignNote" hidden></p><div id="wrTripleResults" hidden></div>
           </div>
           <div class="wrResultActions">
             <button id="wrResultModes" class="wrSecondary" type="button">‹ Menu</button>
@@ -986,7 +993,7 @@
       </div>
       
       <div class="adSlot" id="adSlot" aria-hidden="true" hidden></div>
-      <footer>Grid Club · v0.9.73 beta</footer>
+      <footer>Grid Club · v0.9.74 beta</footer>
     </section>
   </main>
   <div class="pauseLayer" id="dotDailyCompleteLayer" hidden role="dialog" aria-modal="true" aria-labelledby="dotDailyCompleteTitle">
@@ -1027,8 +1034,10 @@
   <script src="pipe-shift.js?v=0.9.73"></script>
   <script src="word-rescue-lexicon.js?v=0.9.30"></script>
   <script src="word-rescue-engine.js?v=0.9.72"></script>
-  <script src="word-rescue.js?v=0.9.73"></script>
-  <script src="edge-navigation.js?v=0.9.73"></script>
+  <script src="word-rescue.js?v=0.9.74"></script>
+  <script src="grid-zero-engine.js?v=0.9.74"></script>
+  <script src="grid-zero.js?v=0.9.74"></script>
+  <script src="edge-navigation.js?v=0.9.74"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol === 'https:') {
       addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
