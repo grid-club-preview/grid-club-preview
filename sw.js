@@ -1,5 +1,5 @@
-/* Grid Club v0.9.74 · Grid Zero prototype */
-const CACHE='gridclub-pwa-v0.9.74';
+/* Grid Club v0.9.75 · Grid Zero difficulty */
+const CACHE='gridclub-pwa-v0.9.75';
 const APP_FILES=[
   './','./index.html',
   './puzzle.js?v=0.9.66',
@@ -16,9 +16,9 @@ const APP_FILES=[
   './word-rescue-lexicon.js?v=0.9.30',
   './word-rescue-engine.js?v=0.9.72',
   './word-rescue.js?v=0.9.74',
-  './grid-zero.css?v=0.9.74',
-  './grid-zero-engine.js?v=0.9.74',
-  './grid-zero.js?v=0.9.74',
+  './grid-zero.css?v=0.9.75',
+  './grid-zero-engine.js?v=0.9.75',
+  './grid-zero.js?v=0.9.75',
   './edge-navigation.js?v=0.9.74',
   './vault-reward.js?v=0.9.25',
   './pipe-engine.js?v=0.9.33',
