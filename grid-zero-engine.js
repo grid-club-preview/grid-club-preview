@@ -1,7 +1,7 @@
-/* Zero Down v4: single-number tray for all difficulties, v3 queues retained. */
+/* Zero Down v5: single-number play with difficulty-specific final six numbers. */
 (function(root){
 'use strict';
-const VERSION=4,PREVIEW=6;
+const VERSION=5,PREVIEW=6;
 const V2_DIFFICULTIES=Object.freeze({
  beginner:Object.freeze({traySize:1,baseMin:3,baseMax:7,smallOnes:9,smallTwos:6}),
  apprentice:Object.freeze({traySize:2,baseMin:3,baseMax:9,smallOnes:4,smallTwos:5}),
@@ -93,11 +93,44 @@ function version3(seed,difficulty='beginner'){
  if((Number(seed)>>>0)!==174937){const p=version3(174937,difficulty);return {...p,seed:Number(seed)>>>0};}
  throw Error('Unable to generate a varied puzzle');
 }
-function generate(seed,difficulty='beginner'){
+function version4(seed,difficulty='beginner'){
  if(typeof difficulty==='number')return legacy(seed,difficulty);
  if(!DIFFICULTIES[difficulty])throw Error('Invalid difficulty');
  const old=({medium:'apprentice',hard:'advanced'})[difficulty]||difficulty;
- return {...version3(seed,old),version:VERSION,difficulty,traySize:1};
+ return {...version3(seed,old),version:4,difficulty,traySize:1};
+}
+const TAILS=Object.freeze({
+ beginner:{small:[3,4],large:[0,1],last:[1,3]},
+ medium:{small:[2,3],large:[1,2],last:[1,5]},
+ hard:{small:[0,2],large:[2,4],last:[3,7]},
+ expert:{small:[0,1],large:[3,5],last:[4,9]}
+});
+function generate(seed,difficulty='beginner'){
+ if(typeof difficulty==='number')return legacy(seed,difficulty);
+ const rule=TAILS[difficulty];if(!rule)throw Error('Invalid difficulty');
+ const r=rng((Number(seed)^0x9e3779b9)>>>0),within=(v,range)=>v>=range[0]&&v<=range[1];
+ const category=v=>v<=2?0:v>=5?2:1;
+ const varied=xs=>xs.every((v,i)=>i<2||v!==xs[i-1]||v!==xs[i-2]);
+ for(let attempt=0;attempt<64;attempt++){
+   const p=version4(attempt===0?seed:rand(r,1,4294967295),difficulty);
+   const pieces=p.numbers.map((value,i)=>({value,cell:p.solution[i],i}));
+   const groups=[0,1,2].map(c=>pieces.filter(x=>category(x.value)===c));
+   const counts=[];
+   for(let a=rule.small[0];a<=rule.small[1];a++)for(let b=rule.large[0];b<=rule.large[1];b++){const n=[a,6-a-b,b];if(n.every((v,i)=>v>=0&&v<=groups[i].length))counts.push(n);}
+   if(!counts.length)continue;
+   for(let k=0;k<64;k++){
+     const n=counts[rand(r,0,counts.length-1)];
+     const chosen=groups.flatMap((g,i)=>g.map(x=>({...x,key:r()+.35*(1-x.i/pieces.length)})).sort((a,b)=>a.key-b.key).slice(0,n[i]));
+     const ids=new Set(chosen.map(x=>x.i)),front=pieces.filter(x=>!ids.has(x.i));
+     const endings=chosen.filter(x=>within(x.value,rule.last));if(!endings.length)continue;
+     const last=endings[rand(r,0,endings.length-1)],tail=shuffle(chosen.filter(x=>x.i!==last.i),r).concat(last);
+     const out=front.concat(tail);if(!varied(out.map(x=>x.value)))continue;
+     return {...p,version:VERSION,seed:Number(seed)>>>0,numbers:out.map(x=>x.value),solution:out.map(x=>x.cell)};
+   }
+ }
+ // Deterministic, tested fallback for extremely unlucky seeds.
+ if((Number(seed)>>>0)!==174937)return {...generate(174937,difficulty),seed:Number(seed)>>>0};
+ throw Error('Unable to generate constrained tail');
 }
 function fresh(puzzle){return {cells:puzzle.cells.slice(),tray:puzzle.numbers.slice(0,puzzle.traySize),cursor:puzzle.traySize,moves:0};}
 function status(s){if(s.cells.every(n=>n===0))return 'won';return s.tray.some(v=>v!==null&&s.cells.some(n=>n>=v))?'playing':'stuck';}
@@ -112,5 +145,5 @@ function valid(p,s){
  if(!s.cells.every((v,i)=>Number.isInteger(v)&&v>=0&&v<=p.cells[i])||!s.tray.every(v=>v===null||Number.isInteger(v)&&v>=1&&v<=9))return false;
  const rest=s.tray.filter(v=>v!==null).concat(p.numbers.slice(s.cursor));return s.moves===p.numbers.length-rest.length&&s.cells.reduce((a,b)=>a+b,0)===rest.reduce((a,b)=>a+b,0);
 }
-const api={VERSION,PREVIEW,DIFFICULTIES,generate,legacy,version2,version3,fresh,status,place,remaining,valid};root.GridZeroEngine=Object.freeze(api);if(typeof module!=='undefined'&&module.exports)module.exports=api;
+const api={VERSION,PREVIEW,DIFFICULTIES,generate,legacy,version2,version3,version4,TAILS,fresh,status,place,remaining,valid};root.GridZeroEngine=Object.freeze(api);if(typeof module!=='undefined'&&module.exports)module.exports=api;
 })(globalThis);

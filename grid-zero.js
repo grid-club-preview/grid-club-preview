@@ -6,20 +6,20 @@ if(!E||!root)return;
 const KEY='gridclub-gridzero-v1',read=()=>{try{return JSON.parse(localStorage.getItem(KEY)||'null');}catch(_){return null;}};
 const modes=Object.keys(E.DIFFICULTIES),currentMode=k=>({apprentice:'medium',advanced:'hard'})[k]||k,label=k=>{const n=currentMode(k);return n[0].toUpperCase()+n.slice(1);};
 let difficulty='beginner',puzzle=null,state=null,selected=0,elapsed=0,restarts=0,timer=null,started=null,screen='menu',best={};
-const bestKey=()=>puzzle?.version<4?'v'+puzzle.version+':'+puzzle.difficulty:puzzle?.difficulty||difficulty;
+const bestKey=()=>puzzle?.version<5?'v'+puzzle.version+':'+puzzle.difficulty:puzzle?.difficulty||difficulty;
 function seed(){return (Date.now()^Math.floor(Math.random()*4294967296))>>>0||1;}
 const now=()=>performance.now(),time=()=>Math.max(0,elapsed+(started===null?0:now()-started));
 const fmt=ms=>{const s=Math.floor(ms/1000);return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');};
-function save(){try{localStorage.setItem(KEY,JSON.stringify({version:4,difficulty,seed:puzzle?.seed??null,puzzleVersion:puzzle?.version??null,puzzleDifficulty:puzzle?.difficulty??null,traySize:puzzle?.traySize??null,state,elapsed:Math.round(time()),restarts,best}));}catch(_){}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify({version:5,difficulty,seed:puzzle?.seed??null,puzzleVersion:puzzle?.version??null,puzzleDifficulty:puzzle?.difficulty??null,traySize:puzzle?.traySize??null,state,elapsed:Math.round(time()),restarts,best}));}catch(_){}}
 function clock(){ $('gzTime').textContent=fmt(time()); }
 function stop(){if(started!==null){elapsed=time();started=null;}if(timer!==null){clearInterval(timer);timer=null;}clock();}
 function run(){if(started!==null||screen!=='play'||root.hidden||document.hidden||E.status(state)!=='playing')return;started=now();timer=setInterval(()=>{clock();},250);}
 function route(which){screen=which;$('gzMenu').hidden=which!=='menu';$('gzPlay').hidden=which!=='play';}
-function restore(){const x=read();if(!x||![1,2,3,4].includes(x.version))return;
+function restore(){const x=read();if(!x||![1,2,3,4,5].includes(x.version))return;
  if(x.version===1){best=Object.fromEntries(Object.entries(x.best||{}).map(([k,v])=>['legacy:'+k,v]));difficulty='beginner';}
- else{best=x.best&&typeof x.best==='object'?x.best:{};if(x.version===2||x.version===3)best=Object.fromEntries(Object.entries(best).map(([k,v])=>[['beginner','apprentice','advanced','expert'].includes(k)?'v'+x.version+':'+k:k,v]));const mode=currentMode(x.difficulty);difficulty=modes.includes(mode)?mode:'beginner';}
+ else{best=x.best&&typeof x.best==='object'?x.best:{};if(x.version===2||x.version===3||x.version===4)best=Object.fromEntries(Object.entries(best).map(([k,v])=>[['beginner','apprentice','advanced','medium','hard','expert'].includes(k)?'v'+x.version+':'+k:k,v]));const mode=currentMode(x.difficulty);difficulty=modes.includes(mode)?mode:'beginner';}
  if(!Number.isInteger(x.seed)||x.version===1||x.puzzleVersion===1)return;
- let p;try{const v=x.puzzleVersion||x.version,oldMode=x.puzzleDifficulty||x.difficulty||'beginner';p=v===2?E.version2(x.seed,oldMode):v===3?E.version3(x.seed,oldMode):E.generate(x.seed,currentMode(oldMode));}catch(_){return;}
+ let p;try{const v=x.puzzleVersion||x.version,oldMode=x.puzzleDifficulty||x.difficulty||'beginner';p=v===2?E.version2(x.seed,oldMode):v===3?E.version3(x.seed,oldMode):v===4?E.version4(x.seed,currentMode(oldMode)):E.generate(x.seed,currentMode(oldMode));}catch(_){return;}
  if(!E.valid(p,x.state))return;puzzle=p;state=x.state;elapsed=Math.max(0,Number(x.elapsed)||0);restarts=Math.max(0,Math.floor(Number(x.restarts)||0));selected=Math.max(0,state.tray.findIndex(v=>v!==null));}
 function menu(){stop();save();route('menu');for(const n of modes)$('gzChoice'+label(n)).setAttribute('aria-pressed',String(n===difficulty));$('gzContinue').hidden=!puzzle||E.status(state)==='won';$('gzContinue').textContent='Continue last puzzle ›';}
 function open(){home.hidden=true;root.hidden=false;menu();}
@@ -27,7 +27,7 @@ function begin(mode=difficulty){mode=currentMode(mode);if(!modes.includes(mode))
 function resume(){if(!puzzle)return;route('play');render();run();save();}
 function restart(){if(!puzzle)return;if(E.status(state)==='playing'&&state.moves&&!confirm('Restart this puzzle? Your stopwatch will keep its elapsed time.'))return;stop();state=E.fresh(puzzle);selected=0;restarts++;render();run();save();}
 function choose(n){if(!modes.includes(n)||n===difficulty)return;difficulty=n;menu();}
-function back(){if(screen==='play'){menu();return;}stop();save();root.hidden=true;home.hidden=false;}
+function back(){if($('gzIntro').open){$('gzIntro').close();return;}if(screen==='play'){menu();return;}stop();save();root.hidden=true;home.hidden=false;}
 function tile(value,index,kind){const el=document.createElement('button');el.type='button';el.className=kind;el.textContent=value===null?'·':String(value);el.dataset.index=String(index);return el;}
 function render(){
  if(!puzzle||!state)return;const status=E.status(state),won=status==='won',stuck=status==='stuck',locked=state.cells.filter(n=>n===0).length;
@@ -39,7 +39,12 @@ function render(){
  $('gzMessage').textContent='Numbers remaining: '+E.remaining(puzzle,state);
  $('gzMessage').dataset.outcome=status;$('gzMessage').hidden=status!=='playing';$('gzPlayControls').hidden=status!=='playing';$('gzResult').hidden=status==='playing';$('gzResult').dataset.outcome=status;$('gzResultTitle').textContent=won?'Zero Down!':'Grid lock!';$('gzResultText').textContent=won?'Time '+fmt(time())+' and '+restarts+' restart'+(restarts===1?'':'s'):'No moves left · '+locked+'/9 squares complete';$('gzResultRestart').className=won?'gzSecondary':'gzPrimary';$('gzResultNext').className=won?'gzPrimary':'gzSecondary';
 }
-$('gzEntry').onclick=open;$('gzBack').onclick=back;$('gzStart').onclick=()=>begin(difficulty);$('gzContinue').onclick=resume;$('gzRestart').onclick=restart;$('gzNew').onclick=()=>begin(puzzle?.difficulty||difficulty);$('gzResultNext').onclick=()=>begin(puzzle?.difficulty||difficulty);$('gzResultRestart').onclick=restart;$('gzResultMenu').onclick=menu;for(const n of modes)$('gzChoice'+label(n)).onclick=()=>choose(n);
+const INTRO_KEY='gridclub-zero-down-intro-v1';let introSeen=false,pendingMode=null;
+try{introSeen=localStorage.getItem(INTRO_KEY)==='1';}catch(_){}
+function requestStart(){if(introSeen){begin(difficulty);return;}pendingMode=difficulty;$('gzIntro').showModal();}
+$('gzIntro').addEventListener('close',()=>{pendingMode=null;});
+$('gzIntroStart').onclick=()=>{const mode=pendingMode||difficulty;introSeen=true;try{localStorage.setItem(INTRO_KEY,'1');}catch(_){}$('gzIntro').close();begin(mode);};
+$('gzEntry').onclick=open;$('gzBack').onclick=back;$('gzStart').onclick=requestStart;$('gzContinue').onclick=resume;$('gzRestart').onclick=restart;$('gzNew').onclick=()=>begin(puzzle?.difficulty||difficulty);$('gzResultNext').onclick=()=>begin(puzzle?.difficulty||difficulty);$('gzResultRestart').onclick=restart;$('gzResultMenu').onclick=menu;for(const n of modes)$('gzChoice'+label(n)).onclick=()=>choose(n);
 document.addEventListener('visibilitychange',()=>{if(root.hidden||screen!=='play')return;if(document.hidden){stop();save();}else run();});window.addEventListener('pagehide',()=>{if(!root.hidden&&screen==='play'){stop();save();}});
 restore();globalThis.GridZeroApp=Object.freeze({open,back,menu});
 })();
