@@ -1,13 +1,14 @@
 /* Grid Club v0.9.5 · shared device-local Daily Challenge journey */
 (function(root){
  'use strict';
- const order=['dotTrails','pipeShift'];
+ const order=['dotTrails','pipeShift','wordRescue'];
  const date=()=>new Date().toISOString().slice(0,10);
  function read(key){try{return JSON.parse(localStorage.getItem(key)||'null')||{};}catch(_){return {};}}
  function status(){
    const day=date(),dot=read('gridclub-stats-v1').games?.dotTrails?.daily?.[day];
    const pipe=read('gridclub-pipeshift-progress-v1').daily?.[day];
-   const completed={dotTrails:!!dot,pipeShift:!!pipe?.completed};
+   const word=read('gridclub-word-rescue-daily-v1')[day];
+   const completed={dotTrails:!!dot,pipeShift:!!pipe?.completed,wordRescue:!!word?.completed};
    return {day,completed,count:order.filter(id=>completed[id]).length,total:order.length};
  }
  function nextGame(from){
@@ -20,11 +21,13 @@
  function remainingLabel(){const n=remaining();return n?`Daily Challenges remaining: ${n}`:'All Daily Challenges complete, more tomorrow';}
  function summary(){
    const s=status();
-   return `${s.count}/${s.total} complete today · Dot Trails ${s.completed.dotTrails?'✓':'○'} · Pipe Shift ${s.completed.pipeShift?'✓':'○'}`;
+   return `${s.count}/${s.total} complete today · Dot Trails ${s.completed.dotTrails?'✓':'○'} · Pipe Shift ${s.completed.pipeShift?'✓':'○'} · Word Rescue ${s.completed.wordRescue?'✓':'○'}`;
  }
  function visitNext(from){
    const next=nextGame(from);if(!next)return false;
-   if(next==='pipeShift'){
+   root.WordRescueApp?.home?.();
+   if(next==='wordRescue'){root.GridDotTrailsApp?.home?.();root.PipeShiftApp?.home?.();if(!root.WordRescueApp?.openDaily)return false;root.WordRescueApp.openDaily();}
+   else if(next==='pipeShift'){
      if(!root.PipeShiftApp?.dailyMenu)return false;
      root.GridDotTrailsApp?.home?.();
      root.PipeShiftApp.dailyMenu();

@@ -471,7 +471,8 @@
         result.sync==='review'?'Awaiting fair-play review':result.sync==='expired'?'Ranked attempt expired':
         'Saved locally · verification pending';
       note.textContent=`Your first result: ${time} · ${result.moves} moves · ${state}`;
-    }else note.textContent='One ranked attempt per day. Practice unlocks after completion.';
+    }else note.textContent='';
+    note.hidden=!result;
     renderDailyLeaderboard();
   }
   function renderDailyLeaderboard(){
@@ -914,7 +915,7 @@
       serverElapsedMs:reply.elapsedMs,serverMoves:reply.moves});
     if(mode==='daily'&&!$('gameScreen').hidden&&game?.attemptId===result.attemptId){
       $('resultStatus').hidden=false;
-      $('resultStatus').textContent=reply.verified?(result.assisted?'Your result is saved, but using hints excludes it from the leaderboard.':'Verified! Your unassisted result is on the community leaderboard.'):'Your result is saved and awaiting a fair-play review.';
+      $('resultStatus').textContent=reply.verified?(result.assisted?'Your result is saved, but using hints excludes it from the leaderboard.':'Your first result is on today’s leaderboard!'):'Your result is saved and awaiting a fair-play review.';
       $('winMessage').textContent=`Daily Challenge · ${fmtSeconds(reply.elapsedMs)} ranked time · ${reply.moves} moves`;
     }
   }
@@ -956,7 +957,7 @@
     if(mode!=='daily'||!result)return;
     const status=$('resultStatus');
     if(result.date!==today()){status.textContent='This Daily Challenge has ended. Your achievement is saved locally, but the leaderboard is closed.';return;}
-    if(result.verified){status.textContent=result.assisted?'Your result is saved, but using hints excludes it from the leaderboard.':'Verified result saved on the unassisted leaderboard.';await refreshLeaderboard(result);return;}
+    if(result.verified){status.textContent=result.assisted?'Your result is saved, but using hints excludes it from the leaderboard.':'Your first result is on today’s leaderboard!';await refreshLeaderboard(result);return;}
     if(result.sync==='review'){status.textContent='This result is awaiting a fair-play review.';await refreshLeaderboard(result);return;}
     if(!navigator.onLine){status.textContent="You're offline, but your achievement is saved. We'll try to submit it when you're online, if today's challenge is still active.";return;}
     if(!window.GridRanked?.configured){status.textContent='Achievement saved on this device. Community rankings will appear once the backend is connected.';return;}

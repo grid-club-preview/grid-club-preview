@@ -219,8 +219,8 @@ function statsMenu(){
  const s=progress.moveStats||{},records=[s.levels,s.daily,...Object.values(s.random||{})].filter(Boolean);
  const sum=records.reduce((a,v)=>a+(Number(v.total)||0),0);
  const count=records.reduce((a,v)=>a+(Number(v.count)||0),0);
- $('pipeStatsCompleted').textContent=String(completed+random);
- $('pipeStatsAverage').textContent=count?(sum/count).toFixed(1):'—';
+ $('pipeStatsCompleted').textContent=String(completed+random+Object.values(progress.daily||{}).filter(x=>x?.completed).length);
+ $('pipeStatsAverage').textContent=count?String(Math.round(sum/count)):'—';
  const list=$('pipeStatsDetails');list.replaceChildren();
  for(const [label,tier,previousSize] of [
    ['Beginner','beginner',5],['Apprentice','apprentice',6],
@@ -236,7 +236,7 @@ function statsMenu(){
    const row=document.createElement('tr');
    const title=document.createElement('th');title.scope='row';title.textContent=label;
    const completedCell=document.createElement('td');completedCell.textContent=String(played);
-   const averageCell=document.createElement('td');averageCell.textContent=record?.count?(record.total/record.count).toFixed(1):'—';
+   const averageCell=document.createElement('td');averageCell.textContent=record?.count?String(Math.round(record.total/record.count)):'—';
    row.append(title,completedCell,averageCell);list.append(row);
  }
 }
@@ -314,7 +314,8 @@ function dailyMenu(){
  $('pipeDailyDay').textContent=day;
  $('pipeDailyDifficulty').textContent=p.freeObjective==='all'?'Use all pipes':'Use any pipes';
  $('pipeDailyPlay').textContent=record?.completed?'Practice today’s puzzle':progress.active[`daily:${day}`]?'Continue today’s puzzle':'Play today’s puzzle';
- $('pipeDailyNote').textContent=record?.completed?`Your first result: ${record.moves} moves${record.verified?' · verified':record.sync==='review'?' · under review':' · saved locally'}`:'One ranked result per day · Fewest moves wins · Fastest verified time breaks ties.';
+ $('pipeDailyNote').textContent=record?.completed?`Your first result: ${record.moves} moves${record.verified?' · verified':record.sync==='review'?' · under review':' · saved locally'}`:'';
+ $('pipeDailyNote').hidden=!record?.completed;
  $('pipeDailyRank').textContent='';
  const list=$('pipeDailyEntries');list.replaceChildren();
  if(!rankedReady()){list.textContent='Leaderboard unavailable offline or until the backend update is installed.';return;}

@@ -7,7 +7,7 @@ const current=()=>{
  if(visible('home'))return null;
  if(visible('wordRescueScreen')){
    if(visible('wrRules'))return null;
-   return visible('wrPlay')?['word-play',root.WordRescueApp?.back]:visible('wrLeaderboard')?['word-leaderboard',root.WordRescueApp?.back]:visible('wrStats')?['word-stats',root.WordRescueApp?.back]:visible('wrCampaign')?['word-campaign',root.WordRescueApp?.back]:visible('wrMenu')?['word-menu',root.WordRescueApp?.back]:null;
+   return visible('wrPlay')?['word-play',root.WordRescueApp?.back]:visible('wrLeaderboard')?['word-leaderboard',root.WordRescueApp?.back]:visible('wrStats')?['word-stats',root.WordRescueApp?.back]:visible('wrCampaign')?['word-campaign',root.WordRescueApp?.back]:visible('wrDaily')?['word-daily',root.WordRescueApp?.back]:visible('wrMenu')?['word-menu',root.WordRescueApp?.back]:null;
  }
  if(visible('pipeShiftScreen')){
    for(const id of ['pipe-game','pipe-menu','pipe-random','pipe-stages','pipe-levels','pipe-stats','pipe-daily'])

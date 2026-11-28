@@ -476,6 +476,7 @@
           </div>
         </div>
         <button id="wrContinue" class="wrContinue" type="button" hidden><span id="wrContinueLabel">Continue current run</span><span aria-hidden="true">›</span></button>
+        <button id="wrDailyEntry" class="wrMode" type="button"><span class="wrModeIcon" aria-hidden="true">☀</span><span><strong>Daily Challenge</strong><small>Triple Rescue • Earn credits</small></span><span class="tileArrow" aria-hidden="true">›</span></button>
         <button id="wrCampaignEntry" class="wrMode" type="button"><span class="wrModeIcon" aria-hidden="true">⚓</span><span><strong>Rescue Challenge</strong><small>Play levels • Earn credits</small></span><span class="tileArrow" aria-hidden="true">›</span></button>
         <h3 class="wrMenuSection">Choose a rescue</h3>
         <button id="wrNewTide" class="wrMode" type="button">
@@ -507,6 +508,7 @@
           <p class="wrFine">Play offline or compete in the global rankings with an online, unassisted rescue.</p>
         </details>
       </div>
+      <div id="wrDaily" hidden><div class="wrCard"><div class="eyebrow" id="wrDailyDate"></div><h3>Triple Rescue</h3><p class="wrFine">Three rescues. Save Gridda as often as you can. Find 5, 6 and 7-letter words for one-time bonuses of 10, 20 and 30 points.</p><div id="wrDailyStages"></div><p id="wrDailySummary" class="wrFine"></p><button id="wrDailyPlay" class="wrAction" type="button">Play today’s rescue</button><button id="wrDailyNext" class="wrAction" type="button" hidden>Next Daily Challenge ›</button><p id="wrDailyTomorrow" class="wrFine" hidden>More Daily Challenges tomorrow.</p></div><div class="wrCard"><h3>Global leaderboard</h3><table class="wrBoardTable"><thead><tr><th>Rank</th><th>Player</th><th>Saved</th><th>Score</th></tr></thead><tbody id="wrDailyRows"></tbody></table><p id="wrDailyRank" class="wrFine"></p><button id="wrDailyRefresh" class="wrSecondary" type="button">Refresh</button></div></div>
       <div id="wrCampaign" hidden><div class="wrCard"><h3 id="wrCampaignTitle">Rescue Challenge</h3><p id="wrCampaignSummary" class="wrFine"></p><p class="wrFine">Earn 5 credits each for completing all three stages, reaching the score target, and making a 5+ letter word in every stage.</p><button id="wrCampaignBack" class="wrSecondary" type="button" hidden>All levels</button></div><div id="wrCampaignList"></div></div>
       <div id="wrLeaderboard" hidden>
         <div class="wrCard wrScoreboard">
@@ -706,7 +708,7 @@
         <div class="pipeCard pipeDailyHero">
           <strong id="pipeDailyDifficulty">Use any pipes</strong>
           <p>Fix the flow using as few moves as possible.</p>
-          <p id="pipeDailyNote">One ranked result per day. No timer.</p>
+          <p id="pipeDailyNote" hidden></p>
           <button id="pipeDailyPlay" type="button" class="pipeButton pipeDailyAction">Play today’s puzzle</button>
         </div>
         <div class="pipeDailyBoard">
@@ -871,7 +873,7 @@
       </div>
       <div class="dotDailyCard dotDailyHero">
         <p>Connect every pair and fill the grid as quickly as possible.</p>
-        <p id="dotDailyResultNote" class="dotDailyResultNote">One ranked result per day.</p>
+        <p id="dotDailyResultNote" class="dotDailyResultNote" hidden></p>
         <button type="button" id="dotDailyPlay" class="dotDailyPlay">Play today's puzzle</button>
       </div>
       <div class="dotDailyCard dotDailyLeaderboard">

@@ -455,3 +455,5 @@
 #wordRescueScreen .wrScene[data-expression=fear] .wrTension,#wordRescueScreen .wrScene[data-expression=worried] .wrTension{opacity:1}
 #wordRescueScreen .wrScene[data-danger=won] .wrTension{opacity:0}
 @media(max-width:350px){#wordRescueScreen .wrResultActions{gap:4px}#wordRescueScreen .wrResultActions button{padding-left:3px;padding-right:3px}#wordRescueScreen .wrResult[data-context=campaign] #wrTryAgain{font-size:12px}}
+
+#wordRescueScreen .wrStatus:has(.wrSafetyStat){align-items:stretch} #wordRescueScreen .wrStatus:has(.wrSafetyStat) .wrStat{height:64px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center} #wordRescueScreen .wrSafetyStat strong{line-height:1.15} .wrDailyStage{display:flex;justify-content:space-between;gap:8px;padding:12px 0;border-bottom:1px solid #34475e;font-size:13px}.wrDailyStage span{color:#b5c7d8;text-align:right} #wrDaily .wrAction{width:100%;margin-top:8px}
