@@ -1,5 +1,5 @@
-/* Grid Club v0.9.78 · Zero Down result copy */
-const CACHE='gridclub-pwa-v0.9.78';
+/* Grid Club v0.9.79 · Zero Down single-number play */
+const CACHE='gridclub-pwa-v0.9.79';
 const APP_FILES=[
   './','./index.html',
   './puzzle.js?v=0.9.66',
@@ -16,9 +16,9 @@ const APP_FILES=[
   './word-rescue-lexicon.js?v=0.9.30',
   './word-rescue-engine.js?v=0.9.72',
   './word-rescue.js?v=0.9.74',
-  './grid-zero.css?v=0.9.77',
-  './grid-zero-engine.js?v=0.9.76',
-  './grid-zero.js?v=0.9.78',
+  './grid-zero.css?v=0.9.79',
+  './grid-zero-engine.js?v=0.9.79',
+  './grid-zero.js?v=0.9.79',
   './edge-navigation.js?v=0.9.74',
   './vault-reward.js?v=0.9.25',
   './pipe-engine.js?v=0.9.33',
