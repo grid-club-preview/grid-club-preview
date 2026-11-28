@@ -17,7 +17,7 @@
   <link rel="stylesheet" href="dot-daily.css?v=0.9.25">
   <link rel="stylesheet" href="home-roadmap.css?v=0.9.26">
   <link rel="stylesheet" href="word-rescue.css?v=0.9.74">
-  <link rel="stylesheet" href="grid-zero.css?v=0.9.79">
+  <link rel="stylesheet" href="grid-zero.css?v=0.9.80">
   <style>
     :root { color-scheme: dark; --bg:#0e1424; --surface:#1a243a; --tile:#253147; --muted:#9daabe; --mint:#7be3d4; --purple:#a178ff; }
     * { box-sizing: border-box; }
@@ -339,7 +339,7 @@
 <body>
   <main class="shell">
     <section id="home">
-      <header><div><div class="eyebrow">GRID CLUB</div><h1>A pocketful of challenges.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.79</span></div></header>
+      <header><div><div class="eyebrow">GRID CLUB</div><h1>A pocketful of challenges.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.80</span></div></header>
       <div class="homeSectionHeader" aria-label="Puzzle Deck games">
         <div class="eyebrow">PUZZLE DECK</div>
         <span class="homeSectionCount">4 playable · 3 planned</span>
@@ -432,7 +432,7 @@
         <div class="gzCard"><h3>Start new game</h3><div class="gzChoices" role="group" aria-label="Difficulty"><button id="gzChoiceBeginner" type="button" aria-pressed="true">Beginner</button><button id="gzChoiceMedium" type="button" aria-pressed="false">Medium</button><button id="gzChoiceHard" type="button" aria-pressed="false">Hard</button><button id="gzChoiceExpert" type="button" aria-pressed="false">Expert</button></div><button id="gzStart" class="gzPrimary" type="button">Play now ›</button></div>
         <details class="gzCard gzRules"><summary>How to play</summary><div class="gzRulesCopy"><p>Select a square to subtract the highlighted number from that square. Make every square zero to win.</p><p>Each subtraction brings the next number into play. Plan ahead: a wrong choice can leave you stuck. Restart to try the same puzzle again.</p></div></details>
       </div>
-      <div id="gzPlay" hidden><p id="gzDifficulty" class="gzDifficulty"></p><div class="gzStats"><div class="gzStat"><small>Secured</small><strong id="gzSecured">0/9</strong></div><div class="gzStat"><small>Time</small><strong id="gzTime">00:00</strong></div><div class="gzStat"><small>Restarts</small><strong id="gzRestarts">0</strong></div></div><div id="gzBoard" class="gzBoard" aria-label="Zero Down board"></div><p class="gzLabel" id="gzTrayLabel">Select a number</p><div id="gzTray" class="gzTray"></div><p class="gzLabel">Coming next ↑</p><div id="gzQueue" class="gzQueue" aria-label="Next six numbers"></div><p id="gzMessage" role="status"></p><div class="gzControls" id="gzPlayControls"><button id="gzRestart" class="gzSecondary" type="button">↻ Restart</button><button id="gzNew" class="gzSecondary" type="button">New puzzle</button></div><div id="gzResult" class="gzCard gzResult" hidden><h3 id="gzResultTitle"></h3><p id="gzResultText" class="gzFine"></p><div class="gzControls gzResultControls"><button id="gzResultMenu" class="gzSecondary" type="button">‹ Menu</button><button id="gzResultRestart" class="gzSecondary" type="button">↻ Restart</button><button id="gzResultNext" class="gzPrimary" type="button">New puzzle ›</button></div></div></div>
+      <div id="gzPlay" hidden><p id="gzDifficulty" class="gzDifficulty"></p><div class="gzStats"><div class="gzStat"><small>Secured</small><strong id="gzSecured">0/9</strong></div><div class="gzStat"><small>Time</small><strong id="gzTime">00:00</strong></div><div class="gzStat"><small>Restarts</small><strong id="gzRestarts">0</strong></div></div><div id="gzBoard" class="gzBoard" aria-label="Zero Down board"></div><div id="gzSequence" class="gzSequence" role="group" aria-label="Active and upcoming numbers"><div id="gzTray" class="gzTray"></div><div id="gzQueue" class="gzQueue" aria-label="Next six numbers"></div></div><p id="gzMessage" role="status"></p><div class="gzControls" id="gzPlayControls"><button id="gzRestart" class="gzSecondary" type="button">↻ Restart</button><button id="gzNew" class="gzSecondary" type="button">New puzzle</button></div><div id="gzResult" class="gzCard gzResult" hidden><h3 id="gzResultTitle"></h3><p id="gzResultText" class="gzFine"></p><div class="gzControls gzResultControls"><button id="gzResultMenu" class="gzSecondary" type="button">‹ Menu</button><button id="gzResultRestart" class="gzSecondary" type="button">↻ Restart</button><button id="gzResultNext" class="gzPrimary" type="button">New puzzle ›</button></div></div></div>
     </section>
     <section id="wordRescueScreen" hidden>
       <div class="wrHeader">
@@ -997,7 +997,7 @@
       </div>
       
       <div class="adSlot" id="adSlot" aria-hidden="true" hidden></div>
-      <footer>Grid Club · v0.9.79 beta</footer>
+      <footer>Grid Club · v0.9.80 beta</footer>
     </section>
   </main>
   <div class="pauseLayer" id="dotDailyCompleteLayer" hidden role="dialog" aria-modal="true" aria-labelledby="dotDailyCompleteTitle">
@@ -1040,7 +1040,7 @@
   <script src="word-rescue-engine.js?v=0.9.72"></script>
   <script src="word-rescue.js?v=0.9.74"></script>
   <script src="grid-zero-engine.js?v=0.9.79"></script>
-  <script src="grid-zero.js?v=0.9.79"></script>
+  <script src="grid-zero.js?v=0.9.80"></script>
   <script src="edge-navigation.js?v=0.9.74"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol === 'https:') {
