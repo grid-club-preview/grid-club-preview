@@ -1,5 +1,5 @@
-/* Grid Club v0.9.71 · Rescue Challenge */
-const CACHE='gridclub-pwa-v0.9.71';
+/* Grid Club v0.9.72 · Rescue polish */
+const CACHE='gridclub-pwa-v0.9.72';
 const APP_FILES=[
   './','./index.html',
   './puzzle.js?v=0.9.66',
@@ -12,10 +12,10 @@ const APP_FILES=[
   './vault-reward.css?v=0.9.25',
   './dot-daily.css?v=0.9.25',
   './home-roadmap.css?v=0.9.26',
-  './word-rescue.css?v=0.9.71',
+  './word-rescue.css?v=0.9.72',
   './word-rescue-lexicon.js?v=0.9.30',
-  './word-rescue-engine.js?v=0.9.71',
-  './word-rescue.js?v=0.9.71',
+  './word-rescue-engine.js?v=0.9.72',
+  './word-rescue.js?v=0.9.72',
   './edge-navigation.js?v=0.9.71',
   './vault-reward.js?v=0.9.25',
   './pipe-engine.js?v=0.9.33',

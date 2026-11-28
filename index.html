@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="vault-reward.css?v=0.9.25">
   <link rel="stylesheet" href="dot-daily.css?v=0.9.25">
   <link rel="stylesheet" href="home-roadmap.css?v=0.9.26">
-  <link rel="stylesheet" href="word-rescue.css?v=0.9.71">
+  <link rel="stylesheet" href="word-rescue.css?v=0.9.72">
   <style>
     :root { color-scheme: dark; --bg:#0e1424; --surface:#1a243a; --tile:#253147; --muted:#9daabe; --mint:#7be3d4; --purple:#a178ff; }
     * { box-sizing: border-box; }
@@ -337,7 +337,7 @@
 <body>
   <main class="shell">
     <section id="home">
-      <header><div><div class="eyebrow">GRID CLUB</div><h1>A pocketful of challenges.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.71</span></div></header>
+      <header><div><div class="eyebrow">GRID CLUB</div><h1>A pocketful of challenges.</h1></div><div class="homeBrand"><div class="mark">✦</div><span class="homeVersion" id="homeVersion">v0.9.72</span></div></header>
       <div class="homeSectionHeader" aria-label="Puzzle Deck games">
         <div class="eyebrow">PUZZLE DECK</div>
         <span class="homeSectionCount">3 playable · 3 planned</span>
@@ -476,7 +476,7 @@
           </div>
         </div>
         <button id="wrContinue" class="wrContinue" type="button" hidden><span id="wrContinueLabel">Continue current run</span><span aria-hidden="true">›</span></button>
-        <button id="wrCampaignEntry" class="wrMode" type="button"><span class="wrModeIcon" aria-hidden="true">⚓</span><span><strong>Rescue Challenge</strong><small>15 levels · 45 stages · Earn Club Credits</small></span><span class="tileArrow" aria-hidden="true">›</span></button>
+        <button id="wrCampaignEntry" class="wrMode" type="button"><span class="wrModeIcon" aria-hidden="true">⚓</span><span><strong>Rescue Challenge</strong><small>Play levels • Earn credits</small></span><span class="tileArrow" aria-hidden="true">›</span></button>
         <h3 class="wrMenuSection">Choose a rescue</h3>
         <button id="wrNewTide" class="wrMode" type="button">
           <span class="wrModeIcon" aria-hidden="true">🌊</span>
@@ -498,8 +498,11 @@
         <button id="wrStatsEntry" class="wrMode" type="button"><span class="wrModeIcon" aria-hidden="true">▥</span><span><strong>Your stats</strong><small>Personal records and rescue history</small></span><span class="tileArrow" aria-hidden="true">›</span></button>
         <details class="wrCard wrMenuRules">
           <summary>How to play</summary>
-          <p class="wrFine">Words need at least 3 letters. Regular plurals are accepted. Trays favour familiar short words, with at least one vowel and two consonants. Each new rescue starts with a seven-letter opportunity. Full trays contain two or three vowels. A third copy of a letter is rare; four copies are never dealt. Letters refresh after every valid word. Each letter builds one block; longer words score more points. The first reshuffle in each round is free; subsequent reshuffles cost 5 Club Credits. Credits are not earned in Free Play.</p>
-          <p id="wrBest" class="wrFine" aria-live="polite">Complete a rescue to set your first personal best.</p>
+          <p class="wrFine">Words need at least 3 letters. Regular plurals are accepted.</p>
+          <p class="wrFine">Each rescue starts with seven letters. Select letters to build a word. Letters refresh after every valid word you build.</p>
+          <p class="wrFine">Each letter adds one piece of wreckage. Build enough to save Gridda. Longer words score more points.</p>
+          <p class="wrFine">The first reshuffle in each round is free; subsequent reshuffles cost 5 Club Credits.</p>
+          <p class="wrFine">Club Credits can be earned in Rescue Challenge levels.</p>
           <p id="wrDictionaryStatus" class="wrDictionaryStatus" role="status" aria-live="polite">Expanded English word list ready offline.</p>
           <p class="wrFine">Play offline or compete in the global rankings with an online, unassisted rescue.</p>
         </details>
@@ -534,7 +537,7 @@
       <div id="wrPlay" hidden>
         <p id="wrCampaignObjective" class="wrCampaignObjective" hidden></p>
         <div class="wrStatus">
-          <div class="wrStat wrSafetyStat"><small>Gridda’s status</small><strong id="wrBlocks">Holding steady</strong></div>
+          <div class="wrStat wrSafetyStat"><small>Rescue status</small><strong id="wrBlocks">Holding steady</strong></div>
           <div class="wrStat"><small>Score</small><strong id="wrScore">0</strong></div>
         </div>
         <div class="wrScene" id="wrScene" data-danger="safe" data-mode="tower" data-panic="calm" role="img" aria-label="Gridda builds an elevated escape tower above rising water, or a raft away from a pursuing shark">
@@ -566,9 +569,11 @@
                   <path d="M26 33 Q25 8 46 8 Q65 6 69 27 Q61 18 50 21 Q39 25 30 21 Z" fill="#392d48"/>
                   <path d="M29 23 Q19 39 27 53" fill="none" stroke="#392d48" stroke-width="9" stroke-linecap="round"/>
                   <path d="M68 22 Q78 41 69 54" fill="none" stroke="#392d48" stroke-width="9" stroke-linecap="round"/>
-                  <circle cx="40" cy="36" r="3" fill="#272637"/>
-                  <circle cx="57" cy="36" r="3" fill="#272637"/>
-                  <path d="M42 47 Q48 53 55 46" fill="none" stroke="#963e50" stroke-width="2.7" stroke-linecap="round"/>
+                  <g class="wrEyesNormal"><circle cx="40" cy="36" r="3" fill="#272637"/><circle cx="57" cy="36" r="3" fill="#272637"/></g>
+                  <g class="wrEyesFear"><ellipse cx="40" cy="36" rx="4.7" ry="5.3" fill="#fff4e5"/><ellipse cx="57" cy="36" rx="4.7" ry="5.3" fill="#fff4e5"/><circle cx="40" cy="36" r="2.7" fill="#272637"/><circle cx="57" cy="36" r="2.7" fill="#272637"/></g>
+                  <path class="wrSmile" d="M42 47 Q48 53 55 46" fill="none" stroke="#963e50" stroke-width="2.7" stroke-linecap="round"/>
+                  <path class="wrWorriedMouth" d="M43 51 Q48 44 54 50" fill="none" stroke="#963e50" stroke-width="2.7" stroke-linecap="round"/>
+                  <ellipse class="wrFearMouth" cx="48.5" cy="49" rx="4.8" ry="6" fill="#79394b"/>
                   <path class="wrTension" d="M35 29 L43 32 M54 32 L62 29" stroke="#5e3945" stroke-width="2.6" stroke-linecap="round"/>
                   <circle cx="29" cy="44" r="3" fill="#dc847c" opacity=".55"/>
                   <circle cx="66" cy="44" r="3" fill="#dc847c" opacity=".55"/>
@@ -636,12 +641,15 @@
         <div id="wrResult" class="wrResult" hidden role="dialog" aria-labelledby="wrResultTitle">
           <div class="wrResultCopy">
             <h3 id="wrResultTitle" tabindex="-1">Safe at last!</h3>
+            <p id="wrResultOutcome"></p>
             <p id="wrResultText"></p>
+            <p id="wrResultCampaignNote" hidden></p>
           </div>
           <div class="wrResultActions">
+            <button id="wrResultModes" class="wrSecondary" type="button">‹ Menu</button>
             <button id="wrResultBoard" class="wrSecondary" type="button">Leaderboard</button>
-            <button id="wrResultModes" class="wrSecondary" type="button">Back to game menu</button>
-            <button id="wrTryAgain" type="button">Play again</button>
+            <button id="wrResultLevels" class="wrSecondary" type="button">Levels ›</button>
+            <button id="wrTryAgain" type="button">↻ Play again</button>
           </div>
         </div>
         <div id="wrRules" class="wrRules" hidden role="dialog" aria-modal="true" aria-labelledby="wrRulesTitle">
@@ -815,7 +823,7 @@
                 <h3 id="pipeTimeoutTitle">Time's up!</h3><p id="pipeTimeoutMessage">Try this puzzle again.</p>
                 <button type="button" id="pipeRescue" hidden>Emergency rescue · +30s · 15 ◉</button>
                 <p id="pipeRescueNote" class="pipeRescueNote" role="status"></p>
-                <button type="button" id="pipeRetry">Retry for free</button>
+                <button type="button" id="pipeRetry">↻ Retry for free</button>
                 <button type="button" class="pipeSecondary" id="pipeTimeoutBack">Back to Levels</button>
               </div>
             </div>
@@ -975,7 +983,7 @@
       </div>
       
       <div class="adSlot" id="adSlot" aria-hidden="true" hidden></div>
-      <footer>Grid Club · v0.9.71 beta</footer>
+      <footer>Grid Club · v0.9.72 beta</footer>
     </section>
   </main>
   <div class="pauseLayer" id="dotDailyCompleteLayer" hidden role="dialog" aria-modal="true" aria-labelledby="dotDailyCompleteTitle">
@@ -1015,8 +1023,8 @@
   <script src="vault-reward.js?v=0.9.25"></script>
   <script src="pipe-shift.js?v=0.9.70"></script>
   <script src="word-rescue-lexicon.js?v=0.9.30"></script>
-  <script src="word-rescue-engine.js?v=0.9.71"></script>
-  <script src="word-rescue.js?v=0.9.71"></script>
+  <script src="word-rescue-engine.js?v=0.9.72"></script>
+  <script src="word-rescue.js?v=0.9.72"></script>
   <script src="edge-navigation.js?v=0.9.71"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol === 'https:') {

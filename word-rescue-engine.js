@@ -287,7 +287,7 @@ function safeHeight(s){return SEA_BASELINE+(s.rescueRules>=2?11:17)+Math.min(24,
 // Preserve the original 2.7s allowance for unfinished saved rounds.
 function remainingSafetySeconds(s){
  if(s.mode==='raft')
-   return (s.raftPace===3?28.5:25.5)+(s.campaign?.shark||0)+Math.min(targetBlocks(s),s.blocks)*(s.raftPace===3?.85:s.raftPace===2?.75:2.7)+(s.friendHelp===true?10:0)-s.elapsedMs/1000;
+   return (s.raftPace===4?27:s.raftPace===3?28.5:25.5)+(s.campaign?.shark||0)+Math.min(targetBlocks(s),s.blocks)*(s.raftPace>=3?.85:s.raftPace===2?.75:2.7)+(s.friendHelp===true?10:0)-s.elapsedMs/1000;
  const rate=tideRate(s)*(s.campaign?.tide||1)+2*(s.campaign?.storm||0)*s.elapsedMs/1000;
  return (safeHeight(s)-waterHeight(s))/rate;
 }

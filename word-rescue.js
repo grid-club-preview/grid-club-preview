@@ -68,12 +68,13 @@ function startTimer(){
  if(state.rankEligible===undefined&&state.elapsedMs===0&&state.words.length===0&&rankedReady()){
    const original=state;rankStarting=true;state.rankEligible=false;
    $('wrDock').inert=true;render();
-   const request=globalThis.GridRanked.call('word_start',{mode:state.mode,rackRules:4,raftPace:3,sinkRules:3});
+   const pace=state.mode==='raft'?4:3;
+   const request=globalThis.GridRanked.call('word_start',{mode:state.mode,rackRules:4,raftPace:pace,sinkRules:3});
    let timeout;
    Promise.race([request,new Promise((_,reject)=>{timeout=setTimeout(()=>reject(Error('Connection timeout')),10000);})]).then(reply=>{
      if(state!==original||screen!=='play'||!rankStarting)return;
-     if(!reply.attemptId||!Number.isInteger(reply.seed)||reply.rules!==9)throw Error('Ranked rescue unavailable');
-     state=engine.create(reply.seed,original.mode,4,3,3);
+     if(!reply.attemptId||!Number.isInteger(reply.seed)||reply.rules!==(pace===4?10:9))throw Error('Ranked rescue unavailable');
+     state=engine.create(reply.seed,original.mode,4,pace,3);
      state.attemptId=original.attemptId;state.reracks=0;state.started=true;
      state.rankEligible=true;state.rankAttempt=reply.attemptId;state.rankEvents=[];
      delete state.rankReason;
@@ -204,9 +205,7 @@ function menu(){
  ensureDictionary();
  if(saved)$('wrContinueLabel').textContent=saved.campaign?'Continue Level '+saved.campaign.level+' · Stage '+saved.campaign.stage:'Continue '+modeName(saved.mode)+' · '+formatMs(saved.elapsedMs)+' played';
  $('wrWallet').textContent='◉ '+balance();
- const best=records();
- $('wrBest').textContent=['tide','raft','sinking'].map(mode=>best[mode]?'Best '+modeName(mode)+': '+best[mode].seconds+'s':'').filter(Boolean).join(' · ')||
-   'Complete a rescue to set your first personal best.';
+
 }
 function homeScreen(){if(rankStarting||state?.rankEligible&&!state.won)unrank();save();stop();root.hidden=true;home.hidden=false;}
 function open(){
@@ -351,25 +350,21 @@ function publishRank(run){
 function finished(){
  stop();state.selected=[];rulesOpen=false;$('wrRules').hidden=true;$('wrDock').inert=false;
  persistRecord();
- if(state.won){
-   // Ordinary Free Play rounds do not award credits. A future verified
-   // Daily Challenge can award Club Credits separately.
-   $('wrResultTitle').textContent=victoryTitle(state.mode);
-   if(!state.campaign)publishRank(state);
-   $('wrResultText').textContent='You saved Gridda! '+(state.mode==='raft'?'You built ':'You stacked ')+(state.mode==='raft'?Math.min(engine.targetBlocks(state),state.blocks):state.blocks)+(state.mode==='raft'?' planks':' pieces of wreckage')+' using '+state.words.length+
-     (state.words.length===1?' word':' words')+(state.mode==='raft'?' in '+Math.round(state.elapsedMs/1000)+' seconds':'')+'. Score: '+state.score+'.';
- }else{
-   $('wrResultTitle').textContent=defeatTitle(state.mode);
-   const count=state.mode==='raft'?Math.min(engine.targetBlocks(state),state.blocks):state.blocks;
-   const material=state.mode==='raft'?(count===1?' plank':' planks'):(count===1?' piece of wreckage':' pieces of wreckage');
-   $('wrResultText').textContent='You didn’t save Gridda. '+(state.mode==='raft'?'You built ':'You stacked ')+count+material+' using '+state.words.length+(state.words.length===1?' word':' words')+'. Score: '+state.score+'.';
-
- }
- if(state.campaign)$('wrResultText').textContent+=campaignFinish(state);
- $('wrTryAgain').textContent=state.campaign?(state.won?'Continue':'Retry stage'):'Play again';
- $('wrResultModes').textContent=state.campaign?'Back to Rescue Challenge':'Back to game menu';
- $('wrResult').dataset.outcome=state.won?'won':'lost';
- $('wrResultBoard').hidden=!state.won||!!state.campaign;
+ const won=state.won,c=state.campaign,raft=state.mode==='raft';
+ $('wrResultTitle').textContent=won?victoryTitle(state.mode):defeatTitle(state.mode);
+ if(won&&!c)publishRank(state);
+ const count=raft?Math.min(engine.targetBlocks(state),state.blocks):state.blocks;
+ const material=raft?(count===1?' plank':' planks'):(count===1?' piece of wreckage':' pieces of wreckage');
+ $('wrResultOutcome').textContent=won?'You saved Gridda!':'You didn’t save Gridda!';
+ $('wrResultText').textContent=(raft?'You built ':'You stacked ')+count+material+' using '+state.words.length+(state.words.length===1?' word':' words')+' in '+Math.round(state.elapsedMs/1000)+' seconds.';
+ const note=c?campaignFinish(state).trim():'';
+ $('wrResultCampaignNote').textContent=note;$('wrResultCampaignNote').hidden=!note;
+ $('wrTryAgain').textContent=c?(won?(c.stage<3?'Continue ›':c.level<15?'Level up ›':'Finish ✓'):'↻ Retry'):'↻ Play again';
+ $('wrResultModes').textContent=c?'‹ Challenge menu':'‹ Menu';
+ $('wrResult').dataset.outcome=won?'won':'lost';
+ $('wrResult').dataset.context=c?'campaign':'free';
+ $('wrResultBoard').hidden=!won||!!c;
+ $('wrResultLevels').hidden=!!c;
  // Leave the former letter row free of result controls. Also ignore taps
  // still in flight when the rescue ends, including a rapid Build double-tap.
  resultReadyAt=performance.now()+RESULT_TAP_GUARD_MS;
@@ -403,7 +398,7 @@ function begin(mode,continueSaved=false,campaign=null){
  rankStarting=false;stop();
  if(!continueSaved){
    if(readState()&&!confirm('Start a new run? Your unfinished Word Rescue attempt will be replaced.'))return;
-   state=engine.create(Date.now(),mode);
+   state=engine.create(Date.now(),mode,4,mode==='raft'?4:3,3);
    if(campaign){state.campaign={...campaign};state.rankEligible=false;state.rankReason='Campaign stages are personal challenges.';}
  }else {state=readState();if(state)unrank('A saved round was resumed.');}
  if(!state)return menu();
@@ -434,13 +429,21 @@ function message(text,error){
 function renderShark(){
  if(state.mode==='raft')$('wrShark').style.left=(94-75*engine.sharkProgress(state)).toFixed(3)+'%';
 }
+function raftLead(s){return s.mode==='raft'?engine.sharkProgress(s)-Math.min(1,s.blocks/engine.targetBlocks(s)):0;}
+function threatExpression(s,danger){
+ if(s.won)return 'calm';if(s.expired)return 'fear';
+ if(s.mode==='raft'&&(engine.remainingSafetySeconds(s)<=5||(s.elapsedMs>=3000&&raftLead(s)>=.12)))return 'fear';
+ if(danger>=.86)return 'fear';if(danger>=.48||(s.mode==='raft'&&s.elapsedMs>=3000&&raftLead(s)>=.06))return 'worried';return 'calm';
+}
 function situation(danger){
  if(state.won)return 'SAFE';
  if(state.expired)return 'CAUGHT';
  const phase=state.mode==='raft'?Math.min(1,state.blocks/engine.targetBlocks(state)):engine.rescueProgress(state);
  const variant=Math.floor(state.elapsedMs/5000)%2;
  if(danger>=.86)return variant?'Hurry, Gridda!':'It’s not looking good!';
- if(danger>=.65)return variant?'Keep going!':'Danger rising!';
+ if(state.mode==='raft'&&engine.remainingSafetySeconds(state)<=5)return 'Hurry, Gridda!';
+ if(danger>=.65)return 'Danger rising!';
+ if(threatExpression(state,danger)!=='calm')return 'Getting stressful';
  if(phase>=.78)return variant?'Nearly there!':'Just a little longer';
  if(state.mode!=='raft'&&phase>=.22)return variant?'Help is on the way!':'There’s a boat on the horizon';
  return variant?'Keep building!':'Holding steady';
@@ -458,7 +461,8 @@ function render(){
  scene.style.setProperty('--wrBoatWidth',(12+32*Math.min(1,Math.max(0,(arrival-.20)/.80))).toFixed(2)+'cqw');
  scene.style.setProperty('--wrWater',engine.waterHeight(state)+'%');
  scene.dataset.danger=state.won?'won':state.expired?'lost':danger>=.90?'critical':danger>=.68?'alert':'safe';
- scene.dataset.panic=state.won||state.expired?'end':danger>=.92?'frantic':danger>=.78?'panicking':danger>=.48?'worried':'calm';
+ scene.dataset.expression=threatExpression(state,danger);
+ scene.dataset.panic=state.won||state.expired?'end':danger>=.92?'frantic':danger>=.78||scene.dataset.expression==='fear'?'panicking':scene.dataset.expression==='worried'?'worried':'calm';
  scene.style.setProperty('--wrDanger',String(danger));
  scene.style.setProperty('--wrBuild',String(Math.min(24,state.blocks)));
  // The fixed jetty is at x=80%; the floating platform ends at x=26%.
@@ -584,8 +588,9 @@ $('wrNewTide').onclick=()=>begin('tide');
 $('wrNewSinking').onclick=()=>begin('sinking');
 $('wrNewRaft').onclick=()=>begin('raft');
 $('wrContinue').onclick=()=>begin('tide',true);
-$('wrTryAgain').onclick=()=>{if(screen!=='play'||!state||!(state.won||state.expired)||performance.now()<resultReadyAt)return;safeDel(KEY);const c=state.campaign;if(!c)return begin(state.mode);if(!state.won)return begin(c.mode,false,campaignSpec(c.level,c.stage));if(!campaignProgress()[stageKey(c.level,c.stage)])return campaignMenu(c.level);if(c.stage<3)return begin(campaignMode(c.level,c.stage+1),false,campaignSpec(c.level,c.stage+1));campaignMenu();};
-$('wrResultModes').onclick=()=>state?.campaign?campaignMenu(state.campaign.level):menu();
+$('wrTryAgain').onclick=()=>{if(screen!=='play'||!state||!(state.won||state.expired)||performance.now()<resultReadyAt)return;safeDel(KEY);const c=state.campaign;if(!c)return begin(state.mode);if(!state.won)return begin(c.mode,false,campaignSpec(c.level,c.stage));if(!campaignProgress()[stageKey(c.level,c.stage)])return campaignMenu(c.level);if(c.stage<3)return begin(campaignMode(c.level,c.stage+1),false,campaignSpec(c.level,c.stage+1));if(c.level<15){const next=campaignSpec(c.level+1,1);return begin(next.mode,false,next);}campaignMenu();};
+$('wrResultModes').onclick=()=>state?.campaign?campaignMenu():menu();
+$('wrResultLevels').onclick=()=>campaignMenu();
 $('wrCampaignEntry').onclick=()=>campaignMenu();$('wrCampaignBack').onclick=()=>campaignMenu();
 $('wrBoardEntry').onclick=()=>showScoreboard();
 $('wrBoardRefresh').onclick=renderScoreboard;
